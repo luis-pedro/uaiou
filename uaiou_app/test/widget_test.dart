@@ -7,8 +7,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:uaiou_app/main.dart';
+import 'package:uaiou_app\lib\main.dart';
+import C:\Users\luisp\OneDrive\Documentos\GitHub\uaiou\uaiou_app\lib\main.dart;
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
