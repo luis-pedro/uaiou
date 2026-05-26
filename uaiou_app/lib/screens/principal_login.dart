@@ -70,7 +70,9 @@ class PrincipalLogin extends StatelessWidget {
                       width: double.infinity,
                       height: 55,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/login');
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
                           shape: RoundedRectangleBorder(
@@ -91,7 +93,9 @@ class PrincipalLogin extends StatelessWidget {
                       width: double.infinity,
                       height: 55,
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/cadastro');
+                        },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(
                             color: Color.fromRGBO(254, 98, 29, 1),
