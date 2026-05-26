@@ -17,7 +17,6 @@ class PrincipalLogin extends StatelessWidget {
         child: Column(
           children: [
             // Parte superior laranja
-            // Parte superior laranja
             Expanded(
               flex: 6,
               child: Column(
