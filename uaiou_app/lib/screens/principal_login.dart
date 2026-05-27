@@ -22,14 +22,12 @@ class PrincipalLogin extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Removi o 'const' daqui para evitar problemas
                   Align(
-                    // Removi o 'child:' que estava antes do Align
                     alignment: Alignment.center,
                     child: Image.asset(
                       'assets/imagens/UaiOu_logo_branca.png',
                       height:
-                          150, // Dica: defina uma altura para controle melhor
+                          150,
                       fit: BoxFit.contain,
                     ),
                   ),
