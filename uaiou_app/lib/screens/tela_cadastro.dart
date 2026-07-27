@@ -109,7 +109,7 @@ class TelaCadastro extends StatelessWidget {
                           height: 55,
                           child: OutlinedButton(
                             onPressed: () {
-                              // ação futura
+                              Navigator.pushNamed(context, '/cadastro_entregador1');
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(

@@ -193,7 +193,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(fontSize: 12),
                         ),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            Navigator.pushNamed(context, '/cadastro');
+                          },
                           child: const Text(
                             'Cadastre-se aqui',
                             style: TextStyle(
