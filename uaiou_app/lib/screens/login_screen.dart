@@ -157,30 +157,37 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
+                  Center(
+                    child: Image.asset(
+                      'assets/imagens/google_icon.png',
+                      width: 80,
+                    ),
+                  ),
+
                   // LOGIN GOOGLE
-                  //SizedBox(
-                    //width: double.infinity,
-                    //height: 52,
-                    //child: OutlinedButton.icon(
-                      //onPressed: () {},
-                      //icon: Image.asset(
-                        //'assets/imagens/Google1.png',
-                        //height: 22,
-                      //),
-                      //label: const Text(
-                        //'Entrar com Google',
-                        //style: TextStyle(
-                          //color: Colors.black87,
-                        //),
-                      //),
-                      //style: OutlinedButton.styleFrom(
-                        //shape: RoundedRectangleBorder(
-                          //borderRadius:
-                              //BorderRadius.circular(10),
-                        //),
-                     //),
-                    //),
-                  //),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: Image.asset(
+                        'assets/imagens/google_icon.png',
+                        height: 22,
+                      ),
+                      label: const Text(
+                        'Entrar com Google',
+                        style: TextStyle(
+                          color: Colors.black87,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(10),
+                        ),
+                     ),
+                    ),
+                  ),
 
                   const SizedBox(height: 30),
 
