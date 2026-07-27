@@ -157,13 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
-                  Center(
-                    child: Image.asset(
-                      'assets/imagens/google_icon.png',
-                      width: 80,
-                    ),
-                  ),
-
                   // LOGIN GOOGLE
                   SizedBox(
                     width: double.infinity,
@@ -171,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () {},
                       icon: Image.asset(
-                        'assets/imagens/google_icon.png',
+                        'assets/imagens/google_icon_novo.png',
                         height: 22,
                       ),
                       label: const Text(
