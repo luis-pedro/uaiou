@@ -16,7 +16,7 @@ class _CadastroEntregador2State extends State<CadastroEntregador2> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            //padding: const EdgeInsets.all(24),
 
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -26,7 +26,18 @@ class _CadastroEntregador2State extends State<CadastroEntregador2> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 30),
+
+                  //const SizedBox(height: 30),
+
+                  // LOGO
+                  Center(
+                    child: Image.asset(
+                      'assets/imagens/UaiOu_logo_horizontal.png',
+                      height: 150,
+                      
+                      fit: BoxFit.contain,
+                    ),
+                  ),
 
                   // Título
                   const Text(
@@ -136,7 +147,7 @@ class _CadastroEntregador2State extends State<CadastroEntregador2> {
                         ),
                       ),
                       child: const Text(
-                        'Continuar',
+                        'Próximo',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
