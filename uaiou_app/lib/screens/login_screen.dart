@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            //padding: const EdgeInsets.all(24),
 
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -32,6 +32,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
+
+                  // LOGO
+                  Center(
+                    child: Image.asset(
+                      'assets/imagens/UaiOu_logo_horizontal.png',
+                      height: 150,
+                      
+                      fit: BoxFit.contain,
+                    ),
+                  ),
 
                   // TÍTULO
                   const Text(
