@@ -82,7 +82,7 @@ class TelaCadastro extends StatelessWidget {
                           height: 55,
                           child: ElevatedButton(
                             onPressed: () {
-                              // ação futura
+                              Navigator.pushNamed(context, '/cadastro_estabelecimento1');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:

@@ -10,6 +10,11 @@ import 'package:uaiou/screens/tela_cadastro_entregador1.dart';
 import 'package:uaiou/screens/tela_cadastro_entregador2.dart';
 import 'package:uaiou/screens/tela_cadastro_entregador3.dart';
 
+//TELAS DE CADASTRO - ESTABELECIMENTO
+import 'package:uaiou/screens/tela_cadastro_estabelecimento1.dart';
+import 'package:uaiou/screens/tela_cadastro_estabelecimento2.dart';
+import 'package:uaiou/screens/tela_cadastro_estabelecimento3.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
@@ -34,6 +39,10 @@ class MyApp extends StatelessWidget {
         '/cadastro_entregador1': (context) => const CadastroEntregador1(),
         '/cadastro_entregador2': (context) => const CadastroEntregador2(),
         '/cadastro_entregador3': (context) => const CadastroEntregador3(),
+        // ESTABELECIMENTO
+        '/cadastro_estabelecimento1': (context) => const CadastroEstabelecimento1(),
+        '/cadastro_estabelecimento2': (context) => const CadastroEstabelecimento2(),
+        '/cadastro_estabelecimento3': (context) => const CadastroEstabelecimento3(),
       },
     );
   }

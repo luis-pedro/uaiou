@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
-class CadastroEntregador1 extends StatefulWidget {
-  const CadastroEntregador1({super.key});
+class CadastroEstabelecimento2 extends StatefulWidget {
+  const CadastroEstabelecimento2({super.key});
 
   @override
-  State<CadastroEntregador1> createState() => _CadastroEntregador1State();
+  State<CadastroEstabelecimento2> createState() =>
+      _CadastroEstabelecimento2State();
 }
 
-class _CadastroEntregador1State extends State<CadastroEntregador1> {
+class _CadastroEstabelecimento2State
+    extends State<CadastroEstabelecimento2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,7 +18,7 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            //padding: const EdgeInsets.all(2),
+            //padding: const EdgeInsets.fromLTRB(24, 10, 24, 30),
 
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -27,21 +29,20 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  //const SizedBox(height: 30),
-
                   // LOGO
                   Center(
                     child: Image.asset(
                       'assets/imagens/UaiOu_logo_horizontal.png',
                       height: 150,
-                      
                       fit: BoxFit.contain,
                     ),
                   ),
 
-                  // Título
+                  const SizedBox(height: 10),
+
+                  // TÍTULO
                   const Text(
-                    'Crie uma conta',
+                    'Quase lá...',
                     style: TextStyle(
                       fontSize: 32,
                       color: Color.fromRGBO(254, 98, 29, 1),
@@ -51,11 +52,11 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 25),
 
-                  // Barra de progresso
+                  // BARRA DE PROGRESSO
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
-                      value: 0.33,
+                      value: 0.66,
                       minHeight: 10,
                       backgroundColor: Colors.grey.shade300,
                       valueColor: const AlwaysStoppedAnimation(
@@ -66,62 +67,60 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 30),
 
-                  // Nome
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Nome',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // Email
-                  TextField(
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      hintText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // Telefone
-                  TextField(
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'Telefone',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // Data
-                  TextField(
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Data de nascimento',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // CPF
+                  // CNPJ
                   TextField(
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      hintText: 'CPF',
+                      hintText: 'CNPJ',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // RUA
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Rua',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // ENDEREÇO
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Endereço',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // NÚMERO
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Número',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // CIDADE
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cidade',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -130,21 +129,20 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 35),
 
-                  // Botão Próximo
+                  // BOTÃO PRÓXIMO
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                              Navigator.pushNamed(context, '/cadastro_entregador2');
-                            },
+                        Navigator.pushNamed(
+                          context,
+                          '/cadastro_estabelecimento3',
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(
-                          254,
-                          98,
-                          29,
-                          1,
-                        ),
+                        backgroundColor:
+                            const Color.fromRGBO(254, 98, 29, 1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -161,14 +159,14 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 25),
 
-                  // Voltar
+                  // VOLTAR
                   Center(
                     child: TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
                       child: const Text(
-                        'Voltar a tela principal',
+                        'Voltar a tela anterior',
                         style: TextStyle(
                           color: Colors.black54,
                           fontSize: 12,
@@ -177,7 +175,7 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                     ),
                   ),
 
-                  //const SizedBox(height: 40),
+                  //const SizedBox(height: 20),
                 ],
               ),
             ),

@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 
-class CadastroEntregador1 extends StatefulWidget {
-  const CadastroEntregador1({super.key});
+class CadastroEstabelecimento3 extends StatefulWidget {
+  const CadastroEstabelecimento3({super.key});
 
   @override
-  State<CadastroEntregador1> createState() => _CadastroEntregador1State();
+  State<CadastroEstabelecimento3> createState() =>
+      _CadastroEstabelecimento3State();
 }
 
-class _CadastroEntregador1State extends State<CadastroEntregador1> {
+class _CadastroEstabelecimento3State
+    extends State<CadastroEstabelecimento3> {
+
+  bool lembrarSenha = false;
+  bool esconderSenha = true;
+  bool esconderConfirmacao = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,7 +23,7 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            //padding: const EdgeInsets.all(2),
+            //padding: const EdgeInsets.fromLTRB(24, 10, 24, 30),
 
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -27,35 +34,34 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  //const SizedBox(height: 30),
-
                   // LOGO
                   Center(
                     child: Image.asset(
                       'assets/imagens/UaiOu_logo_horizontal.png',
                       height: 150,
-                      
                       fit: BoxFit.contain,
                     ),
                   ),
 
-                  // Título
+                  const SizedBox(height: 10),
+
+                  // TÍTULO
                   const Text(
-                    'Crie uma conta',
+                    'Pronto!',
                     style: TextStyle(
                       fontSize: 32,
-                      color: Color.fromRGBO(254, 98, 29, 1),
                       fontWeight: FontWeight.bold,
+                      color: Color.fromRGBO(254, 98, 29, 1),
                     ),
                   ),
 
                   const SizedBox(height: 25),
 
-                  // Barra de progresso
+                  // BARRA DE PROGRESSO
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: LinearProgressIndicator(
-                      value: 0.33,
+                      value: 1.0,
                       minHeight: 10,
                       backgroundColor: Colors.grey.shade300,
                       valueColor: const AlwaysStoppedAnimation(
@@ -66,10 +72,10 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 30),
 
-                  // Nome
+                  // USUÁRIO
                   TextField(
                     decoration: InputDecoration(
-                      hintText: 'Nome',
+                      hintText: 'Usuário',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -78,79 +84,97 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 18),
 
-                  // Email
+                  // SENHA
                   TextField(
-                    keyboardType: TextInputType.emailAddress,
+                    obscureText: esconderSenha,
                     decoration: InputDecoration(
-                      hintText: 'Email',
+                      hintText: 'Senha',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          esconderSenha
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            esconderSenha = !esconderSenha;
+                          });
+                        },
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 18),
 
-                  // Telefone
+                  // CONFIRMAR SENHA
                   TextField(
-                    keyboardType: TextInputType.phone,
+                    obscureText: esconderConfirmacao,
                     decoration: InputDecoration(
-                      hintText: 'Telefone',
+                      hintText: 'Confirme a senha',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          esconderConfirmacao
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            esconderConfirmacao =
+                                !esconderConfirmacao;
+                          });
+                        },
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 18),
 
-                  // Data
-                  TextField(
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Data de nascimento',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  // LEMBRAR SENHA
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: lembrarSenha,
+                        activeColor:
+                            const Color.fromRGBO(254, 98, 29, 1),
+                        onChanged: (valor) {
+                          setState(() {
+                            lembrarSenha = valor!;
+                          });
+                        },
                       ),
-                    ),
+                      const Text(
+                        'Lembrar-se da senha',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ),
 
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 30),
 
-                  // CPF
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'CPF',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  // Botão Próximo
+                  // BOTÃO FINALIZAR
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                              Navigator.pushNamed(context, '/cadastro_entregador2');
-                            },
+                        // TODO: Finalizar cadastro
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(
-                          254,
-                          98,
-                          29,
-                          1,
-                        ),
+                        backgroundColor:
+                            const Color.fromRGBO(254, 98, 29, 1),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                              BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
-                        'Próximo',
+                        'Finalizar Cadastro',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -161,14 +185,14 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
 
                   const SizedBox(height: 25),
 
-                  // Voltar
+                  // VOLTAR
                   Center(
                     child: TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                       },
                       child: const Text(
-                        'Voltar a tela principal',
+                        'Voltar a tela anterior',
                         style: TextStyle(
                           color: Colors.black54,
                           fontSize: 12,
@@ -177,7 +201,7 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                     ),
                   ),
 
-                  //const SizedBox(height: 40),
+                  //const SizedBox(height: 20),
                 ],
               ),
             ),

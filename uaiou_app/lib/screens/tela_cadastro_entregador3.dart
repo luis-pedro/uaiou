@@ -195,7 +195,7 @@ class _CadastroEntregador3State extends State<CadastroEntregador3> {
                         Navigator.pop(context);
                       },
                       child: const Text(
-                        'Voltar à tela anterior',
+                        'Voltar a tela anterior',
                         style: TextStyle(
                           color: Colors.black54,
                           fontSize: 12,
