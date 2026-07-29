@@ -162,8 +162,8 @@ class _CadastroEntregador3State extends State<CadastroEntregador3> {
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Entrar
-                      },
+                          Navigator.pushNamed(context, '/login');
+                        },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color.fromRGBO(
                           254,
@@ -177,7 +177,7 @@ class _CadastroEntregador3State extends State<CadastroEntregador3> {
                         ),
                       ),
                       child: const Text(
-                        'Entrar',
+                        'Finalizar Cadastro',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 18,

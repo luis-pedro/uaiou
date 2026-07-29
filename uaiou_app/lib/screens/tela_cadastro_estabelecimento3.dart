@@ -163,8 +163,8 @@ class _CadastroEstabelecimento3State
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: Finalizar cadastro
-                      },
+                          Navigator.pushNamed(context, '/login');
+                        },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             const Color.fromRGBO(254, 98, 29, 1),
