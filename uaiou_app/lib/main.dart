@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-//TELAS PRINCIPAIS
+//TELAS PRINCIPAIS DE LOGIN
 import 'package:uaiou/screens/principal_login.dart';
 import 'package:uaiou/screens/login_screen.dart';
 import 'package:uaiou/screens/tela_cadastro.dart';
@@ -14,6 +14,9 @@ import 'package:uaiou/screens/tela_cadastro_entregador3.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento1.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento2.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento3.dart';
+
+//TELAS PRINCIPAIS - ESTABELECIMENTO
+import 'package:uaiou/screens/tela_principal_estabelecimento.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +33,7 @@ class MyApp extends StatelessWidget {
       home: const PrincipalLogin(),
 
       routes: {
-        // TELAS PRINCIPAIS
+        // TELAS PRINCIPAIS DE LOGIN
         '/login': (context) => const LoginScreen(),
         '/cadastro': (context) => const TelaCadastro(),
 
@@ -43,6 +46,10 @@ class MyApp extends StatelessWidget {
         '/cadastro_estabelecimento1': (context) => const CadastroEstabelecimento1(),
         '/cadastro_estabelecimento2': (context) => const CadastroEstabelecimento2(),
         '/cadastro_estabelecimento3': (context) => const CadastroEstabelecimento3(),
+
+        // TELAS PRINCIPAIS
+        //ESTABELECIMENTO
+        '/principal_estabelecimento': (context) => const TelaPrincipalEstabelecimento(),
       },
     );
   }

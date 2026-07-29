@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
 class TelaPrincipalEstabelecimento extends StatefulWidget {
   const TelaPrincipalEstabelecimento({super.key});
 
@@ -18,11 +21,35 @@ class _TelaPrincipalEstabelecimentoState
       body: Stack(
         children: [
 
-          // MAPA (temporário)
+          // MAPA
           Positioned.fill(
-            child: Image.asset(
-              "assets/imagens/mapa.png",
-              fit: BoxFit.cover,
+            child: FlutterMap(
+              options: const MapOptions(
+                initialCenter: LatLng(-22.2526, -45.7033), // Santa Rita do Sapucaí
+                initialZoom: 15,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.uaiou.app',
+                ),
+
+                //MarkerLayer(
+                  //markers: [
+                    //Marker(
+                      //point: const LatLng(-22.2526, -45.7033),
+                      //width: 45,
+                      //height: 45,
+                      //child: const Icon(
+                        //Icons.location_on,
+                        //color: Color.fromRGBO(254, 98, 29, 1),
+                        //size: 45,
+                      //),
+                    //),
+                  //],
+                //),
+              ],
             ),
           ),
 
@@ -69,13 +96,13 @@ class _TelaPrincipalEstabelecimentoState
           ),
 
           // PIN DA LOCALIZAÇÃO
-          Center(
-            child: Icon(
-              Icons.location_on,
-              size: 55,
-              color: Color.fromRGBO(254, 98, 29, 1),
-            ),
-          ),
+          //Center(
+            //child: Icon(
+              //Icons.location_on,
+              //size: 55,
+              //color: Color.fromRGBO(254, 98, 29, 1),
+            //),
+          //),
         ],
       ),
 
