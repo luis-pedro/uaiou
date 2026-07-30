@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:uaiou/others/estabelecimento_service.dart';
+
 class TelaPrincipalEstabelecimento extends StatefulWidget {
   const TelaPrincipalEstabelecimento({super.key});
 
@@ -117,9 +119,7 @@ class _TelaPrincipalEstabelecimentoState
       right: 15,
       bottom: 95,
       child: ElevatedButton(
-        onPressed: () {
-          // TODO: lógica de pedido de entregador
-        },
+        onPressed: _abrirFormularioPedido,
         style: ElevatedButton.styleFrom(
           backgroundColor: corPrincipal,
           foregroundColor: Colors.white,
@@ -138,6 +138,68 @@ class _TelaPrincipalEstabelecimentoState
         ),
       ),
     );
+  }
+
+  // FORMULÁRIO DO PEDIDO
+  // Coleta bairro, rua e número e cria o pedido no EstabelecimentoService,
+  // que é lido pela Tela de Pedidos.
+  Future<void> _abrirFormularioPedido() async {
+    final bairroController = TextEditingController();
+    final ruaController = TextEditingController();
+    final numeroController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Pedir um entregador"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: bairroController,
+                decoration: const InputDecoration(labelText: "Bairro"),
+              ),
+              TextField(
+                controller: ruaController,
+                decoration: const InputDecoration(labelText: "Rua"),
+              ),
+              TextField(
+                controller: numeroController,
+                decoration: const InputDecoration(labelText: "Número"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: corPrincipal,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                EstabelecimentoService.instance.adicionarPedido(
+                  bairro: bairroController.text,
+                  rua: ruaController.text,
+                  numero: numeroController.text,
+                );
+
+                Navigator.pop(context);
+                Navigator.pushNamed(context, '/pedidos_estabelecimento');
+              },
+              child: const Text("Confirmar"),
+            ),
+          ],
+        );
+      },
+    );
+
+    bairroController.dispose();
+    ruaController.dispose();
+    numeroController.dispose();
   }
 
   // MENU INFERIOR PERSONALIZADO
@@ -233,7 +295,7 @@ class _TelaPrincipalEstabelecimentoState
         break;
 
       case 1:
-        Navigator.pushNamed(context, '/pedidos_estabelecimento');
+        // Navigator.pushNamed(context, '/pedidos_estabelecimento');
         break;
 
       case 2:
