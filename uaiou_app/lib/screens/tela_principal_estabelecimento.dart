@@ -233,7 +233,7 @@ class _TelaPrincipalEstabelecimentoState
         break;
 
       case 1:
-        // Navigator.pushNamed(context, '/pedidos_estabelecimento');
+        Navigator.pushNamed(context, '/pedidos_estabelecimento');
         break;
 
       case 2:
