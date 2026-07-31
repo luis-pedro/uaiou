@@ -335,7 +335,7 @@ class _TelaPedidosEstabelecimentoState
               color: cor,
               size: 27,
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 4),
             Text(
               texto,
               style: TextStyle(

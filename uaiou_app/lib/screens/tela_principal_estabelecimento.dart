@@ -203,8 +203,6 @@ class _TelaPrincipalEstabelecimentoState
   }
 
   // MENU INFERIOR PERSONALIZADO
-  // Fica dentro do Stack (sobre o mapa), e não em bottomNavigationBar,
-  // para que o mapa apareça atrás dos cantos arredondados o tempo todo.
   Widget _buildMenuInferior() {
     return Positioned(
       left: 0,
@@ -284,7 +282,7 @@ class _TelaPrincipalEstabelecimentoState
     );
   }
 
-  // LÓGICA DE NAVEGAÇÃO (inalterada)
+  // LÓGICA DE NAVEGAÇÃO
   void _onItemMenuTap(int index) {
     setState(() {
       paginaAtual = index;
@@ -295,7 +293,7 @@ class _TelaPrincipalEstabelecimentoState
         break;
 
       case 1:
-        // Navigator.pushNamed(context, '/pedidos_estabelecimento');
+        Navigator.pushNamed(context, '/pedidos_estabelecimento');
         break;
 
       case 2:

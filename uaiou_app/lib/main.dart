@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
         // TELAS PRINCIPAIS
         //ESTABELECIMENTO
         '/principal_estabelecimento': (context) => const TelaPrincipalEstabelecimento(),
-        '/estabelecimento_pedidos': (context) => const TelaPedidosEstabelecimento(),
+        '/pedidos_estabelecimento': (context) => const TelaPedidosEstabelecimento(),
       },
     );
   }
