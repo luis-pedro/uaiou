@@ -202,7 +202,10 @@ class _TelaPrincipalEstabelecimentoState
     numeroController.dispose();
   }
 
-  // MENU INFERIOR PERSONALIZADO
+  /// ============================================================
+  /// MENU INFERIOR
+  /// ============================================================
+
   Widget _buildMenuInferior() {
     return Positioned(
       left: 0,
@@ -257,33 +260,53 @@ class _TelaPrincipalEstabelecimentoState
     );
   }
 
-  // ITEM DO MENU INFERIOR
+  /// ============================================================
+  /// ITEM DO MENU
+  /// ============================================================
+
   Widget _buildItemMenu({
     required int index,
     required IconData icone,
     required String texto,
   }) {
     final bool selecionado = paginaAtual == index;
+
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
     return InkWell(
+      borderRadius: BorderRadius.circular(20),
       onTap: () => _onItemMenuTap(index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icone, color: cor),
-          const SizedBox(height: 4),
-          Text(
-            texto,
-            style: TextStyle(color: cor, fontSize: 12),
-          ),
-        ],
+      child: SizedBox(
+        width: 85,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icone,
+              color: cor,
+              size: 27,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              texto,
+              style: TextStyle(
+                color: cor,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // LÓGICA DE NAVEGAÇÃO
+  /// ============================================================
+  /// NAVEGAÇÃO
+  /// ============================================================
+
   void _onItemMenuTap(int index) {
+    if (paginaAtual == index) return;
+
     setState(() {
       paginaAtual = index;
     });
@@ -293,15 +316,24 @@ class _TelaPrincipalEstabelecimentoState
         break;
 
       case 1:
-        Navigator.pushNamed(context, '/pedidos_estabelecimento');
+        Navigator.pushReplacementNamed(
+          context,
+          '/pedidos_estabelecimento',
+        );
         break;
 
       case 2:
-        // Navigator.pushNamed(context, '/atividades_estabelecimento');
+        Navigator.pushReplacementNamed(
+          context,
+          '/atividades_estabelecimento',
+        );
         break;
 
       case 3:
-        // Navigator.pushNamed(context, '/perfil_estabelecimento');
+        Navigator.pushReplacementNamed(
+          context,
+          '/perfil_estabelecimento',
+        );
         break;
     }
   }

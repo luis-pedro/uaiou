@@ -326,7 +326,7 @@ class _TelaPedidosEstabelecimentoState
       borderRadius: BorderRadius.circular(20),
       onTap: () => _onItemMenuTap(index),
       child: SizedBox(
-        width: 75,
+        width: 85,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
