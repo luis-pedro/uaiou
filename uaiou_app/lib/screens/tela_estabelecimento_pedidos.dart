@@ -144,9 +144,9 @@ class _TelaPedidosEstabelecimentoState
         textoStatus = "Aceito";
         break;
 
-      case StatusPedido.finalizado:
+      case StatusPedido.entregue:
         corStatus = Colors.green;
-        textoStatus = "Finalizado";
+        textoStatus = "Entregue";
         break;
 
       case StatusPedido.cancelado:
@@ -335,7 +335,7 @@ class _TelaPedidosEstabelecimentoState
               color: cor,
               size: 27,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               texto,
               style: TextStyle(
