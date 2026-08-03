@@ -23,6 +23,14 @@ class EstabelecimentoService {
   /// Nome do estabelecimento logado.
   String nomeRestaurante = "";
 
+  /// Cidade do estabelecimento (ex: "Santa Rita do Sapucaí - MG"),
+  /// exibida na Tela de Perfil.
+  String cidadeRestaurante = "";
+
+  /// URL/caminho da foto de perfil do estabelecimento.
+  /// Vazio = mostra um avatar padrão.
+  String fotoUrl = "";
+
   /// Lista de pedidos feitos pelo estabelecimento.
   final List<Pedido> pedidos = [];
 
