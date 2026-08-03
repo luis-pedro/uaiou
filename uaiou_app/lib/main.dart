@@ -18,6 +18,7 @@ import 'package:uaiou/screens/tela_cadastro_estabelecimento3.dart';
 //TELAS PRINCIPAIS - ESTABELECIMENTO
 import 'package:uaiou/screens/tela_principal_estabelecimento.dart';
 import 'package:uaiou/screens/tela_estabelecimento_pedidos.dart';
+import 'package:uaiou/screens/tela_atividade_estabelecimento.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
         //ESTABELECIMENTO
         '/principal_estabelecimento': (context) => const TelaPrincipalEstabelecimento(),
         '/pedidos_estabelecimento': (context) => const TelaPedidosEstabelecimento(),
+        '/atividades_estabelecimento': (context) => const TelaAtividadesEstabelecimento(),
       },
     );
   }
