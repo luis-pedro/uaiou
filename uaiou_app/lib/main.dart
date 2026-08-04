@@ -17,6 +17,7 @@ import 'package:uaiou/screens/tela_cadastro_estabelecimento3.dart';
 
 //TELAS PRINCIPAIS - ENTREGADOR
 import 'package:uaiou/screens/tela_principal_entregador.dart';
+import 'package:uaiou/screens/tela_entregas_entregador.dart';
 
 //TELAS PRINCIPAIS - ESTABELECIMENTO
 import 'package:uaiou/screens/tela_principal_estabelecimento.dart';
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
         // TELAS PRINCIPAIS
         //ENTREGADOR
         '/principal_entregador': (context) => const TelaPrincipalEntregador(),
+        '/entregas_entregador': (context) => const TelaEntregasEntregador(),
 
         //ESTABELECIMENTO
         '/principal_estabelecimento': (context) => const TelaPrincipalEstabelecimento(),

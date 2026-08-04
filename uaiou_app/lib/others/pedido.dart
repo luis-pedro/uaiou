@@ -1,3 +1,11 @@
+/// ===============================================================
+/// MODELO DOS PEDIDOS
+/// ===============================================================
+///
+/// Compartilhado entre a Tela Principal, a Tela de Pedidos e a Tela
+/// de Atividades do Estabelecimento, e também pela Tela de Entregas
+/// do Entregador (exibem a lista e os totais).
+
 enum StatusPedido {
   pendente,
   aceito,
@@ -11,7 +19,16 @@ class Pedido {
   final String rua;
   final String numero;
 
-  /// Valor do pedido, usado para calcular o faturamento na Tela de Atividades
+  /// Nome do estabelecimento que fez o pedido.
+  /// Usado na Tela de Entregas do entregador.
+  final String nomeEstabelecimento;
+
+  /// Tempo estimado (em minutos) para a entrega.
+  /// Nulo enquanto não houver estimativa (ex: pedido ainda pendente).
+  final int? tempoEstimadoMinutos;
+
+  /// Valor do pedido, usado para calcular o faturamento na
+  /// Tela de Atividades.
   final double valor;
 
   /// Data em que o pedido foi realizado, usada para filtrar o
@@ -26,6 +43,8 @@ class Pedido {
     required this.rua,
     required this.numero,
     required this.status,
+    this.nomeEstabelecimento = "",
+    this.tempoEstimadoMinutos,
     this.valor = 0,
     DateTime? data,
   }) : data = data ?? DateTime.now();
