@@ -15,6 +15,9 @@ import 'package:uaiou/screens/tela_cadastro_estabelecimento1.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento2.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento3.dart';
 
+//TELAS PRINCIPAIS - ENTREGADOR
+import 'package:uaiou/screens/tela_principal_entregador.dart';
+
 //TELAS PRINCIPAIS - ESTABELECIMENTO
 import 'package:uaiou/screens/tela_principal_estabelecimento.dart';
 import 'package:uaiou/screens/tela_estabelecimento_pedidos.dart';
@@ -51,6 +54,9 @@ class MyApp extends StatelessWidget {
         '/cadastro_estabelecimento3': (context) => const CadastroEstabelecimento3(),
 
         // TELAS PRINCIPAIS
+        //ENTREGADOR
+        '/principal_entregador': (context) => const TelaPrincipalEntregador(),
+
         //ESTABELECIMENTO
         '/principal_estabelecimento': (context) => const TelaPrincipalEstabelecimento(),
         '/pedidos_estabelecimento': (context) => const TelaPedidosEstabelecimento(),

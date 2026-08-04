@@ -174,7 +174,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     height: 52,
                     child: OutlinedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                          Navigator.pushNamed(context, '/principal_entregador');
+                        },
                       icon: Image.asset(
                         'assets/imagens/google_icon_novo.png',
                         height: 22,
