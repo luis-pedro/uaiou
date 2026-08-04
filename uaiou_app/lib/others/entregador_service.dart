@@ -26,6 +26,14 @@ class EntregadorService {
   /// Nome do entregador logado.
   String nomeEntregador = "";
 
+  /// Cidade do entregador (ex: "Santa Rita do Sapucaí - MG"),
+  /// exibida na Tela de Perfil.
+  String cidadeEntregador = "";
+
+  /// URL/caminho da foto de perfil do entregador.
+  /// Vazio = mostra um avatar padrão.
+  String fotoUrl = "";
+
   /// Avaliação média do entregador (ex: 4.8).
   double avaliacao = 0;
 
