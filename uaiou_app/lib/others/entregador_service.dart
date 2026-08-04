@@ -53,4 +53,7 @@ class EntregadorService {
 
   List<Pedido> get entregasConcluidas =>
       entregas.where((e) => e.status == StatusPedido.entregue).toList();
+
+  List<Pedido> get entregasCanceladas =>
+      entregas.where((e) => e.status == StatusPedido.cancelado).toList();
 }
