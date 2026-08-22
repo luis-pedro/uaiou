@@ -19,28 +19,31 @@ class PrincipalLogin extends StatelessWidget {
             // Parte superior laranja
             Expanded(
               flex: 6,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Align(
-                    alignment: Alignment.center,
-                    child: Image.asset(
-                      'assets/imagens/UaiOu_logo_branca.png',
-                      height:
-                          150,
-                      fit: BoxFit.contain,
-                    ),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Align(
+                        alignment: Alignment.center,
+                        child: Image.asset(
+                          'assets/imagens/UaiOu_logo_branca.png',
+                          height: 150,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Pediu, entregou!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Pediu, entregou!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
 
@@ -60,59 +63,74 @@ class PrincipalLogin extends StatelessWidget {
                     topRight: Radius.circular(40),
                   ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Botão Entrar
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/login');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Botão Entrar
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/login');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color.fromRGBO(
+                                  254,
+                                  98,
+                                  29,
+                                  1,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: const Text(
+                                'Entrar',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Entrar',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+
+                          const SizedBox(height: 20),
+
+                          // Botão Cadastrar
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/cadastro');
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color.fromRGBO(254, 98, 29, 1),
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: const Text(
+                                'Cadastrar',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Color.fromRGBO(254, 98, 29, 1),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    // Botão Cadastrar
-                    SizedBox(
-                      width: double.infinity,
-                      height: 55,
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/cadastro');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            color: Color.fromRGBO(254, 98, 29, 1),
-                            width: 2,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                        ),
-                        child: const Text(
-                          'Cadastrar',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color.fromRGBO(254, 98, 29, 1),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

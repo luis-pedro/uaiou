@@ -1,6 +1,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- RF-A13.4 — permissões justificadas para revisão de loja.
+         Localização em segundo plano (ACCESS_BACKGROUND_LOCATION) fica
+         de fora de propósito: A-06 já documentou que rastreio em
+         segundo plano não é implementável no cliente Flutter Web, que
+         é como o app roda nesta fase. Declarar a permissão nativa sem
+         nenhum código que a use é exatamente o tipo de permissão sem
+         justificativa real que a Play Store reprova — quando existir
+         um cliente nativo com rastreio ativo durante entrega, ela
+         entra junto com esse código. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Disponibilidade do entregador e geofence de chegada/entrega
+         (A-06/A-08): a posição em uso é o que decide se o entregador
+         aparece como disponível e se ele está perto o bastante do
+         ponto de retirada/entrega. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Foto de comprovação de entrega (A-04 documentos / A-08 entrega). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Escolher imagem já existente como comprovante ou documento,
+         via image_picker (A-04/A-08). API 33+ usa READ_MEDIA_IMAGES
+         no lugar do antigo READ_EXTERNAL_STORAGE. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Caixa de entrada de notificações (A-11) — sem push efetivo
+         hoje, mas a permissão é o que a plataforma exige a partir do
+         Android 13 para qualquer notificação local futura. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
-        android:label="uaiou_app"
+        android:label="UaiOu"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

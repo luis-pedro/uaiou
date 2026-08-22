@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Uaiou App</string>
+	<string>UaiOu</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>uaiou_app</string>
+	<string>UaiOu</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -26,6 +26,13 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- RF-A13.4 — permissões justificadas para revisão de loja. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>O UaiOu usa sua localização para mostrar entregas disponíveis perto de você e para acompanhar o trajeto durante uma entrega ativa.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>O UaiOu usa a câmera para fotografar o comprovante de entrega no momento da confirmação.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O UaiOu acessa suas fotos para que você escolha uma imagem já existente como comprovante de entrega ou foto de documento.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

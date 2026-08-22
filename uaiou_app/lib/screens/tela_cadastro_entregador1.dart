@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
+import 'package:uaiou/screens/widgets/campo_cadastro.dart';
 
 class CadastroEntregador1 extends StatefulWidget {
   const CadastroEntregador1({super.key});
@@ -8,8 +12,25 @@ class CadastroEntregador1 extends StatefulWidget {
 }
 
 class _CadastroEntregador1State extends State<CadastroEntregador1> {
+  /// Só mostra erro depois da primeira tentativa de avançar —
+  /// marcar campo vazio em vermelho antes de digitar é hostil.
+  bool _mostrarErros = false;
+
+  void _avancar(BuildContext context, RascunhoCadastro rascunho) {
+    if (!rascunho.passoValido(PassoCadastro.dadosPessoais)) {
+      setState(() => _mostrarErros = true);
+      return;
+    }
+    Navigator.pushNamed(context, '/cadastro_entregador2');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rascunho = context.watch<RascunhoCadastro>();
+    final erros = _mostrarErros
+        ? rascunho.validar(PassoCadastro.dadosPessoais)
+        : const <String, String>{};
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -17,16 +38,12 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
         child: Center(
           child: SingleChildScrollView(
             //padding: const EdgeInsets.all(2),
-
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 400,
-              ),
+              constraints: const BoxConstraints(maxWidth: 400),
 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   //const SizedBox(height: 30),
 
                   // LOGO
@@ -34,7 +51,7 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                     child: Image.asset(
                       'assets/imagens/UaiOu_logo_horizontal.png',
                       height: 150,
-                      
+
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -67,65 +84,55 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                   const SizedBox(height: 30),
 
                   // Nome
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Nome',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Nome',
+                    valorInicial: rascunho.nome,
+                    aoMudar: (v) => rascunho.nome = v,
+                    erro: erros['Nome'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // Email
-                  TextField(
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      hintText: 'Email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Email',
+                    valorInicial: rascunho.email,
+                    aoMudar: (v) => rascunho.email = v,
+                    teclado: TextInputType.emailAddress,
+                    erro: erros['Email'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // Telefone
-                  TextField(
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      hintText: 'Telefone',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Telefone',
+                    valorInicial: rascunho.telefone,
+                    aoMudar: (v) => rascunho.telefone = v,
+                    teclado: TextInputType.phone,
+                    erro: erros['Telefone'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // Data
-                  TextField(
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Data de nascimento',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Data de nascimento',
+                    valorInicial: rascunho.dataNascimento,
+                    aoMudar: (v) => rascunho.dataNascimento = v,
+                    teclado: TextInputType.datetime,
+                    erro: erros['Data de nascimento'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // CPF
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'CPF',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'CPF',
+                    valorInicial: rascunho.cpf,
+                    aoMudar: (v) => rascunho.cpf = v,
+                    teclado: TextInputType.number,
+                    erro: erros['CPF'],
                   ),
 
                   const SizedBox(height: 35),
@@ -136,25 +143,17 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                              Navigator.pushNamed(context, '/cadastro_entregador2');
-                            },
+                        _avancar(context, rascunho);
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(
-                          254,
-                          98,
-                          29,
-                          1,
-                        ),
+                        backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
                         'Próximo',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ),
                   ),
@@ -169,10 +168,7 @@ class _CadastroEntregador1State extends State<CadastroEntregador1> {
                       },
                       child: const Text(
                         'Voltar a tela principal',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.black54, fontSize: 12),
                       ),
                     ),
                   ),

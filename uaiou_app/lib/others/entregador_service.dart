@@ -1,67 +1,77 @@
-import 'pedido.dart';
+import 'package:flutter/foundation.dart';
+
+import '../core/modelos/status_pedido.dart';
+import '../core/pedidos/lista_de_pedidos.dart';
+import '../core/pedidos/repositorio_pedidos.dart';
+import '../core/sessao/controlador_sessao.dart';
 
 /// ===============================================================
-/// ESTADO DO ENTREGADOR
+/// ESTADO DO ENTREGADOR — RF-A03.2
 /// ===============================================================
 ///
-/// Singleton simples para compartilhar dados entre as telas do
-/// entregador enquanto não existe integração com backend/Firebase
-/// (mesmo padrão do EstabelecimentoService).
+/// Substitui o antigo `EntregadorService.instance`, um singleton
+/// mutável que as telas liam direto e que nunca falhava — o que fazia
+/// toda tela supor que o dado já estava lá.
 ///
-/// - `nomeEntregador`, `avaliacao`: preenchidos no login/cadastro do
-///   entregador.
-/// - `disponivel`: alternado pelo próprio entregador na Tela Principal.
-/// - `ganhosHoje`, `entregasHoje`: devem ser calculados a partir das
-///   entregas concluídas no dia assim que existir uma lista real de
-///   entregas vinda do backend (hoje ficam como valores simples,
-///   como placeholder).
-/// - `entregas`: pedidos atribuídos a esse entregador (aceitos ou
-///   entregues). Preenchida conforme o app for atribuindo pedidos —
-///   por enquanto começa vazia.
-class EntregadorService {
-  EntregadorService._();
+/// Agora as listas vêm do servidor, cada uma com o próprio estado de
+/// carga (RF-A03.5): o app **não** filtra uma lista local para
+/// derivar "pendentes" e "concluídas", porque o recorte é do servidor.
+class EstadoEntregador extends ChangeNotifier {
+  final ControladorSessao _sessao;
 
-  static final EntregadorService instance = EntregadorService._();
+  /// `GET /orders?status=accepted` — entregas em andamento.
+  final ListaDePedidos emAndamento;
 
-  /// Nome do entregador logado.
-  String nomeEntregador = "";
+  /// `GET /orders?status=finalized` — histórico.
+  final ListaDePedidos concluidas;
 
-  /// Cidade do entregador (ex: "Santa Rita do Sapucaí - MG"),
-  /// exibida na Tela de Perfil.
-  String cidadeEntregador = "";
+  EstadoEntregador({
+    required RepositorioPedidos repositorio,
+    required ControladorSessao sessao,
+  }) : _sessao = sessao,
+       emAndamento = ListaDePedidos(repositorio, recorte: StatusPedido.aceito),
+       concluidas = ListaDePedidos(
+         repositorio,
+         recorte: StatusPedido.entregue,
+       ) {
+    // As listas são notificadores próprios. Sem repassar, uma tela que
+    // observa apenas esta loja nunca sabe que a carga terminou — e
+    // fica girando para sempre.
+    emAndamento.addListener(notifyListeners);
+    concluidas.addListener(notifyListeners);
+  }
 
-  /// URL/caminho da foto de perfil do entregador.
-  /// Vazio = mostra um avatar padrão.
-  String fotoUrl = "";
+  @override
+  void dispose() {
+    emAndamento.removeListener(notifyListeners);
+    concluidas.removeListener(notifyListeners);
+    super.dispose();
+  }
 
-  /// Avaliação média do entregador (ex: 4.8).
-  double avaliacao = 0;
+  /// Nome vem da sessão (A-02). Cidade e foto são de `GET /me`, que
+  /// pertence a A-05.
+  String get nome => _sessao.usuario?.nomeExibicao ?? '';
 
-  /// Se o entregador está disponível para receber novas entregas.
-  bool disponivel = true;
+  // Nota do entregador (A-12) não vive mais aqui: o cabeçalho e o
+  // perfil leem `GET /me/score` via `ControladorScore`, que sabe
+  // distinguir "sem nota ainda" de "nota zero" — este estado não
+  // precisa (nem deve) espelhar isso.
 
-  /// Ganhos do entregador no dia atual.
-  double ganhosHoje = 0;
+  /// ⚠️ **A-06.** Disponibilidade real é `PUT /me/availability`. Até
+  /// lá o app não tem como saber, e não deve fingir que sabe.
+  bool? get disponivel => null;
 
-  /// Quantidade de entregas realizadas no dia atual.
-  int entregasHoje = 0;
+  // Ganhos e contagem de entregas vêm de `ControladorGanhos`
+  // (`GET /me/earnings`) — A-09. Não são mais campos deste estado.
 
-  /// Pedidos atribuídos a esse entregador.
-  final List<Pedido> entregas = [];
+  Future<void> carregar() async {
+    await Future.wait([emAndamento.carregar(), concluidas.carregar()]);
+  }
 
-  /// ============================================================
-  /// LISTAS DERIVADAS — usadas na Tela de Entregas
-  /// ============================================================
-
-  List<Pedido> get entregasPendentes => entregas
-      .where((e) =>
-          e.status == StatusPedido.pendente ||
-          e.status == StatusPedido.aceito)
-      .toList();
-
-  List<Pedido> get entregasConcluidas =>
-      entregas.where((e) => e.status == StatusPedido.entregue).toList();
-
-  List<Pedido> get entregasCanceladas =>
-      entregas.where((e) => e.status == StatusPedido.cancelado).toList();
+  /// RF-A03.9 — descarta tudo no logout.
+  void limpar() {
+    emAndamento.limpar();
+    concluidas.limpar();
+    notifyListeners();
+  }
 }

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.uaiou_app"
+    namespace = "com.uaiou.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,8 +20,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.uaiou_app"
+        // RF-A13.9 — identificador real do app, alinhado ao pacote
+        // Java do backend (`com.uaiou.*`).
+        applicationId = "com.uaiou.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

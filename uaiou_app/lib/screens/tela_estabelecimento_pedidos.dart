@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
+import 'package:uaiou/screens/tela_detalhe_pedido.dart';
+import 'package:uaiou/screens/widgets/badge_status.dart';
+import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 class TelaPedidosEstabelecimento extends StatefulWidget {
   const TelaPedidosEstabelecimento({super.key});
@@ -19,24 +23,20 @@ class _TelaPedidosEstabelecimentoState
   /// Cor principal do aplicativo
   static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
 
-  /// Nome do restaurante e pedidos vêm do EstabelecimentoService,
-  /// compartilhado com a Tela Principal e a tela de Login.
-  final EstabelecimentoService _service = EstabelecimentoService.instance;
-
-  String get nomeRestaurante => _service.nomeRestaurante;
-  List<Pedido> get pedidos => _service.pedidos;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EstadoEstabelecimento>().carregar();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corPrincipal,
       body: SafeArea(
-        child: Stack(
-          children: [
-            _buildConteudo(),
-            _buildMenuInferior(),
-          ],
-        ),
+        child: Stack(children: [_buildConteudo(), _buildMenuInferior()]),
       ),
     );
   }
@@ -61,9 +61,7 @@ class _TelaPedidosEstabelecimentoState
             const SizedBox(height: 25),
             _buildHeader(),
             const SizedBox(height: 20),
-            Expanded(
-              child: _buildListaPedidos(),
-            ),
+            Expanded(child: _buildListaPedidos()),
             const SizedBox(height: 95),
           ],
         ),
@@ -82,7 +80,11 @@ class _TelaPedidosEstabelecimentoState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            nomeRestaurante.isEmpty ? "Meu restaurante" : nomeRestaurante,
+            // Nome real da sessão (A-02), no lugar do campo vazio do
+            // antigo singleton.
+            context.watch<EstadoEstabelecimento>().nome.isEmpty
+                ? "Meu restaurante"
+                : context.watch<EstadoEstabelecimento>().nome,
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -92,10 +94,7 @@ class _TelaPedidosEstabelecimentoState
           const SizedBox(height: 5),
           const Text(
             "Pedidos",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey),
           ),
         ],
       ),
@@ -107,21 +106,40 @@ class _TelaPedidosEstabelecimentoState
   /// ============================================================
 
   Widget _buildListaPedidos() {
-    if (pedidos.isEmpty) {
-      return const Center(
-        child: Text(
-          "Nenhum pedido ainda",
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
+    final lista = context.read<EstadoEstabelecimento>().pedidos;
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
-      itemCount: pedidos.length,
-      itemBuilder: (context, index) {
-        return _buildCardPedido(pedidos[index]);
-      },
+    return ListenableBuilder(
+      listenable: lista,
+      builder: (context, _) => RefreshIndicator(
+        // RF-A03.6
+        color: corPrincipal,
+        onRefresh: lista.recarregar,
+        child: VisaoCarregavel<List<Pedido>>(
+          estado: lista.estado,
+          aoTentarNovamente: lista.carregar,
+          textoVazio: "Nenhum pedido ainda",
+          iconeVazio: Icons.receipt_long_outlined,
+          construir: (pedidos) => ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            physics: const AlwaysScrollableScrollPhysics(),
+            // RF-A03.7 — a última linha vira o gatilho da próxima
+            // página, seguindo o `_links.next` do servidor.
+            itemCount: pedidos.length + (lista.temMais ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index >= pedidos.length) {
+                if (!lista.carregandoMais) lista.carregarMais();
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: CircularProgressIndicator(color: corPrincipal),
+                  ),
+                );
+              }
+              return _buildCardPedido(pedidos[index]);
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -130,47 +148,19 @@ class _TelaPedidosEstabelecimentoState
   /// ============================================================
 
   Widget _buildCardPedido(Pedido pedido) {
-    Color corStatus;
-    String textoStatus;
-
-    switch (pedido.status) {
-      case StatusPedido.pendente:
-        corStatus = Colors.orange;
-        textoStatus = "Pendente";
-        break;
-
-      case StatusPedido.aceito:
-        corStatus = Colors.blue;
-        textoStatus = "Aceito";
-        break;
-
-      case StatusPedido.entregue:
-        corStatus = Colors.green;
-        textoStatus = "Entregue";
-        break;
-
-      case StatusPedido.cancelado:
-        corStatus = Colors.red;
-        textoStatus = "Cancelado";
-        break;
-    }
-
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: Colors.grey.shade400,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.grey.shade400, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 3),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -180,62 +170,42 @@ class _TelaPedidosEstabelecimentoState
           Row(
             children: [
               Text(
-                "Pedido ${pedido.numeroPedido}",
+                "Pedido ${pedido.rotuloCurto}",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: corStatus.withOpacity(.15),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  textoStatus,
-                  style: TextStyle(
-                    color: corStatus,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              BadgeStatus(pedido.status),
             ],
           ),
 
           const SizedBox(height: 15),
 
-          Text(
-            "Bairro: ${pedido.bairro}",
-            style: const TextStyle(fontSize: 14),
-          ),
+          Text(pedido.enderecoResumido, style: const TextStyle(fontSize: 14)),
 
-          const SizedBox(height: 5),
+          const SizedBox(height: 8),
 
           Text(
-            "Rua: ${pedido.rua}",
-            style: const TextStyle(fontSize: 14),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            "Número: ${pedido.numero}",
-            style: const TextStyle(fontSize: 14),
+            "Frete: ${pedido.valor.formatarBRL()}",
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color.fromRGBO(94, 94, 94, 1),
+            ),
           ),
 
           const SizedBox(height: 18),
 
           Center(
             child: InkWell(
-              onTap: () {
-                // TODO:
-                // Abrir tela com informações completas do pedido.
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
+                ),
+              ),
               child: const Text(
                 "Visualizar pedido",
                 style: TextStyle(
@@ -282,11 +252,7 @@ class _TelaPedidosEstabelecimentoState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildItemMenu(
-                index: 0,
-                icone: Icons.home,
-                texto: "Principal",
-              ),
+              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
               _buildItemMenu(
                 index: 1,
                 icone: Icons.shopping_bag,
@@ -297,11 +263,7 @@ class _TelaPedidosEstabelecimentoState
                 icone: Icons.list_alt,
                 texto: "Atividades",
               ),
-              _buildItemMenu(
-                index: 3,
-                icone: Icons.person,
-                texto: "Perfil",
-              ),
+              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
             ],
           ),
         ),
@@ -330,19 +292,9 @@ class _TelaPedidosEstabelecimentoState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icone,
-              color: cor,
-              size: 27,
-            ),
+            Icon(icone, color: cor, size: 27),
             const SizedBox(height: 5),
-            Text(
-              texto,
-              style: TextStyle(
-                color: cor,
-                fontSize: 12,
-              ),
-            ),
+            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
           ],
         ),
       ),
@@ -362,27 +314,18 @@ class _TelaPedidosEstabelecimentoState
 
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(
-          context,
-          '/principal_estabelecimento',
-        );
+        Navigator.pushReplacementNamed(context, '/principal_estabelecimento');
         break;
 
       case 1:
         break;
 
       case 2:
-        Navigator.pushReplacementNamed(
-          context,
-          '/atividades_estabelecimento',
-        );
+        Navigator.pushReplacementNamed(context, '/atividades_estabelecimento');
         break;
 
       case 3:
-        Navigator.pushReplacementNamed(
-          context,
-          '/perfil_estabelecimento',
-        );
+        Navigator.pushReplacementNamed(context, '/perfil_estabelecimento');
         break;
     }
   }

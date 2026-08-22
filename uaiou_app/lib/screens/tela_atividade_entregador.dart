@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/estatisticas/controlador_estatisticas.dart';
+import 'package:uaiou/core/estatisticas/modelo_estatisticas.dart';
+import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/entregador_service.dart';
+import 'package:uaiou/screens/widgets/badge_status.dart';
+import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 /// Filtro selecionado na lista de entregas anteriores.
 enum _FiltroAtividades { todos, entregues, cancelados }
@@ -21,22 +27,31 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   /// Cor principal do aplicativo
   static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
 
-  /// Entregas anteriores vêm do EntregadorService, compartilhado com
-  /// a Tela Principal e a Tela de Entregas.
-  final EntregadorService _service = EntregadorService.instance;
-
   _FiltroAtividades _filtro = _FiltroAtividades.todos;
 
-  /// Lista de entregas já respeitando o filtro selecionado.
-  List<Pedido> get _entregasFiltradas {
-    switch (_filtro) {
-      case _FiltroAtividades.entregues:
-        return _service.entregasConcluidas;
-      case _FiltroAtividades.cancelados:
-        return _service.entregasCanceladas;
-      case _FiltroAtividades.todos:
-        return _service.entregas;
-    }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EstadoEntregador>().carregar();
+      // RF-A09.7 — contagens e taxas vêm de `GET /me/stats`; dinheiro
+      // continua vindo só de `GET /me/earnings` (card da tela principal).
+      context.read<ControladorEstatisticas>().carregar();
+    });
+  }
+
+  /// O histórico vem de `GET /orders?status=finalized`; o filtro só
+  /// recorta visualmente o que já está carregado.
+  ListaDePedidos get _lista => context.read<EstadoEntregador>().concluidas;
+
+  List<Pedido> _aplicarFiltro(List<Pedido> entregas) {
+    return switch (_filtro) {
+      _FiltroAtividades.entregues =>
+        entregas.where((e) => e.status.concluido).toList(),
+      _FiltroAtividades.cancelados =>
+        entregas.where((e) => e.status == StatusPedido.cancelado).toList(),
+      _FiltroAtividades.todos => entregas,
+    };
   }
 
   @override
@@ -45,11 +60,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
       backgroundColor: corPrincipal,
       body: SafeArea(
         child: Stack(
-          children: [
-            _buildTitulo(),
-            _buildConteudo(),
-            _buildMenuInferior(),
-          ],
+          children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
         ),
       ),
     );
@@ -91,6 +102,10 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
           children: [
             const SizedBox(height: 20),
 
+            _buildPainelEstatisticas(),
+
+            const SizedBox(height: 20),
+
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
@@ -115,13 +130,90 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
             const Divider(height: 1, color: Color.fromRGBO(217, 217, 217, 1)),
 
-            Expanded(
-              child: _buildListaEntregas(),
-            ),
+            Expanded(child: _buildListaEntregas()),
 
             const SizedBox(height: 95),
           ],
         ),
+      ),
+    );
+  }
+
+  /// ============================================================
+  /// PAINEL DE ESTATÍSTICAS — RF-A09.7
+  /// ============================================================
+  ///
+  /// `GET /me/stats` alimenta contagens e taxas. Números de dinheiro
+  /// **não aparecem aqui** — vêm só de `GET /me/earnings`, no card da
+  /// tela principal e no extrato, para não haver duas origens do
+  /// mesmo valor.
+  Widget _buildPainelEstatisticas() {
+    final controlador = context.watch<ControladorEstatisticas>();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: controlador.estado.quando(
+        carregando: () => const SizedBox(
+          height: 60,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        pronto: (stats) => _buildCardsEstatisticas(stats),
+        vazio: () => const SizedBox.shrink(),
+        falhou: (_) => const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  Widget _buildCardsEstatisticas(EstatisticasEntregador stats) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildCardEstatistica(
+            "Entregas concluídas",
+            "${stats.entregasConcluidas}",
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildCardEstatistica(
+            "Finalização limpa",
+            _formatarPercentual(stats.taxaFinalizacaoLimpa),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _buildCardEstatistica(
+            "Contrapropostas aceitas",
+            _formatarPercentual(stats.taxaSucessoContraoferta),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatarPercentual(double? taxa) =>
+      taxa == null ? "—" : "${(taxa * 100).toStringAsFixed(0)}%";
+
+  Widget _buildCardEstatistica(String rotulo, String valor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: const Color.fromRGBO(254, 98, 29, 0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            valor,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: corPrincipal),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            rotulo,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 11, color: Colors.black54),
+          ),
+        ],
       ),
     );
   }
@@ -219,23 +311,41 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   /// ============================================================
 
   Widget _buildListaEntregas() {
-    final entregas = _entregasFiltradas;
+    final lista = _lista;
 
-    if (entregas.isEmpty) {
-      return const Center(
-        child: Text(
-          "Nenhuma entrega encontrada",
-          style: TextStyle(color: Colors.grey),
+    return ListenableBuilder(
+      listenable: lista,
+      builder: (context, _) => RefreshIndicator(
+        color: corPrincipal,
+        onRefresh: lista.recarregar,
+        child: VisaoCarregavel<List<Pedido>>(
+          estado: lista.estado,
+          aoTentarNovamente: lista.carregar,
+          textoVazio: "Nenhuma entrega encontrada",
+          iconeVazio: Icons.local_shipping_outlined,
+          construir: (todas) {
+            final entregas = _aplicarFiltro(todas);
+            if (entregas.isEmpty) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Text(
+                    "Nenhuma entrega neste filtro",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: entregas.length,
+              itemBuilder: (context, index) =>
+                  _buildCardEntrega(entregas[index]),
+            );
+          },
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: entregas.length,
-      itemBuilder: (context, index) {
-        return _buildCardEntrega(entregas[index]);
-      },
+      ),
     );
   }
 
@@ -245,7 +355,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
   Widget _buildCardEntrega(Pedido entrega) {
     final data =
-        "${entrega.data.day.toString().padLeft(2, '0')}/${entrega.data.month.toString().padLeft(2, '0')}/${entrega.data.year.toString().substring(2)}";
+        "${entrega.criadoEm.day.toString().padLeft(2, '0')}/${entrega.criadoEm.month.toString().padLeft(2, '0')}/${entrega.criadoEm.year.toString().substring(2)}";
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -253,32 +363,26 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: Colors.grey.shade400,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.grey.shade400, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            data,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text(data, style: const TextStyle(fontSize: 12, color: Colors.grey)),
 
           const SizedBox(height: 8),
 
           Row(
             children: [
               Text(
-                "Pedido ${entrega.numeroPedido}",
+                "Pedido ${entrega.rotuloCurto}",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const Spacer(),
-              _buildBadgeStatus(entrega.status),
+              BadgeStatus(entrega.status, comIcone: true),
             ],
           ),
 
@@ -328,61 +432,6 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
     );
   }
 
-  Widget _buildBadgeStatus(StatusPedido status) {
-    late final Color cor;
-    late final String texto;
-    late final IconData icone;
-
-    switch (status) {
-      case StatusPedido.entregue:
-        cor = Colors.green;
-        texto = "Entregue";
-        icone = Icons.check_circle;
-        break;
-
-      case StatusPedido.cancelado:
-        cor = Colors.grey;
-        texto = "Cancelado";
-        icone = Icons.info;
-        break;
-
-      case StatusPedido.aceito:
-        cor = Colors.blue;
-        texto = "Aceito";
-        icone = Icons.check_circle_outline;
-        break;
-
-      case StatusPedido.pendente:
-        cor = Colors.orange;
-        texto = "Pendente";
-        icone = Icons.hourglass_bottom;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(.15),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icone, size: 14, color: cor),
-          const SizedBox(width: 6),
-          Text(
-            texto,
-            style: TextStyle(
-              color: cor,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// ============================================================
   /// MENU INFERIOR
   /// ============================================================
@@ -414,11 +463,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildItemMenu(
-                index: 0,
-                icone: Icons.home,
-                texto: "Principal",
-              ),
+              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
               _buildItemMenu(
                 index: 1,
                 icone: Icons.local_shipping,
@@ -429,11 +474,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
                 icone: Icons.list_alt,
                 texto: "Atividades",
               ),
-              _buildItemMenu(
-                index: 3,
-                icone: Icons.person,
-                texto: "Perfil",
-              ),
+              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
             ],
           ),
         ),
@@ -462,19 +503,9 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icone,
-              color: cor,
-              size: 27,
-            ),
+            Icon(icone, color: cor, size: 27),
             const SizedBox(height: 5),
-            Text(
-              texto,
-              style: TextStyle(
-                color: cor,
-                fontSize: 12,
-              ),
-            ),
+            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
           ],
         ),
       ),

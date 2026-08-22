@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/entregador_service.dart';
+import 'package:uaiou/screens/widgets/badge_status.dart';
+import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 class TelaEntregasEntregador extends StatefulWidget {
   const TelaEntregasEntregador({super.key});
 
   @override
-  State<TelaEntregasEntregador> createState() =>
-      _TelaEntregasEntregadorState();
+  State<TelaEntregasEntregador> createState() => _TelaEntregasEntregadorState();
 }
 
 class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
@@ -18,9 +21,15 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   /// Cor principal do aplicativo
   static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
 
-  /// Entregas pendentes/concluídas vêm do EntregadorService,
-  /// preenchido conforme pedidos são atribuídos ao entregador.
-  final EntregadorService _service = EntregadorService.instance;
+  @override
+  void initState() {
+    super.initState();
+    // RNF-A03.1 — carga tem ciclo de vida próprio; `build` roda
+    // muitas vezes e não pode disparar requisição.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EstadoEntregador>().carregar();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +37,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
       backgroundColor: corPrincipal,
       body: SafeArea(
         child: Stack(
-          children: [
-            _buildTitulo(),
-            _buildConteudo(),
-            _buildMenuInferior(),
-          ],
+          children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
         ),
       ),
     );
@@ -78,42 +83,79 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   /// LISTA (seções: pendentes / concluídas)
   /// ============================================================
 
+  /// Duas listas independentes, cada uma com o próprio recorte no
+  /// servidor e o próprio estado de carga (RF-A03.3/RF-A03.5).
   Widget _buildLista() {
-    final pendentes = _service.entregasPendentes;
-    final concluidas = _service.entregasConcluidas;
+    final estado = context.watch<EstadoEntregador>();
 
-    if (pendentes.isEmpty && concluidas.isEmpty) {
-      return const Center(
-        child: Text(
-          "Nenhuma entrega no momento",
-          style: TextStyle(color: Colors.grey),
+    return RefreshIndicator(
+      // RF-A03.6
+      color: corPrincipal,
+      onRefresh: () => Future.wait([
+        estado.emAndamento.recarregar(),
+        estado.concluidas.recarregar(),
+      ]),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 25, 20, 95),
+        // Sem isto, puxar não funciona quando a lista é curta demais
+        // para rolar — que é justamente o caso do estado vazio.
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          _buildTituloSecao("Entregas pendentes"),
+          const SizedBox(height: 10),
+          _buildSecao(estado.emAndamento, vazio: "Nenhuma entrega pendente"),
+
+          const SizedBox(height: 20),
+          const Divider(color: Color.fromRGBO(94, 94, 94, 1), height: 1),
+          const SizedBox(height: 20),
+
+          _buildTituloSecao("Entregas concluídas"),
+          const SizedBox(height: 10),
+          _buildSecao(
+            estado.concluidas,
+            vazio: "Nenhuma entrega concluída ainda",
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Observa a **própria lista**, não a loja que a contém.
+  ///
+  /// Depender do repasse da loja é frágil — e foi exatamente o que
+  /// deixou esta tela girando para sempre com a requisição já
+  /// respondida. Aqui, quem muda é quem avisa, e só esta seção
+  /// reconstrói.
+  Widget _buildSecao(ListaDePedidos lista, {required String vazio}) {
+    return ListenableBuilder(
+      listenable: lista,
+      builder: (context, _) => VisaoCarregavel<List<Pedido>>(
+        estado: lista.estado,
+        aoTentarNovamente: lista.carregar,
+        textoVazio: vazio,
+        iconeVazio: Icons.local_shipping_outlined,
+        construir: (entregas) => Column(
+          children: [
+            ...entregas.map((entrega) => _buildCardEntrega(context, entrega)),
+            if (lista.temMais) _buildCarregarMais(lista),
+          ],
         ),
+      ),
+    );
+  }
+
+  /// RF-A03.7 — a próxima página vem do `_links.next` do servidor.
+  Widget _buildCarregarMais(ListaDePedidos lista) {
+    if (lista.carregandoMais) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: CircularProgressIndicator(color: corPrincipal),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 25, 20, 95),
-      children: [
-        _buildTituloSecao("Entregas pendentes"),
-        const SizedBox(height: 10),
-
-        if (pendentes.isEmpty)
-          _buildSecaoVazia("Nenhuma entrega pendente")
-        else
-          ...pendentes.map(_buildCardEntrega),
-
-        const SizedBox(height: 20),
-        const Divider(color: Color.fromRGBO(94, 94, 94, 1), height: 1),
-        const SizedBox(height: 20),
-
-        _buildTituloSecao("Entregas concluídas"),
-        const SizedBox(height: 10),
-
-        if (concluidas.isEmpty)
-          _buildSecaoVazia("Nenhuma entrega concluída ainda")
-        else
-          ...concluidas.map(_buildCardEntrega),
-      ],
+    return TextButton(
+      onPressed: lista.carregarMais,
+      child: const Text("Carregar mais", style: TextStyle(color: corPrincipal)),
     );
   }
 
@@ -128,21 +170,11 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
     );
   }
 
-  Widget _buildSecaoVazia(String texto) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(
-        texto,
-        style: const TextStyle(fontSize: 13, color: Colors.grey),
-      ),
-    );
-  }
-
   /// ============================================================
   /// CARD DA ENTREGA
   /// ============================================================
 
-  Widget _buildCardEntrega(Pedido entrega) {
+  Widget _buildCardEntrega(BuildContext context, Pedido entrega) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -161,9 +193,9 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
             children: [
               Expanded(
                 child: Text(
-                  entrega.nomeEstabelecimento.isEmpty
-                      ? "Pedido ${entrega.numeroPedido}"
-                      : entrega.nomeEstabelecimento,
+                  entrega.nomeEstabelecimento?.isNotEmpty == true
+                      ? entrega.nomeEstabelecimento!
+                      : "Pedido ${entrega.rotuloCurto}",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -173,47 +205,41 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
                 ),
               ),
               const SizedBox(width: 8),
-              _buildBadgeStatus(entrega.status),
+              BadgeStatus(entrega.status),
             ],
           ),
 
           const SizedBox(height: 10),
 
+          // O endereço vem no detalhe que o servidor permitiu: na
+          // vitrine, só o bairro (RF-11.6).
           Text(
-            "Bairro: ${entrega.bairro}",
-            style: const TextStyle(fontSize: 13, color: Color.fromRGBO(94, 94, 94, 1)),
-          ),
-
-          const SizedBox(height: 5),
-
-          Row(
-            children: [
-              Text(
-                "Rua: ${entrega.rua}",
-                style: const TextStyle(fontSize: 13, color: Color.fromRGBO(94, 94, 94, 1)),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "Número: ${entrega.numero}",
-                style: const TextStyle(fontSize: 13, color: Color.fromRGBO(94, 94, 94, 1)),
-              ),
-            ],
+            entrega.enderecoResumido,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color.fromRGBO(94, 94, 94, 1),
+            ),
           ),
 
           const SizedBox(height: 14),
 
           Row(
             children: [
-              if (entrega.tempoEstimadoMinutos != null) ...[
-                _buildChipTempo(entrega.tempoEstimadoMinutos!),
+              if (entrega.minutosDesdeAceite != null) ...[
+                _buildChipTempo(entrega.minutosDesdeAceite!),
                 const Spacer(),
               ] else
                 const Spacer(),
               InkWell(
-                onTap: () {
-                  // TODO:
-                  // Abrir tela com informações completas da entrega.
-                },
+                // RF-A08.2 — pedido aceito abre a execução da entrega;
+                // demais estados não têm ação aqui ainda.
+                onTap: entrega.status == StatusPedido.aceito
+                    ? () => Navigator.pushNamed(
+                        context,
+                        '/entrega_em_andamento',
+                        arguments: entrega.id,
+                      )
+                    : null,
                 child: const Text(
                   "Visualizar pedido",
                   style: TextStyle(
@@ -238,53 +264,10 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
         border: Border.all(color: const Color.fromRGBO(94, 94, 94, 1)),
       ),
       child: Text(
-        "$minutos min",
+        "há $minutos min",
         style: const TextStyle(
           fontSize: 13,
           color: Color.fromRGBO(34, 34, 34, 1),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBadgeStatus(StatusPedido status) {
-    late final Color cor;
-    late final String texto;
-
-    switch (status) {
-      case StatusPedido.pendente:
-        cor = Colors.orange;
-        texto = "Pendente...";
-        break;
-
-      case StatusPedido.aceito:
-        cor = Colors.blue;
-        texto = "Aceito";
-        break;
-
-      case StatusPedido.entregue:
-        cor = Colors.green;
-        texto = "Entregue";
-        break;
-
-      case StatusPedido.cancelado:
-        cor = Colors.red;
-        texto = "Cancelado";
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(.15),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        texto,
-        style: TextStyle(
-          color: cor,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
@@ -321,11 +304,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildItemMenu(
-                index: 0,
-                icone: Icons.home,
-                texto: "Principal",
-              ),
+              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
               _buildItemMenu(
                 index: 1,
                 icone: Icons.local_shipping,
@@ -336,11 +315,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
                 icone: Icons.list_alt,
                 texto: "Atividades",
               ),
-              _buildItemMenu(
-                index: 3,
-                icone: Icons.person,
-                texto: "Perfil",
-              ),
+              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
             ],
           ),
         ),
@@ -369,19 +344,9 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icone,
-              color: cor,
-              size: 27,
-            ),
+            Icon(icone, color: cor, size: 27),
             const SizedBox(height: 5),
-            Text(
-              texto,
-              style: TextStyle(
-                color: cor,
-                fontSize: 12,
-              ),
-            ),
+            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
           ],
         ),
       ),

@@ -1,83 +1,93 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+
+import '../core/estatisticas/repositorio_estatisticas.dart';
+import '../core/modelos/dinheiro.dart';
+import '../core/pedidos/lista_de_pedidos.dart';
+import '../core/pedidos/repositorio_pedidos.dart';
+import '../core/rede/erros_api.dart';
+import '../core/sessao/controlador_sessao.dart';
 import 'pedido.dart';
 
 /// ===============================================================
-/// ESTADO DO ESTABELECIMENTO
+/// ESTADO DO ESTABELECIMENTO — RF-A03.2
 /// ===============================================================
 ///
-/// Singleton simples para compartilhar dados entre telas enquanto
-/// não existe integração com backend/Firebase:
+/// Substitui o antigo `EstabelecimentoService.instance`.
 ///
-/// - `nomeRestaurante`: preenchido na tela de LOGIN do estabelecimento.
-/// - `pedidos`: preenchido pela TELA PRINCIPAL quando o botão
-///   "Pedir um entregador" é confirmado, e lido pela TELA DE PEDIDOS.
+/// O que sumiu aqui, de propósito:
 ///
-/// Quando o backend existir, essa classe pode passar a buscar/salvar
-/// os dados remotamente (ex: Firestore) sem precisar mudar as telas
-/// que a usam — elas só leem `instance.nomeRestaurante` e
-/// `instance.pedidos`.
-class EstabelecimentoService {
-  EstabelecimentoService._();
+/// - **`adicionarPedido`** (RF-A03.4): criava pedido na memória do app
+///   com número autoincrementado a partir de 6246. A criação real é
+///   `POST /orders`, em [A-10].
+/// - **`faturamentoHoje`** (RF-A03.5/RF-A10.10): somava `double` de
+///   uma lista local e inferia "hoje" pelo relógio do aparelho. O
+///   agregado vem de `GET /me/stats` e `GET /me/payables`.
+class EstadoEstabelecimento extends ChangeNotifier {
+  final ControladorSessao _sessao;
+  final RepositorioEstatisticas _estatisticas;
 
-  static final EstabelecimentoService instance = EstabelecimentoService._();
+  /// `GET /orders` — o servidor já devolve só os próprios pedidos
+  /// deste estabelecimento (RF-11.6).
+  final ListaDePedidos pedidos;
 
-  /// Nome do estabelecimento logado.
-  String nomeRestaurante = "";
-
-  /// Cidade do estabelecimento (ex: "Santa Rita do Sapucaí - MG"),
-  /// exibida na Tela de Perfil.
-  String cidadeRestaurante = "";
-
-  /// URL/caminho da foto de perfil do estabelecimento.
-  /// Vazio = mostra um avatar padrão.
-  String fotoUrl = "";
-
-  /// Lista de pedidos feitos pelo estabelecimento.
-  final List<Pedido> pedidos = [];
-
-  int _proximoNumeroPedido = 6246;
-
-  /// Cria e adiciona um novo pedido.
-  /// Chamado pelo botão "Pedir um entregador" na Tela Principal.
-  Pedido adicionarPedido({
-    required String bairro,
-    required String rua,
-    required String numero,
-    double valor = 0,
-  }) {
-    final pedido = Pedido(
-      numeroPedido: _proximoNumeroPedido++,
-      bairro: bairro,
-      rua: rua,
-      numero: numero,
-      valor: valor,
-      status: StatusPedido.pendente,
-    );
-
-    // Pedido mais novo aparece primeiro na lista.
-    pedidos.insert(0, pedido);
-    return pedido;
+  EstadoEstabelecimento({
+    required RepositorioPedidos repositorio,
+    required ControladorSessao sessao,
+    required RepositorioEstatisticas estatisticas,
+  }) : _sessao = sessao,
+       _estatisticas = estatisticas,
+       pedidos = ListaDePedidos(repositorio) {
+    // Ver a nota em EstadoEntregador: sem repassar a notificação da
+    // lista, a tela que observa só esta loja fica girando para sempre.
+    pedidos.addListener(notifyListeners);
   }
 
-  /// ============================================================
-  /// TOTAIS — usados na Tela de Atividades
-  /// ============================================================
+  @override
+  void dispose() {
+    pedidos.removeListener(notifyListeners);
+    super.dispose();
+  }
 
-  List<Pedido> get pedidosEntregues =>
-      pedidos.where((p) => p.status == StatusPedido.entregue).toList();
+  /// Nome vem da sessão (A-02); cidade e logo são de `GET /me` (A-05).
+  String get nome => _sessao.usuario?.nomeExibicao ?? '';
 
-  List<Pedido> get pedidosCancelados =>
-      pedidos.where((p) => p.status == StatusPedido.cancelado).toList();
+  /// RF-A10.10 — `freightSpend` de `GET /me/stats` (`MerchantStatsResponse`).
+  /// `null` até a primeira carga responder; nunca uma soma feita aqui.
+  Dinheiro? _faturamento;
+  Dinheiro? get faturamentoHoje => _faturamento;
 
-  /// Soma o valor dos pedidos entregues feitos hoje.
-  double get faturamentoHoje {
-    final hoje = DateTime.now();
+  Future<void> _carregarEstatisticas() async {
+    try {
+      final estatisticas = await _estatisticas.obterEstabelecimento();
+      _faturamento = estatisticas.freteGasto;
+    } on ErroApi {
+      // Estatística indisponível não impede a lista de pedidos de
+      // aparecer — o card de faturamento só fica em "—".
+    } finally {
+      notifyListeners();
+    }
+  }
 
-    return pedidos
-        .where((p) =>
-            p.status == StatusPedido.entregue &&
-            p.data.year == hoje.year &&
-            p.data.month == hoje.month &&
-            p.data.day == hoje.day)
-        .fold(0.0, (soma, p) => soma + p.valor);
+  /// Recortes locais que a tela de atividades usa para agrupar o que
+  /// **já foi carregado**. Não é filtro de escopo — o escopo veio do
+  /// servidor; isto só separa visualmente o que está na mão.
+  List<Pedido> get concluidos =>
+      pedidos.itens.where((p) => p.status.concluido).toList();
+
+  List<Pedido> get cancelados =>
+      pedidos.itens.where((p) => p.status == StatusPedido.cancelado).toList();
+
+  Future<void> carregar() async {
+    await pedidos.carregar();
+    unawaited(_carregarEstatisticas());
+  }
+
+  /// RF-A03.9
+  void limpar() {
+    pedidos.limpar();
+    _faturamento = null;
+    notifyListeners();
   }
 }

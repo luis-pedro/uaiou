@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
+import 'package:uaiou/screens/tela_a_pagar.dart';
+import 'package:uaiou/screens/tela_detalhe_pedido.dart';
+import 'package:uaiou/screens/widgets/badge_status.dart';
+import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 /// Filtro selecionado na lista de pedidos.
 enum _FiltroAtividades { todos, entregues, cancelados }
@@ -22,22 +28,26 @@ class _TelaAtividadesEstabelecimentoState
   /// Cor principal do aplicativo
   static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
 
-  /// Fonte dos dados: nome do estabelecimento e pedidos, compartilhados
-  /// com a Tela Principal e a Tela de Pedidos.
-  final EstabelecimentoService _service = EstabelecimentoService.instance;
-
   _FiltroAtividades _filtro = _FiltroAtividades.todos;
 
-  /// Lista de pedidos já respeitando o filtro selecionado.
-  List<Pedido> get _pedidosFiltrados {
-    switch (_filtro) {
-      case _FiltroAtividades.entregues:
-        return _service.pedidosEntregues;
-      case _FiltroAtividades.cancelados:
-        return _service.pedidosCancelados;
-      case _FiltroAtividades.todos:
-        return _service.pedidos;
-    }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EstadoEstabelecimento>().carregar();
+    });
+  }
+
+  ListaDePedidos get _lista => context.read<EstadoEstabelecimento>().pedidos;
+
+  List<Pedido> _aplicarFiltro(List<Pedido> pedidos) {
+    return switch (_filtro) {
+      _FiltroAtividades.entregues =>
+        pedidos.where((p) => p.status.concluido).toList(),
+      _FiltroAtividades.cancelados =>
+        pedidos.where((p) => p.status == StatusPedido.cancelado).toList(),
+      _FiltroAtividades.todos => pedidos,
+    };
   }
 
   @override
@@ -46,11 +56,7 @@ class _TelaAtividadesEstabelecimentoState
       backgroundColor: corPrincipal,
       body: SafeArea(
         child: Stack(
-          children: [
-            _buildTitulo(),
-            _buildConteudo(),
-            _buildMenuInferior(),
-          ],
+          children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
         ),
       ),
     );
@@ -108,6 +114,10 @@ class _TelaAtividadesEstabelecimentoState
 
             _buildCardFaturamento(),
 
+            const SizedBox(height: 12),
+
+            _buildBotaoAPagar(),
+
             const SizedBox(height: 15),
 
             _buildContadores(),
@@ -120,9 +130,7 @@ class _TelaAtividadesEstabelecimentoState
 
             const Divider(height: 1, color: Color.fromRGBO(217, 217, 217, 1)),
 
-            Expanded(
-              child: _buildListaPedidos(),
-            ),
+            Expanded(child: _buildListaPedidos()),
 
             const SizedBox(height: 95),
           ],
@@ -136,10 +144,10 @@ class _TelaAtividadesEstabelecimentoState
   /// ============================================================
 
   Widget _buildCardFaturamento() {
-    // O faturamento vem do EstabelecimentoService: soma o valor de
-    // todos os pedidos entregues hoje. Nada de valor fixo aqui —
-    // quando o backend existir, é só o service buscar os pedidos reais.
-    final faturamento = _service.faturamentoHoje;
+    // ⚠️ A-10 (RF-A10.10): o agregado vem de `GET /me/stats` e
+    // `GET /me/payables`. Somar dinheiro no cliente e inferir "hoje"
+    // pelo relógio do aparelho eram as duas coisas que a task proíbe.
+    final faturamento = context.watch<EstadoEstabelecimento>().faturamentoHoje;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -162,7 +170,7 @@ class _TelaAtividadesEstabelecimentoState
             ),
             const SizedBox(height: 5),
             Text(
-              "R\$${faturamento.toStringAsFixed(2).replaceAll('.', ',')}",
+              faturamento?.formatarBRL() ?? "—",
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 24,
@@ -170,6 +178,34 @@ class _TelaAtividadesEstabelecimentoState
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// ============================================================
+  /// BOTÃO "A PAGAR" — RF-A10.9
+  /// ============================================================
+
+  Widget _buildBotaoAPagar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: OutlinedButton.icon(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TelaAPagar()),
+        ),
+        icon: const Icon(Icons.payments_outlined, color: corPrincipal),
+        label: const Text(
+          "A pagar aos entregadores",
+          style: TextStyle(color: corPrincipal, fontWeight: FontWeight.w600),
+        ),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: corPrincipal),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );
@@ -186,12 +222,12 @@ class _TelaAtividadesEstabelecimentoState
         children: [
           _buildContador(
             "Entregues",
-            _service.pedidosEntregues.length,
+            context.watch<EstadoEstabelecimento>().concluidos.length,
           ),
           const Spacer(),
           _buildContador(
             "Cancelados",
-            _service.pedidosCancelados.length,
+            context.watch<EstadoEstabelecimento>().cancelados.length,
           ),
           const Spacer(),
         ],
@@ -264,23 +300,40 @@ class _TelaAtividadesEstabelecimentoState
   /// ============================================================
 
   Widget _buildListaPedidos() {
-    final pedidos = _pedidosFiltrados;
+    final lista = _lista;
 
-    if (pedidos.isEmpty) {
-      return const Center(
-        child: Text(
-          "Nenhum pedido encontrado",
-          style: TextStyle(color: Colors.grey),
+    return ListenableBuilder(
+      listenable: lista,
+      builder: (context, _) => RefreshIndicator(
+        color: corPrincipal,
+        onRefresh: lista.recarregar,
+        child: VisaoCarregavel<List<Pedido>>(
+          estado: lista.estado,
+          aoTentarNovamente: lista.carregar,
+          textoVazio: "Nenhum pedido encontrado",
+          iconeVazio: Icons.receipt_long_outlined,
+          construir: (todos) {
+            final pedidos = _aplicarFiltro(todos);
+            if (pedidos.isEmpty) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(40),
+                  child: Text(
+                    "Nenhum pedido neste filtro",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              );
+            }
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: pedidos.length,
+              itemBuilder: (context, index) => _buildCardPedido(pedidos[index]),
+            );
+          },
         ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      itemCount: pedidos.length,
-      itemBuilder: (context, index) {
-        return _buildCardPedido(pedidos[index]);
-      },
+      ),
     );
   }
 
@@ -290,7 +343,7 @@ class _TelaAtividadesEstabelecimentoState
 
   Widget _buildCardPedido(Pedido pedido) {
     final data =
-        "${pedido.data.day.toString().padLeft(2, '0')}/${pedido.data.month.toString().padLeft(2, '0')}/${pedido.data.year.toString().substring(2)}";
+        "${pedido.criadoEm.day.toString().padLeft(2, '0')}/${pedido.criadoEm.month.toString().padLeft(2, '0')}/${pedido.criadoEm.year.toString().substring(2)}";
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -298,32 +351,26 @@ class _TelaAtividadesEstabelecimentoState
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: Colors.grey.shade400,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.grey.shade400, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            data,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text(data, style: const TextStyle(fontSize: 12, color: Colors.grey)),
 
           const SizedBox(height: 8),
 
           Row(
             children: [
               Text(
-                "Pedido ${pedido.numeroPedido}",
+                "Pedido ${pedido.rotuloCurto}",
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const Spacer(),
-              _buildBadgeStatus(pedido.status),
+              BadgeStatus(pedido.status, comIcone: true),
             ],
           ),
 
@@ -354,10 +401,12 @@ class _TelaAtividadesEstabelecimentoState
 
           Center(
             child: InkWell(
-              onTap: () {
-                // TODO:
-                // Abrir tela com informações completas do pedido.
-              },
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
+                ),
+              ),
               child: const Text(
                 "Visualizar pedido",
                 style: TextStyle(
@@ -366,61 +415,6 @@ class _TelaAtividadesEstabelecimentoState
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBadgeStatus(StatusPedido status) {
-    late final Color cor;
-    late final String texto;
-    late final IconData icone;
-
-    switch (status) {
-      case StatusPedido.entregue:
-        cor = Colors.green;
-        texto = "Entregue";
-        icone = Icons.check_circle;
-        break;
-
-      case StatusPedido.cancelado:
-        cor = Colors.grey;
-        texto = "Cancelado";
-        icone = Icons.info;
-        break;
-
-      case StatusPedido.aceito:
-        cor = Colors.blue;
-        texto = "Aceito";
-        icone = Icons.check_circle_outline;
-        break;
-
-      case StatusPedido.pendente:
-        cor = Colors.orange;
-        texto = "Pendente";
-        icone = Icons.hourglass_bottom;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: cor.withOpacity(.15),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icone, size: 14, color: cor),
-          const SizedBox(width: 6),
-          Text(
-            texto,
-            style: TextStyle(
-              color: cor,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -459,11 +453,7 @@ class _TelaAtividadesEstabelecimentoState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildItemMenu(
-                index: 0,
-                icone: Icons.home,
-                texto: "Principal",
-              ),
+              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
               _buildItemMenu(
                 index: 1,
                 icone: Icons.shopping_bag,
@@ -474,11 +464,7 @@ class _TelaAtividadesEstabelecimentoState
                 icone: Icons.list_alt,
                 texto: "Atividades",
               ),
-              _buildItemMenu(
-                index: 3,
-                icone: Icons.person,
-                texto: "Perfil",
-              ),
+              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
             ],
           ),
         ),
@@ -507,19 +493,9 @@ class _TelaAtividadesEstabelecimentoState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icone,
-              color: cor,
-              size: 27,
-            ),
+            Icon(icone, color: cor, size: 27),
             const SizedBox(height: 5),
-            Text(
-              texto,
-              style: TextStyle(
-                color: cor,
-                fontSize: 12,
-              ),
-            ),
+            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
           ],
         ),
       ),
@@ -539,27 +515,18 @@ class _TelaAtividadesEstabelecimentoState
 
     switch (index) {
       case 0:
-        Navigator.pushReplacementNamed(
-          context,
-          '/principal_estabelecimento',
-        );
+        Navigator.pushReplacementNamed(context, '/principal_estabelecimento');
         break;
 
       case 1:
-        Navigator.pushReplacementNamed(
-          context,
-          '/pedidos_estabelecimento',
-        );
+        Navigator.pushReplacementNamed(context, '/pedidos_estabelecimento');
         break;
 
       case 2:
         break;
 
       case 3:
-        Navigator.pushReplacementNamed(
-          context,
-          '/perfil_estabelecimento',
-        );
+        Navigator.pushReplacementNamed(context, '/perfil_estabelecimento');
         break;
     }
   }

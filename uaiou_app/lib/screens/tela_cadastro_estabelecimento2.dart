@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
+import 'package:uaiou/screens/widgets/campo_cadastro.dart';
 
 class CadastroEstabelecimento2 extends StatefulWidget {
   const CadastroEstabelecimento2({super.key});
@@ -8,10 +12,26 @@ class CadastroEstabelecimento2 extends StatefulWidget {
       _CadastroEstabelecimento2State();
 }
 
-class _CadastroEstabelecimento2State
-    extends State<CadastroEstabelecimento2> {
+class _CadastroEstabelecimento2State extends State<CadastroEstabelecimento2> {
+  /// Só mostra erro depois da primeira tentativa de avançar —
+  /// marcar campo vazio em vermelho antes de digitar é hostil.
+  bool _mostrarErros = false;
+
+  void _avancar(BuildContext context, RascunhoCadastro rascunho) {
+    if (!rascunho.passoValido(PassoCadastro.perfil)) {
+      setState(() => _mostrarErros = true);
+      return;
+    }
+    Navigator.pushNamed(context, '/cadastro_estabelecimento3');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rascunho = context.watch<RascunhoCadastro>();
+    final erros = _mostrarErros
+        ? rascunho.validar(PassoCadastro.perfil)
+        : const <String, String>{};
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -19,16 +39,12 @@ class _CadastroEstabelecimento2State
         child: Center(
           child: SingleChildScrollView(
             //padding: const EdgeInsets.fromLTRB(24, 10, 24, 30),
-
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 400,
-              ),
+              constraints: const BoxConstraints(maxWidth: 400),
 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   // LOGO
                   Center(
                     child: Image.asset(
@@ -68,63 +84,53 @@ class _CadastroEstabelecimento2State
                   const SizedBox(height: 30),
 
                   // CNPJ
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'CNPJ',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'CNPJ',
+                    valorInicial: rascunho.cnpj,
+                    aoMudar: (v) => rascunho.cnpj = v,
+                    teclado: TextInputType.number,
+                    erro: erros['CNPJ'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // RUA
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Rua',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Rua',
+                    valorInicial: rascunho.rua,
+                    aoMudar: (v) => rascunho.rua = v,
+                    erro: erros['Rua'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // ENDEREÇO
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Endereço',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Endereço',
+                    valorInicial: rascunho.enderecoComplemento,
+                    aoMudar: (v) => rascunho.enderecoComplemento = v,
+                    erro: erros['Endereço'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // NÚMERO
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: 'Número',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Número',
+                    valorInicial: rascunho.numero,
+                    aoMudar: (v) => rascunho.numero = v,
+                    teclado: TextInputType.number,
+                    erro: erros['Número'],
                   ),
 
                   const SizedBox(height: 18),
 
                   // CIDADE
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Cidade',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                  CampoCadastro(
+                    rotulo: 'Cidade',
+                    valorInicial: rascunho.cidade,
+                    aoMudar: (v) => rascunho.cidade = v,
+                    erro: erros['Cidade'],
                   ),
 
                   const SizedBox(height: 35),
@@ -135,24 +141,17 @@ class _CadastroEstabelecimento2State
                     height: 55,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/cadastro_estabelecimento3',
-                        );
+                        _avancar(context, rascunho);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            const Color.fromRGBO(254, 98, 29, 1),
+                        backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: const Text(
                         'Próximo',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ),
                   ),
@@ -167,10 +166,7 @@ class _CadastroEstabelecimento2State
                       },
                       child: const Text(
                         'Voltar a tela anterior',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.black54, fontSize: 12),
                       ),
                     ),
                   ),
