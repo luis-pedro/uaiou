@@ -6,6 +6,7 @@ import 'package:uaiou/core/estatisticas/modelo_estatisticas.dart';
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/entregador_service.dart';
+import 'package:uaiou/screens/tela_detalhe_pedido.dart';
 import 'package:uaiou/screens/widgets/badge_status.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
@@ -388,35 +389,29 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
           const SizedBox(height: 15),
 
+          // A lista devolve só o bairro (`DestinationResponse.apenasBairro`):
+          // rua e número do endereço vêm nulos aqui, e escrevê-los direto
+          // imprimia "Rua: null" na tela. `enderecoResumido` mostra o que
+          // existe e cai para "Endereço não informado" quando não há nada.
           Text(
-            "Bairro: ${entrega.bairro}",
+            entrega.enderecoResumido,
             style: const TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-
-          const SizedBox(height: 5),
-
-          Row(
-            children: [
-              Text(
-                "Rua: ${entrega.rua}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "Número: ${entrega.numero}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
-              ),
-            ],
           ),
 
           const SizedBox(height: 14),
 
           Center(
             child: InkWell(
-              onTap: () {
-                // TODO:
-                // Abrir tela com informações completas da entrega.
-              },
+              // O histórico é de entregas que foram deste entregador, e
+              // `GET /orders/{id}` libera a leitura de pedido atribuído
+              // a ele (RF-11.9) — a mesma tela de detalhe das demais
+              // listas serve aqui.
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => TelaDetalhePedido(pedidoId: entrega.id),
+                ),
+              ),
               child: const Text(
                 "Visualizar pedido",
                 style: TextStyle(

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RF-A13.2 — política de tráfego em texto puro.
+
+  A partir do Android 9 (API 28) o sistema bloqueia HTTP sem TLS por
+  padrão. Como `Ambiente._baseUrlPadrao` aponta o Android para
+  `http://10.0.2.2:8080/api/v1` em desenvolvimento, sem esta exceção
+  toda requisição morre antes de sair do aparelho — o app parece
+  "não fazer nada" ao publicar pedido, entrar, ou carregar a vitrine.
+
+  A base segue `false`: nenhum domínio real trafega em texto puro,
+  nem em debug. Liberado apenas o conjunto de hosts que
+  `Ambiente._hostEhLocal` já considera local — endereços de loopback
+  do próprio aparelho, inalcançáveis pela internet pública. Por isso
+  o arquivo vale também para build de release apontando para o
+  backend local, que é como o app é testado nesta fase.
+
+  Para testar em aparelho físico na mesma rede Wi-Fi, acrescente aqui
+  o IP da máquina anfitriã (ex.: 192.168.0.42) e passe a mesma URL em
+  --dart-define=UAIOU_API_BASE_URL. Faixa de IP não pode ser expressa
+  por curinga: o Android exige host a host.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Apelido do host anfitrião visto de dentro do emulador Android. -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- Loopback do próprio aparelho — usado com `adb reverse`. -->
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

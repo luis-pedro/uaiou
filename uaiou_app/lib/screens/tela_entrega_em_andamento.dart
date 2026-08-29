@@ -341,13 +341,13 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
           TextField(
             controller: _codigoController,
             keyboardType: TextInputType.number,
-            maxLength: 4,
+            maxLength: 6,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 28, letterSpacing: 8),
+            style: const TextStyle(fontSize: 28, letterSpacing: 6),
             decoration: const InputDecoration(
               counterText: '',
               border: OutlineInputBorder(),
-              hintText: '0000',
+              hintText: '000000',
             ),
           ),
           const SizedBox(height: 8),
@@ -391,8 +391,8 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     ControladorEntrega controlador,
   ) async {
     final codigo = _codigoController.text.trim();
-    if (codigo.length != 4) {
-      mostrarAviso(context, 'Informe os 4 dígitos do código.', erro: true);
+    if (codigo.length != 6) {
+      mostrarAviso(context, 'Informe os 6 dígitos do código.', erro: true);
       return;
     }
     await controlador.finalizarComCodigo(codigo);

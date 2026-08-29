@@ -72,9 +72,14 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     final estado = context.read<EstadoEntregador>();
     await estado.emAndamento.carregar();
     if (!mounted) return;
-    final itens = estado.emAndamento.itens;
-    if (itens.isEmpty) return;
-    final ativa = itens.first;
+    // Só entrega REALMENTE em curso sequestra a tela. Confiar no
+    // primeiro item da lista mandava o entregador de volta para a
+    // entrega que ele acabara de concluir — bastava a listagem trazer
+    // um pedido já finalizado junto para a principal virar inalcançável.
+    final ativa = estado.emAndamento.itens
+        .where((pedido) => pedido.status == StatusPedido.aceito)
+        .firstOrNull;
+    if (ativa == null) return;
     Navigator.pushReplacementNamed(
       context,
       '/entrega_em_andamento',

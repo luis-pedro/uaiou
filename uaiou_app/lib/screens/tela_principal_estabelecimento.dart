@@ -46,6 +46,7 @@ class _TelaPrincipalEstabelecimentoState
         children: [
           _buildMapa(),
           _buildCampoLocalizacao(),
+          _buildAvisos(),
           _buildBotaoPedirEntregador(),
           _buildMenuInferior(),
         ],
@@ -79,7 +80,8 @@ class _TelaPrincipalEstabelecimentoState
     return Positioned(
       top: 45,
       left: 15,
-      right: 15,
+      // Abre espaço para o botão de avisos, que agora divide esta faixa.
+      right: 75,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -126,6 +128,68 @@ class _TelaPrincipalEstabelecimentoState
         : 'Retirada: ${partes.join(' — ')}';
   }
 
+  /// RF-A11.7 — avisos no canto superior direito, em vez de item da
+  /// barra inferior: os quatro itens que sobraram lá são **lugares onde
+  /// se fica** (principal, pedidos, atividades, perfil), e avisos é uma
+  /// consulta rápida da qual se volta. Mesmo tratamento já dado à tela
+  /// do entregador. O contador continua vindo de `meta.unread` do
+  /// servidor, nunca somado aqui.
+  Widget _buildAvisos() {
+    final naoLidas = context.watch<ControladorNotificacoes>().naoLidas;
+
+    return Positioned(
+      top: 45,
+      right: 15,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        elevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(25),
+          onTap: () => Navigator.pushNamed(context, '/notificacoes'),
+          child: Padding(
+            // RNF-A14.2 — alvo grande: mesmo uso de rua do resto da tela.
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  color: corPrincipal,
+                  size: 22,
+                ),
+                if (naoLidas > 0)
+                  Positioned(
+                    right: -8,
+                    top: -6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        naoLidas > 99 ? "99+" : "$naoLidas",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   // BOTÃO "PEDIR UM ENTREGADOR"
   Widget _buildBotaoPedirEntregador() {
     return Positioned(
@@ -162,9 +226,9 @@ class _TelaPrincipalEstabelecimentoState
       // RF-A10.5 — a lista de pedidos passa a refletir o novo pedido
       // na próxima visita à tela de pedidos.
       unawaited(context.read<EstadoEstabelecimento>().carregar());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pedido publicado.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Pedido publicado.')));
     }
   }
 
@@ -210,7 +274,6 @@ class _TelaPrincipalEstabelecimentoState
                 icone: Icons.list_alt,
                 texto: "Atividades",
               ),
-              _buildItemMenuNotificacoes(index: 3),
               _buildItemMenu(index: 4, icone: Icons.person, texto: "Perfil"),
             ],
           ),
@@ -249,57 +312,6 @@ class _TelaPrincipalEstabelecimentoState
     );
   }
 
-  /// RF-A11.7 — item de menu com o contador de não lidas.
-  Widget _buildItemMenuNotificacoes({required int index}) {
-    final bool selecionado = paginaAtual == index;
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
-    final naoLidas = context.watch<ControladorNotificacoes>().naoLidas;
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(Icons.notifications_outlined, color: cor, size: 27),
-                if (naoLidas > 0)
-                  Positioned(
-                    right: -6,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        naoLidas > 99 ? "99+" : "$naoLidas",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 5),
-            Text("Avisos", style: TextStyle(color: cor, fontSize: 12)),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// ============================================================
   /// NAVEGAÇÃO
   /// ============================================================
@@ -321,10 +333,6 @@ class _TelaPrincipalEstabelecimentoState
 
       case 2:
         Navigator.pushReplacementNamed(context, '/atividades_estabelecimento');
-        break;
-
-      case 3:
-        Navigator.pushNamed(context, '/notificacoes');
         break;
 
       case 4:

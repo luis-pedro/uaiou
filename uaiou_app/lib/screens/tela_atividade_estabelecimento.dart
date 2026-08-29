@@ -376,25 +376,12 @@ class _TelaAtividadesEstabelecimentoState
 
           const SizedBox(height: 15),
 
+          // Mesmo motivo da tela do entregador: a listagem só traz o
+          // bairro, e interpolar `rua`/`numeroEndereco` nulos escrevia
+          // "Rua: null" no card.
           Text(
-            "Bairro: ${pedido.bairro}",
+            pedido.enderecoResumido,
             style: const TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-
-          const SizedBox(height: 5),
-
-          Row(
-            children: [
-              Text(
-                "Rua: ${pedido.rua}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "Número: ${pedido.numero}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
-              ),
-            ],
           ),
 
           const SizedBox(height: 14),

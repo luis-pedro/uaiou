@@ -233,13 +233,19 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
             style: TextStyle(color: Colors.white70, fontSize: 13),
           ),
           const SizedBox(height: 10),
-          Text(
-            codigo.codigo,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 44,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 8,
+          // Seis dígitos a 44px não cabem na largura de um celular
+          // estreito; o `FittedBox` encolhe o necessário em vez de
+          // deixar o código cortado — que é o único conteúdo do cartão.
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              codigo.codigo,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 44,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 8,
+              ),
             ),
           ),
         ],

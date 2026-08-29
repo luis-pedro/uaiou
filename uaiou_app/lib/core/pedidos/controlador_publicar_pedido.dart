@@ -96,6 +96,15 @@ class ControladorPublicarPedido extends ChangeNotifier {
     } on ErroApi catch (erro) {
       _erro = erro.mensagemParaUsuario;
       return null;
+    } on Object catch (erro, pilha) {
+      // Sem esta guarda, um erro que não seja [ErroApi] escapa do
+      // `await` da tela e vira exceção não tratada no console: o botão
+      // fica sem reação nenhuma e o defeito não aparece na interface.
+      // Foi assim que o `RangeError` de `gerarChaveIdempotencia` passou
+      // despercebido no Flutter Web.
+      _erro = 'Não foi possível publicar o pedido. Tente novamente.';
+      debugPrint('Falha inesperada ao publicar pedido: $erro\n$pilha');
+      return null;
     } finally {
       _enviando = false;
       notifyListeners();
