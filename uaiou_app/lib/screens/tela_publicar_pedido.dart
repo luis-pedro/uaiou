@@ -97,6 +97,19 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
       Navigator.pop(context, true);
       return;
     }
+
+    // A recusa por falta de ponto no mapa (RF-A10.3) só era mostrada no
+    // texto sob o [MapaEndereco], que num celular fica fora da tela na
+    // hora do toque — a caixa vermelha acima do botão é justamente a que
+    // se esconde quando `enderecoInvalido`. Sem isto, a tentativa que nem
+    // chega a virar `POST /orders` não produz nenhum sinal visível: o
+    // botão parece morto.
+    final erro = _controlador.erro;
+    if (erro != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(erro)));
+    }
   }
 
   @override
