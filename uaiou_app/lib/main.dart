@@ -8,6 +8,7 @@ import 'package:uaiou/core/bloqueios/repositorio_bloqueios.dart';
 import 'package:uaiou/core/cadastro/controlador_cadastro.dart';
 import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
 import 'package:uaiou/core/documentos/estado_documentos.dart';
+import 'package:uaiou/core/endereco/repositorio_endereco_publico.dart';
 import 'package:uaiou/core/entregas/controlador_entrega.dart';
 import 'package:uaiou/core/entregas/repositorio_entregas.dart';
 import 'package:uaiou/core/estatisticas/controlador_estatisticas.dart';
@@ -209,6 +210,15 @@ class MyApp extends StatelessWidget {
           create: (contexto) => RepositorioPedidos(contexto.read<ClienteApi>()),
         ),
         Provider<SeletorDeImagem>(create: (_) => SeletorDeImagem()),
+
+        // Salto 1 (coordenada -> CEP) vai pela nossa API, que guarda a
+        // chave do provedor; salto 2 (ViaCEP) é público e vai por um
+        // Dio próprio, dentro do repositório. Sem estado, então um
+        // Provider simples basta.
+        Provider<RepositorioEnderecoPublico>(
+          create: (contexto) =>
+              RepositorioEnderecoPublico(contexto.read<ClienteApi>()),
+        ),
 
         // Cadastro (A-04) — o rascunho vive enquanto o assistente
         // estiver aberto e é descartado ao concluir.

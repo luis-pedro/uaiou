@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/endereco/endereco_publico.dart';
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/perfil/repositorio_perfil.dart';
 import 'package:uaiou/core/sessao/identidade.dart';
@@ -34,6 +35,19 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
   bool _salvando = false;
   double? _lat;
   double? _lng;
+
+  /// Resultado do fluxo `coordenada -> CEP -> ViaCEP` disparado pelo
+  /// mapa. Marcar outro ponto significa "meu endereço é outro", então
+  /// rua/bairro/cidade/CEP são sobrescritos — só o número fica, porque
+  /// CEP nenhum sabe o número da porta.
+  void _preencherComEndereco(EnderecoPublico endereco) {
+    setState(() {
+      _cep.text = endereco.cepFormatado;
+      if (endereco.rua != null) _rua.text = endereco.rua!;
+      if (endereco.bairro != null) _bairro.text = endereco.bairro!;
+      if (endereco.cidade != null) _cidade.text = endereco.cidade!;
+    });
+  }
 
   @override
   void dispose() {
@@ -188,6 +202,7 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
                     _lat = ponto.latitude;
                     _lng = ponto.longitude;
                   }),
+                  aoResolverEndereco: _preencherComEndereco,
                 ),
               ],
               const SizedBox(height: 28),

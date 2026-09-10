@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/endereco/endereco_publico.dart';
 import 'package:uaiou/core/modelos/dinheiro.dart';
 import 'package:uaiou/core/pedidos/controlador_publicar_pedido.dart';
 import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
@@ -60,6 +61,18 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
     _telefoneRecebedorController.dispose();
     _controlador.dispose();
     super.dispose();
+  }
+
+  /// Chamado quando o fluxo `coordenada -> CEP -> ViaCEP` volta com um
+  /// endereço para o ponto tocado. Sobrescreve rua e bairro — marcar
+  /// outro ponto no mapa é justamente dizer "o destino é outro" —, mas
+  /// **nunca** o número: nenhum CEP sabe o número da casa, e apagar o
+  /// que o usuário já digitou é pior do que deixar em branco.
+  void _preencherComEndereco(EnderecoPublico endereco) {
+    setState(() {
+      if (endereco.rua != null) _ruaController.text = endereco.rua!;
+      if (endereco.bairro != null) _bairroController.text = endereco.bairro!;
+    });
   }
 
   Future<void> _publicar() async {
@@ -185,6 +198,7 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                     _lat = ponto.latitude;
                     _lng = ponto.longitude;
                   }),
+                  aoResolverEndereco: _preencherComEndereco,
                 ),
                 if (_controlador.enderecoInvalido)
                   Padding(

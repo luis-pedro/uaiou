@@ -36,6 +36,21 @@ class _CampoCadastroState extends State<CampoCadastro> {
   );
   late bool _escondido = widget.senha;
 
+  /// O controlador nasce de [valorInicial] e, no uso normal, ninguém
+  /// mais escreve nele. Mas o preenchimento automático por CEP
+  /// (`MapaEndereco` -> ViaCEP) muda o valor de fora, depois do campo
+  /// já montado — sem isto o texto novo simplesmente não apareceria.
+  /// A comparação com o texto atual evita mexer no cursor de quem
+  /// está digitando.
+  @override
+  void didUpdateWidget(CampoCadastro anterior) {
+    super.didUpdateWidget(anterior);
+    if (widget.valorInicial != anterior.valorInicial &&
+        widget.valorInicial != _controle.text) {
+      _controle.text = widget.valorInicial;
+    }
+  }
+
   @override
   void dispose() {
     _controle.dispose();
