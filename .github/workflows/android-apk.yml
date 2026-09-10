@@ -1,0 +1,55 @@
+# Gera o APK de distribuição apontando para o backend de produção.
+#
+# O app lê a URL da API de --dart-define (lib/core/config/ambiente.dart); sem o define ele cai no
+# padrão local (10.0.2.2 no Android), que só funciona em emulador na máquina do desenvolvedor. É
+# por isso que a URL aparece aqui e não em constante no código.
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'uaiou_app/**'
+      - '.github/workflows/android-apk.yml'
+
+env:
+  # Backend em produção (Railway). HTTPS não é detalhe: Ambiente.usaTextoPuro recusa build de
+  # distribuição contra texto puro fora da rede local.
+  API_BASE_URL: https://uaiou-backend-production.up.railway.app/api/v1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: uaiou_app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # O Gradle do projeto (AGP 8.11.1 / Gradle 8.14) exige JDK 17+.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - run: flutter analyze
+
+      - run: flutter test
+
+      - name: Build APK
+        run: flutter build apk --release --dart-define=UAIOU_API_BASE_URL=$API_BASE_URL
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uaiou-apk
+          path: uaiou_app/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
