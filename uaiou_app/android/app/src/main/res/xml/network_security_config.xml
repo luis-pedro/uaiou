@@ -16,9 +16,12 @@
   backend local, que é como o app é testado nesta fase.
 
   Para testar em aparelho físico na mesma rede Wi-Fi, acrescente aqui
-  o IP da máquina anfitriã (ex.: 192.168.0.42) e passe a mesma URL em
-  --dart-define=UAIOU_API_BASE_URL. Faixa de IP não pode ser expressa
+  o IP da máquina anfitriã (ex.: 192.168.0.42) e passe a mesma URL no
+  dart-define UAIOU_API_BASE_URL. Faixa de IP não pode ser expressa
   por curinga: o Android exige host a host.
+
+  Não escreva dois hifens seguidos neste comentário: XML os proíbe e o
+  aapt2 falha a compilação do recurso, derrubando todo build release.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />
