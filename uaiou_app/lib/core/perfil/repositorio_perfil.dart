@@ -25,7 +25,11 @@ class EdicaoDePerfil {
   final double? lat;
   final double? lng;
 
+  // Entregador — campo livre, sem moderação.
+  final FormaPagamento? formaPagamento;
+
   const EdicaoDePerfil({
+    this.formaPagamento,
     this.nomeExibicao,
     this.telefone,
     this.bairro,
@@ -46,7 +50,8 @@ class EdicaoDePerfil {
       lat != null ||
       lng != null;
 
-  bool get estaVazia => nomeExibicao == null && telefone == null && !temEndereco;
+  bool get estaVazia =>
+      nomeExibicao == null && telefone == null && !temEndereco && formaPagamento == null;
 
   /// Só o que mudou — nunca o valor inteiro (RF-A05.2, critério 2).
   Map<String, dynamic> paraJson() {
@@ -54,8 +59,9 @@ class EdicaoDePerfil {
     if (nomeExibicao != null) corpo['displayName'] = nomeExibicao;
     if (telefone != null) corpo['telefone'] = telefone;
 
-    if (temEndereco) {
+    if (temEndereco || formaPagamento != null) {
       corpo['profile'] = {
+        if (formaPagamento != null) 'paymentMethod': formaPagamento!.contrato,
         if (bairro != null) 'bairro': bairro,
         if (rua != null) 'rua': rua,
         if (numero != null) 'numero': numero,

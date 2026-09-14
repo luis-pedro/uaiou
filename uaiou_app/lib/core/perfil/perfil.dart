@@ -77,6 +77,29 @@ class EnderecoEstabelecimento {
   bool get temCoordenada => lat != null && lng != null;
 }
 
+/// Forma de pagamento que o entregador aceita — `PaymentMethod` do
+/// backend, trafegado em minúsculas (`cash`, `credit`, `debit`, `pix`).
+enum FormaPagamento {
+  dinheiro('cash', 'Dinheiro'),
+  credito('credit', 'Crédito'),
+  debito('debit', 'Débito'),
+  pix('pix', 'Pix');
+
+  final String contrato;
+  final String rotulo;
+
+  const FormaPagamento(this.contrato, this.rotulo);
+
+  /// `null` para ausente ou valor desconhecido — entregador que ainda
+  /// não escolheu não é erro.
+  static FormaPagamento? doContrato(Object? valor) {
+    for (final forma in values) {
+      if (forma.contrato == valor) return forma;
+    }
+    return null;
+  }
+}
+
 /// `profile` — os campos que não se aplicam ao papel vêm nulos do
 /// contrato (um único formato para os dois papéis).
 class PerfilDetalhado {
@@ -87,6 +110,7 @@ class PerfilDetalhado {
   final bool? disponivel;
   final LocalizacaoEntregador? localizacao;
   final int? entregasConcluidas;
+  final FormaPagamento? formaPagamento;
 
   // Estabelecimento
   final String? cnpj;
@@ -104,6 +128,7 @@ class PerfilDetalhado {
     this.disponivel,
     this.localizacao,
     this.entregasConcluidas,
+    this.formaPagamento,
     this.cnpj,
     this.nomeDoNegocio,
     this.logoObjectKey,
@@ -120,6 +145,7 @@ class PerfilDetalhado {
         ? LocalizacaoEntregador.doJson(Map<String, dynamic>.from(json['location'] as Map))
         : null,
     entregasConcluidas: (json['completedDeliveries'] as num?)?.toInt(),
+    formaPagamento: FormaPagamento.doContrato(json['paymentMethod']),
     cnpj: json['cnpj'] as String?,
     nomeDoNegocio: json['businessName'] as String?,
     logoObjectKey: json['logoObjectKey'] as String?,

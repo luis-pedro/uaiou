@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
+import 'package:uaiou/core/perfil/perfil.dart';
+import 'package:uaiou/core/perfil/repositorio_perfil.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/screens/widgets/acao_sair.dart';
 
@@ -116,6 +118,14 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
               const SizedBox(height: 15),
 
               _buildOpcao(
+                icone: Icons.payments_outlined,
+                texto: _textoFormaPagamento,
+                onTap: _escolherFormaPagamento,
+              ),
+
+              const SizedBox(height: 15),
+
+              _buildOpcao(
                 icone: Icons.badge_outlined,
                 texto: "Documentos",
                 onTap: () => Navigator.pushNamed(context, '/documentos'),
@@ -152,6 +162,79 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
               const AcaoSair(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// ============================================================
+  /// FORMA DE PAGAMENTO
+  /// ============================================================
+
+  String get _textoFormaPagamento {
+    final forma = context
+        .watch<ControladorPerfil>()
+        .estado
+        .valorOuNulo
+        ?.detalhes
+        ?.formaPagamento;
+    return forma == null
+        ? "Forma de pagamento"
+        : "Forma de pagamento: ${forma.rotulo}";
+  }
+
+  Future<void> _escolherFormaPagamento() async {
+    final controlador = context.read<ControladorPerfil>();
+    final atual = controlador.estado.valorOuNulo?.detalhes?.formaPagamento;
+
+    final escolhida = await showModalBottomSheet<FormaPagamento>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (contexto) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(18),
+              child: Text(
+                "Forma de pagamento",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            RadioGroup<FormaPagamento>(
+              groupValue: atual,
+              onChanged: (forma) => Navigator.pop(contexto, forma),
+              child: Column(
+                children: [
+                  for (final forma in FormaPagamento.values)
+                    RadioListTile<FormaPagamento>(
+                      value: forma,
+                      activeColor: corPrincipal,
+                      title: Text(forma.rotulo),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+
+    if (escolhida == null || escolhida == atual || !mounted) return;
+
+    final salvou = await controlador.salvar(
+      EdicaoDePerfil(formaPagamento: escolhida),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          salvou
+              ? "Forma de pagamento atualizada."
+              : controlador.ultimoErro ?? "Não foi possível salvar.",
         ),
       ),
     );
