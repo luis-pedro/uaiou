@@ -80,7 +80,7 @@ const _semGeofence = '''
   "orderId": "p1",
   "status": "in_progress",
   "geofence": {"inside": false, "radiusMeters": 100, "distanceMeters": 340},
-  "deliveryCode": {"status": "issued", "attemptsLeft": 3, "channels": ["sms"]},
+  "deliveryCode": {"status": "issued", "attemptsLeft": 3, "length": 6, "channels": ["sms"]},
   "contingency": {"step": null, "contestableReleased": false},
   "_links": {"self": {"href": "/api/v1/orders/p1/delivery"}}
 }
@@ -91,7 +91,7 @@ const _comGeofence = '''
   "orderId": "p1",
   "status": "in_progress",
   "geofence": {"inside": true, "radiusMeters": 100, "distanceMeters": 12},
-  "deliveryCode": {"status": "issued", "attemptsLeft": 3, "channels": ["sms"]},
+  "deliveryCode": {"status": "issued", "attemptsLeft": 3, "length": 6, "channels": ["sms"]},
   "contingency": {"step": null, "contestableReleased": false},
   "_links": {
     "completion": {"href": "/api/v1/orders/p1/delivery/completion", "method": "POST"},
@@ -170,6 +170,34 @@ void main() {
 
       expect(estado.codigo.tentativasRestantes, 2);
     });
+
+    /// O app tinha 4 dígitos fixos enquanto o servidor emitia 6, e recusava o
+    /// código certo antes de enviá-lo. O tamanho passa a vir de `length`.
+    test('deliveryCode.length manda no tamanho do campo', () {
+      final doServidor = EstadoEntrega.doJson(
+        Map<String, dynamic>.from({
+          'orderId': 'p1',
+          'status': 'in_progress',
+          'deliveryCode': {'status': 'issued', 'attemptsLeft': 3, 'length': 8},
+          '_links': {},
+        }),
+      );
+
+      expect(doServidor.codigo.tamanho, 8);
+    });
+
+    test('servidor sem length cai no padrão de 6, não nos 4 antigos', () {
+      final semCampo = EstadoEntrega.doJson(
+        Map<String, dynamic>.from({
+          'orderId': 'p1',
+          'status': 'in_progress',
+          'deliveryCode': {'status': 'issued', 'attemptsLeft': 2},
+          '_links': {},
+        }),
+      );
+
+      expect(semCampo.codigo.tamanho, 6);
+    });
   });
 
   group('ControladorEntrega.abrir — RNF-A08.2', () {
@@ -211,7 +239,7 @@ void main() {
       await controlador.abrir('p1');
       expect(controlador.entrega!.podeFinalizar, isTrue);
 
-      final ok = await controlador.finalizarComCodigo('4821');
+      final ok = await controlador.finalizarComCodigo('482103');
 
       expect(ok, isTrue);
       expect(controlador.finalizada, isTrue);
@@ -222,7 +250,7 @@ void main() {
       expect(requisicao.method, 'POST');
       expect(requisicao.data, {
         'mode': 'code',
-        'deliveryCode': '4821',
+        'deliveryCode': '482103',
         'lat': -19.9,
         'lng': -43.9,
       });
@@ -247,7 +275,7 @@ void main() {
       final controlador = _montar(servidor);
       await controlador.abrir('p1');
 
-      final ok = await controlador.finalizarComCodigo('0000');
+      final ok = await controlador.finalizarComCodigo('000000');
 
       expect(ok, isFalse);
       expect(controlador.erro, contains('Código incorreto'));

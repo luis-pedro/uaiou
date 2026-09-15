@@ -43,11 +43,20 @@ class CodigoDeEntrega {
   final int? tentativasRestantes;
   final List<String> canais;
 
+  /// Quantos dígitos o código tem — **do servidor**, nunca fixo no app.
+  /// O valor escrito à mão aqui era 4 enquanto o backend emitia 6, e a
+  /// tela recusava o código certo antes de enviá-lo.
+  final int tamanho;
+
   const CodigoDeEntrega({
     this.status = '',
     this.tentativasRestantes,
     this.canais = const [],
+    this.tamanho = tamanhoPadrao,
   });
+
+  /// Reserva para servidor antigo, que ainda não manda `length`.
+  static const int tamanhoPadrao = 6;
 
   factory CodigoDeEntrega.doJson(Object? json) {
     if (json is! Map) return const CodigoDeEntrega();
@@ -56,6 +65,7 @@ class CodigoDeEntrega {
       tentativasRestantes: (json['attemptsLeft'] as num?)?.toInt(),
       canais: (json['channels'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
+      tamanho: (json['length'] as num?)?.toInt() ?? tamanhoPadrao,
     );
   }
 }

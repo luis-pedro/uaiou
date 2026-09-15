@@ -555,13 +555,15 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
           TextField(
             controller: _codigoController,
             keyboardType: TextInputType.number,
-            maxLength: 4,
+            // RF-A08.4 — o tamanho é do servidor (`deliveryCode.length`); fixá-lo aqui foi o que
+            // impediu o entregador de digitar o código real.
+            maxLength: entrega.codigo.tamanho,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 28, letterSpacing: 8),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               counterText: '',
-              border: OutlineInputBorder(),
-              hintText: '0000',
+              border: const OutlineInputBorder(),
+              hintText: '0' * entrega.codigo.tamanho,
             ),
           ),
           const SizedBox(height: 8),
@@ -576,7 +578,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               ),
               onPressed: controlador.enviando
                   ? null
-                  : () => _finalizarPorCodigo(context, controlador),
+                  : () => _finalizarPorCodigo(context, controlador, entrega.codigo.tamanho),
               child: controlador.enviando
                   ? const SizedBox(
                       width: 20,
@@ -603,10 +605,11 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   Future<void> _finalizarPorCodigo(
     BuildContext context,
     ControladorEntrega controlador,
+    int tamanho,
   ) async {
     final codigo = _codigoController.text.trim();
-    if (codigo.length != 4) {
-      mostrarAviso(context, 'Informe os 4 dígitos do código.', erro: true);
+    if (codigo.length != tamanho) {
+      mostrarAviso(context, 'Informe os $tamanho dígitos do código.', erro: true);
       return;
     }
     await controlador.finalizarComCodigo(codigo);
