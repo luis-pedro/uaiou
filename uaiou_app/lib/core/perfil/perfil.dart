@@ -77,7 +77,7 @@ class EnderecoEstabelecimento {
   bool get temCoordenada => lat != null && lng != null;
 }
 
-/// Forma de pagamento que o entregador aceita — `PaymentMethod` do
+/// Forma de pagamento que o entregador aceita (pode aceitar várias) — `PaymentMethod` do
 /// backend, trafegado em minúsculas (`cash`, `credit`, `debit`, `pix`).
 enum FormaPagamento {
   dinheiro('cash', 'Dinheiro'),
@@ -110,7 +110,8 @@ class PerfilDetalhado {
   final bool? disponivel;
   final LocalizacaoEntregador? localizacao;
   final int? entregasConcluidas;
-  final FormaPagamento? formaPagamento;
+  /// Vazia enquanto o entregador não informou nenhuma.
+  final List<FormaPagamento> formasPagamento;
 
   // Estabelecimento
   final String? cnpj;
@@ -128,7 +129,7 @@ class PerfilDetalhado {
     this.disponivel,
     this.localizacao,
     this.entregasConcluidas,
-    this.formaPagamento,
+    this.formasPagamento = const [],
     this.cnpj,
     this.nomeDoNegocio,
     this.logoObjectKey,
@@ -145,7 +146,11 @@ class PerfilDetalhado {
         ? LocalizacaoEntregador.doJson(Map<String, dynamic>.from(json['location'] as Map))
         : null,
     entregasConcluidas: (json['completedDeliveries'] as num?)?.toInt(),
-    formaPagamento: FormaPagamento.doContrato(json['paymentMethod']),
+    formasPagamento: switch (json['paymentMethods']) {
+      final List<dynamic> lista =>
+        lista.map(FormaPagamento.doContrato).whereType<FormaPagamento>().toList(),
+      _ => const [],
+    },
     cnpj: json['cnpj'] as String?,
     nomeDoNegocio: json['businessName'] as String?,
     logoObjectKey: json['logoObjectKey'] as String?,

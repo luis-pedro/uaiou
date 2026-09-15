@@ -25,11 +25,12 @@ class EdicaoDePerfil {
   final double? lat;
   final double? lng;
 
-  // Entregador — campo livre, sem moderação.
-  final FormaPagamento? formaPagamento;
+  // Entregador — campo livre, sem moderação. Substitui o conjunto
+  // inteiro no backend; lista vazia limpa, `null` não mexe.
+  final List<FormaPagamento>? formasPagamento;
 
   const EdicaoDePerfil({
-    this.formaPagamento,
+    this.formasPagamento,
     this.nomeExibicao,
     this.telefone,
     this.bairro,
@@ -51,7 +52,7 @@ class EdicaoDePerfil {
       lng != null;
 
   bool get estaVazia =>
-      nomeExibicao == null && telefone == null && !temEndereco && formaPagamento == null;
+      nomeExibicao == null && telefone == null && !temEndereco && formasPagamento == null;
 
   /// Só o que mudou — nunca o valor inteiro (RF-A05.2, critério 2).
   Map<String, dynamic> paraJson() {
@@ -59,9 +60,10 @@ class EdicaoDePerfil {
     if (nomeExibicao != null) corpo['displayName'] = nomeExibicao;
     if (telefone != null) corpo['telefone'] = telefone;
 
-    if (temEndereco || formaPagamento != null) {
+    if (temEndereco || formasPagamento != null) {
       corpo['profile'] = {
-        if (formaPagamento != null) 'paymentMethod': formaPagamento!.contrato,
+        if (formasPagamento != null)
+          'paymentMethods': [for (final forma in formasPagamento!) forma.contrato],
         if (bairro != null) 'bairro': bairro,
         if (rua != null) 'rua': rua,
         if (numero != null) 'numero': numero,

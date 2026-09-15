@@ -172,68 +172,101 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
   /// ============================================================
 
   String get _textoFormaPagamento {
-    final forma = context
-        .watch<ControladorPerfil>()
-        .estado
-        .valorOuNulo
-        ?.detalhes
-        ?.formaPagamento;
-    return forma == null
-        ? "Forma de pagamento"
-        : "Forma de pagamento: ${forma.rotulo}";
+    final formas =
+        context
+            .watch<ControladorPerfil>()
+            .estado
+            .valorOuNulo
+            ?.detalhes
+            ?.formasPagamento ??
+        const <FormaPagamento>[];
+    return formas.isEmpty
+        ? "Formas de pagamento"
+        : "Pagamento: ${formas.map((f) => f.rotulo).join(', ')}";
   }
 
   Future<void> _escolherFormaPagamento() async {
     final controlador = context.read<ControladorPerfil>();
-    final atual = controlador.estado.valorOuNulo?.detalhes?.formaPagamento;
+    final atuais = {
+      ...?controlador.estado.valorOuNulo?.detalhes?.formasPagamento,
+    };
 
-    final escolhida = await showModalBottomSheet<FormaPagamento>(
+    // `null` = fechou sem salvar.
+    final escolhidas = await showModalBottomSheet<Set<FormaPagamento>>(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (contexto) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(18),
-              child: Text(
-                "Forma de pagamento",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ),
-            RadioGroup<FormaPagamento>(
-              groupValue: atual,
-              onChanged: (forma) => Navigator.pop(contexto, forma),
-              child: Column(
-                children: [
-                  for (final forma in FormaPagamento.values)
-                    RadioListTile<FormaPagamento>(
-                      value: forma,
-                      activeColor: corPrincipal,
-                      title: Text(forma.rotulo),
+      builder: (contexto) {
+        final marcadas = {...atuais};
+        return StatefulBuilder(
+          builder: (contexto, atualizar) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(18, 18, 18, 4),
+                  child: Text(
+                    "Formas de pagamento",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Text(
+                  "Marque todas que você aceita",
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                for (final forma in FormaPagamento.values)
+                  CheckboxListTile(
+                    value: marcadas.contains(forma),
+                    activeColor: corPrincipal,
+                    title: Text(forma.rotulo),
+                    onChanged: (marcada) => atualizar(() {
+                      marcada == true
+                          ? marcadas.add(forma)
+                          : marcadas.remove(forma);
+                    }),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: corPrincipal,
+                      ),
+                      onPressed: () => Navigator.pop(contexto, marcadas),
+                      child: const Text("Salvar"),
                     ),
-                ],
-              ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
 
-    if (escolhida == null || escolhida == atual || !mounted) return;
+    if (escolhidas == null || !mounted) return;
+    if (escolhidas.length == atuais.length &&
+        escolhidas.containsAll(atuais)) {
+      return;
+    }
 
     final salvou = await controlador.salvar(
-      EdicaoDePerfil(formaPagamento: escolhida),
+      EdicaoDePerfil(
+        // Ordem do enum: a mesma que o backend devolve.
+        formasPagamento: FormaPagamento.values
+            .where(escolhidas.contains)
+            .toList(),
+      ),
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           salvou
-              ? "Forma de pagamento atualizada."
+              ? "Formas de pagamento atualizadas."
               : controlador.ultimoErro ?? "Não foi possível salvar.",
         ),
       ),
