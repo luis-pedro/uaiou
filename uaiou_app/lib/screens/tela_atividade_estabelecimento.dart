@@ -40,13 +40,16 @@ class _TelaAtividadesEstabelecimentoState
 
   ListaDePedidos get _lista => context.read<EstadoEstabelecimento>().pedidos;
 
+  /// Esta tela é o histórico: só pedido encerrado entra, em qualquer filtro.
+  /// O que está em andamento vive na tela de Pedidos.
   List<Pedido> _aplicarFiltro(List<Pedido> pedidos) {
+    final historico = pedidos.where((p) => p.status.encerrado).toList();
     return switch (_filtro) {
       _FiltroAtividades.entregues =>
-        pedidos.where((p) => p.status.concluido).toList(),
+        historico.where((p) => p.status.concluido).toList(),
       _FiltroAtividades.cancelados =>
-        pedidos.where((p) => p.status == StatusPedido.cancelado).toList(),
-      _FiltroAtividades.todos => pedidos,
+        historico.where((p) => p.status == StatusPedido.cancelado).toList(),
+      _FiltroAtividades.todos => historico,
     };
   }
 
@@ -54,7 +57,10 @@ class _TelaAtividadesEstabelecimentoState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corPrincipal,
+      // Ver a nota em `tela_estabelecimento_pedidos`: o recuo da barra do
+      // sistema é aplicado pelo menu, não aqui.
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
         ),
@@ -132,7 +138,7 @@ class _TelaAtividadesEstabelecimentoState
 
             Expanded(child: _buildListaPedidos()),
 
-            const SizedBox(height: 95),
+            SizedBox(height: 95 + MediaQuery.viewPaddingOf(context).bottom),
           ],
         ),
       ),
@@ -202,7 +208,8 @@ class _TelaAtividadesEstabelecimentoState
         ),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: corPrincipal),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          // Sem recuo lateral o rótulo encostava na borda do botão.
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),

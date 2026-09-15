@@ -35,7 +35,9 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corPrincipal,
+      // O recuo da barra do sistema é aplicado pelo menu inferior.
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
         ),

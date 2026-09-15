@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/tela_detalhe_pedido.dart';
@@ -35,7 +36,11 @@ class _TelaPedidosEstabelecimentoState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corPrincipal,
+      // `bottom: false` de propósito: quem aplica o recuo da barra do sistema
+      // (botões nativos ou gesto) é o menu inferior. Consumindo aqui, o menu
+      // ficava POR BAIXO dos botões de home/voltar.
       body: SafeArea(
+        bottom: false,
         child: Stack(children: [_buildConteudo(), _buildMenuInferior()]),
       ),
     );
@@ -57,12 +62,17 @@ class _TelaPedidosEstabelecimentoState
           ),
         ),
         child: Column(
+          // Sem isto a coluna centraliza os filhos, e o cabeçalho — que ocupa
+          // só a largura do próprio texto — aparecia no meio da tela.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 25),
             _buildHeader(),
             const SizedBox(height: 20),
             Expanded(child: _buildListaPedidos()),
-            const SizedBox(height: 95),
+            // O vão do menu acompanha a barra do sistema, senão o último card
+            // fica escondido atrás dela em aparelho com botões nativos.
+            SizedBox(height: 95 + MediaQuery.viewPaddingOf(context).bottom),
           ],
         ),
       ),
@@ -117,29 +127,54 @@ class _TelaPedidosEstabelecimentoState
         child: VisaoCarregavel<List<Pedido>>(
           estado: lista.estado,
           aoTentarNovamente: lista.carregar,
-          textoVazio: "Nenhum pedido ainda",
+          textoVazio: "Nenhum pedido em andamento",
           iconeVazio: Icons.receipt_long_outlined,
-          construir: (pedidos) => ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            physics: const AlwaysScrollableScrollPhysics(),
-            // RF-A03.7 — a última linha vira o gatilho da próxima
-            // página, seguindo o `_links.next` do servidor.
-            itemCount: pedidos.length + (lista.temMais ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= pedidos.length) {
-                if (!lista.carregandoMais) lista.carregarMais();
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(
-                    child: CircularProgressIndicator(color: corPrincipal),
-                  ),
-                );
-              }
-              return _buildCardPedido(pedidos[index]);
-            },
+          // Entregues e cancelados saem daqui: esta tela é o que está
+          // acontecendo agora. O histórico fica em Atividades.
+          construir: (todos) => _buildLista(
+            todos.where((pedido) => !pedido.status.encerrado).toList(),
+            lista,
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLista(List<Pedido> pedidos, ListaDePedidos lista) {
+    // Vazio aqui não é "nenhum pedido": é "nenhum em andamento". A página pode
+    // estar cheia de entregas concluídas, e dizer o contrário confundiria.
+    if (pedidos.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          Padding(
+            padding: EdgeInsets.all(40),
+            child: Text(
+              "Nenhum pedido em andamento.\nOs concluídos ficam em Atividades.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 15),
+      physics: const AlwaysScrollableScrollPhysics(),
+      // RF-A03.7 — a última linha vira o gatilho da próxima página, seguindo o
+      // `_links.next` do servidor.
+      itemCount: pedidos.length + (lista.temMais ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index >= pedidos.length) {
+          if (!lista.carregandoMais) lista.carregarMais();
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: CircularProgressIndicator(color: corPrincipal)),
+          );
+        }
+        return _buildCardPedido(pedidos[index]);
+      },
     );
   }
 

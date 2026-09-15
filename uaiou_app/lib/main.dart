@@ -410,6 +410,17 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'UaiOu',
         debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          // Troca de tela é instantânea: o app é usado de moto parada, em pé na
+          // porta do cliente, com pressa. Meio segundo de deslize por toque, em
+          // quatro abas, é tempo de espera sem informação nenhuma.
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: _SemTransicao(),
+              TargetPlatform.iOS: _SemTransicao(),
+            },
+          ),
+        ),
         home: const _Raiz(),
         onGenerateRoute: _gerarRota,
         // RF-A13.6 — qualquer tela, a qualquer momento: um 426 aciona
@@ -423,6 +434,23 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Sem animação nenhuma: a tela nova aparece pronta.
+///
+/// Devolver o filho direto (em vez de duração zero) evita até o quadro
+/// intermediário que um `FadeTransition` de 0 ms ainda agenda.
+class _SemTransicao extends PageTransitionsBuilder {
+  const _SemTransicao();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => child;
 }
 
 /// Bloqueio de tela cheia da RF-A13.6 — ver comentário em

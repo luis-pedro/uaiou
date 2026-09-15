@@ -66,7 +66,9 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: corPrincipal,
+      // O recuo da barra do sistema é aplicado pelo menu inferior.
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
         ),
@@ -301,19 +303,12 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
               children: [
                 const Icon(Icons.star, color: corPrincipal),
                 const SizedBox(width: 10),
+                // "Janela: all_time" era vocabulário do contrato vazando para a
+                // tela, e a segunda linha ainda deixava um vão embaixo do card.
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nota ${score.valor}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        score.janela == 'all_time' ? 'Janela: todo o histórico' : 'Janela: ${score.janela}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
+                  child: Text(
+                    'Nota ${score.valor}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -322,9 +317,13 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
               const SizedBox(height: 10),
               const Divider(height: 1),
               const SizedBox(height: 8),
-              for (final componente in score.componentes)
+              // O espaço entre as linhas fica entre elas, não depois da última:
+              // `bottom: 4` no último item era o branco sobrando no fim do card.
+              for (final (indice, componente) in score.componentes.indexed)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: EdgeInsets.only(
+                    top: indice == 0 ? 0 : 4,
+                  ),
                   child: Text(
                     '${componente.metrica}: ${componente.valor}'
                     '${componente.contribuicao != null ? ' (${componente.contribuicao})' : ''}',
