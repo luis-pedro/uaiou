@@ -330,14 +330,12 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
               children: [
                 Expanded(
                   child: _buildRotuloGanho(
-                    "A receber",
                     resumo.receivable.formatarBRL(),
                     Colors.orange.shade800,
                   ),
                 ),
                 Expanded(
                   child: _buildRotuloGanho(
-                    "Recebido",
                     resumo.settled.formatarBRL(),
                     Colors.green.shade700,
                   ),
@@ -350,23 +348,11 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     );
   }
 
-  Widget _buildRotuloGanho(String rotulo, String valor, Color cor) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            "$rotulo $valor",
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12, color: cor, fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
+  Widget _buildRotuloGanho(String valor, Color cor) {
+    return Text(
+      valor,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 12, color: cor, fontWeight: FontWeight.w600),
     );
   }
 
