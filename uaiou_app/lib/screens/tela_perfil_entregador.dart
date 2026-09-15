@@ -5,6 +5,8 @@ import 'package:uaiou/core/gamificacao/controlador_score.dart';
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/perfil/perfil.dart';
 import 'package:uaiou/core/perfil/repositorio_perfil.dart';
+import 'package:uaiou/core/uploads/repositorio_uploads.dart';
+import 'package:uaiou/screens/widgets/avatar_rede.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/screens/widgets/acao_sair.dart';
 
@@ -43,11 +45,10 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
     return perfil?.nomeExibicao ?? context.watch<EstadoEntregador>().nome;
   }
 
-  /// ⚠️ O DTO real de `GET /me` (`MeProfile`) não traz cidade nem
-  /// foto para o entregador — só o estabelecimento tem endereço e
-  /// logo. A tela mostra o texto de ausência de propósito.
+  /// ⚠️ O DTO real de `GET /me` (`MeProfile`) não traz cidade para o
+  /// entregador — só o estabelecimento tem endereço. A tela mostra o
+  /// texto de ausência de propósito.
   String get cidadeEntregador => '';
-  String get fotoUrl => '';
 
   @override
   Widget build(BuildContext context) {
@@ -316,13 +317,9 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
   }
 
   Widget _buildFotoPerfil() {
-    return CircleAvatar(
-      radius: 40,
-      backgroundColor: const Color.fromRGBO(217, 217, 217, 1),
-      backgroundImage: fotoUrl.isNotEmpty ? NetworkImage(fotoUrl) : null,
-      child: fotoUrl.isEmpty
-          ? const Icon(Icons.person, color: Colors.white, size: 32)
-          : null,
+    return const AvatarPerfilEditavel(
+      icone: Icons.person,
+      proposito: PropositoUpload.fotoEntregador,
     );
   }
 

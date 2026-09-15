@@ -247,6 +247,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<ControladorSessao, ControladorPerfil>(
           create: (contexto) => ControladorPerfil(
             repositorio: RepositorioPerfil(contexto.read<ClienteApi>()),
+            uploads: RepositorioUploads(contexto.read<ClienteApi>()),
           ),
           update: (_, sessao, estado) =>
               _sincronizar(estado!, sessao, estado.limpar),

@@ -122,7 +122,12 @@ class PerfilDetalhado {
   // Comum
   final String? score;
 
+  /// Foto do entregador ou logo do estabelecimento — URL de leitura com
+  /// validade curta; recarregar o perfil renova.
+  final String? fotoUrl;
+
   const PerfilDetalhado({
+    this.fotoUrl,
     this.cpf,
     this.tipoDeVeiculo,
     this.placaDoVeiculo,
@@ -158,6 +163,7 @@ class PerfilDetalhado {
         ? EnderecoEstabelecimento.doJson(Map<String, dynamic>.from(json['address'] as Map))
         : null,
     score: json['score'] as String?,
+    fotoUrl: json['photoUrl'] as String?,
   );
 }
 

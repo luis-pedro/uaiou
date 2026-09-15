@@ -158,9 +158,12 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  lancamento.orderNumber.isNotEmpty
-                      ? 'Pedido ${lancamento.orderNumber}'
-                      : 'Pedido',
+                  [
+                    if (lancamento.taxaDeCancelamento) 'Taxa de cancelamento —',
+                    lancamento.orderNumber.isNotEmpty
+                        ? 'Pedido ${lancamento.orderNumber}'
+                        : 'Pedido',
+                  ].join(' '),
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 4),

@@ -13,6 +13,7 @@ enum PropositoUpload {
   documentoVeiculo('VEHICLE_DOCUMENT', 'Documento do veículo'),
   documentoCnpj('CNPJ_DOCUMENT', 'Cartão CNPJ'),
   logoEstabelecimento('MERCHANT_LOGO', 'Logo do estabelecimento'),
+  fotoEntregador('COURIER_PHOTO', 'Foto do entregador'),
   comprovanteEntrega('DELIVERY_PROOF', 'Comprovante de entrega'),
   desconhecido('', '—');
 

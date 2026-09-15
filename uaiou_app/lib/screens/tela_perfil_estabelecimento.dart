@@ -6,6 +6,8 @@ import 'package:uaiou/core/financeiro/repositorio_creditos.dart';
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/rede/cliente_api.dart';
+import 'package:uaiou/core/uploads/repositorio_uploads.dart';
+import 'package:uaiou/screens/widgets/avatar_rede.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/widgets/acao_sair.dart';
 
@@ -59,14 +61,6 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
     return perfil?.detalhes?.endereco?.cidade ?? '';
   }
 
-  /// ⚠️ `logoObjectKey` é uma chave interna de storage: o backend
-  /// nunca devolve a URL pública correspondente em `GET /me`, e o
-  /// fluxo de confirmação de upload (`PUT /uploads/{id}`) só expõe
-  /// `fileUrl` de curta validade — não a chave persistente que o
-  /// PATCH exige de volta. Sem uma rota que resolva isso, a troca de
-  /// logo (RF-A05.3) não tem como completar o vínculo; a tela mantém
-  /// o avatar padrão em vez de fingir uma foto que não persiste.
-  String get fotoUrl => '';
 
   @override
   Widget build(BuildContext context) {
@@ -234,13 +228,9 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
   }
 
   Widget _buildFotoPerfil() {
-    return CircleAvatar(
-      radius: 40,
-      backgroundColor: const Color.fromRGBO(217, 217, 217, 1),
-      backgroundImage: fotoUrl.isNotEmpty ? NetworkImage(fotoUrl) : null,
-      child: fotoUrl.isEmpty
-          ? const Icon(Icons.store, color: Colors.white, size: 32)
-          : null,
+    return const AvatarPerfilEditavel(
+      icone: Icons.store,
+      proposito: PropositoUpload.logoEstabelecimento,
     );
   }
 

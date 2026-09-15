@@ -50,6 +50,7 @@ class BadgeStatus extends StatelessWidget {
     StatusPedido.criado || StatusPedido.pendente => Colors.orange,
     StatusPedido.emNegociacao => Colors.purple,
     StatusPedido.aceito => Colors.blue,
+    StatusPedido.coletado => Colors.teal,
     StatusPedido.entregue || StatusPedido.entregueContestavel => Colors.green,
     StatusPedido.cancelado => Colors.red,
     StatusPedido.desconhecido => Colors.grey,
@@ -59,6 +60,7 @@ class BadgeStatus extends StatelessWidget {
     StatusPedido.criado || StatusPedido.pendente => Icons.hourglass_bottom,
     StatusPedido.emNegociacao => Icons.swap_horiz,
     StatusPedido.aceito => Icons.check_circle_outline,
+    StatusPedido.coletado => Icons.delivery_dining,
     StatusPedido.entregue ||
     StatusPedido.entregueContestavel => Icons.check_circle,
     StatusPedido.cancelado => Icons.info,

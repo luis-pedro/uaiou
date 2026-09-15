@@ -64,6 +64,29 @@ class Pedido {
   final String? nomeEntregador;
   final int? creditosConsumidos;
 
+  /// T-26 — entregador entrou no raio do estabelecimento.
+  final DateTime? chegouEm;
+
+  /// T-26 — estabelecimento confirmou a coleta.
+  final DateTime? coletadoEm;
+
+  /// RF-26.6 — identifica o entregador na porta da loja.
+  final String? placaEntregador;
+
+  /// URLs de leitura com validade curta — recarregar o pedido renova.
+  final String? fotoEntregador;
+  final String? logoEstabelecimento;
+
+  /// RF-A15.5 — taxa que o estabelecimento pagaria cancelando agora.
+  /// Vem pronta do servidor; o app não aplica percentual.
+  final Dinheiro? taxaCancelamentoPendente;
+
+  /// RF-A15.6 — sem coordenada da loja não há aviso de chegada.
+  final bool localizacaoRetiradaConhecida;
+
+  /// Código do motivo, quando cancelado.
+  final String? motivoCancelamento;
+
   /// Transições permitidas pelo servidor neste estado, para este
   /// papel (RF-A03.8).
   final Links links;
@@ -90,6 +113,14 @@ class Pedido {
     this.entregadorId,
     this.nomeEntregador,
     this.creditosConsumidos,
+    this.chegouEm,
+    this.coletadoEm,
+    this.placaEntregador,
+    this.fotoEntregador,
+    this.logoEstabelecimento,
+    this.taxaCancelamentoPendente,
+    this.localizacaoRetiradaConhecida = true,
+    this.motivoCancelamento,
     this.links = Links.vazio,
   });
 
@@ -134,9 +165,27 @@ class Pedido {
       entregadorId: entregador['id'] as String?,
       nomeEntregador: entregador['name'] as String?,
       creditosConsumidos: (json['creditsConsumed'] as num?)?.toInt(),
+      chegouEm: _dataLocal(json['arrivedAt']),
+      coletadoEm: _dataLocal(json['pickedUpAt']),
+      placaEntregador: entregador['vehiclePlate'] as String?,
+      fotoEntregador: entregador['photoUrl'] as String?,
+      logoEstabelecimento: estabelecimento['logoUrl'] as String?,
+      taxaCancelamentoPendente: Dinheiro.tentarDeString(
+        json['pendingCancellationFee']?.toString(),
+      ),
+      // Ausente na listagem (`OrderSummary`): assume conhecida para não
+      // exibir aviso falso fora do detalhe.
+      localizacaoRetiradaConhecida: json['pickupLocationKnown'] != false,
+      motivoCancelamento: json['cancellation'] is Map
+          ? (json['cancellation'] as Map)['reason'] as String?
+          : null,
       links: Links.doJson(json['_links']),
     );
   }
+
+  /// T-26 — entregador na porta e pedido ainda sem coleta.
+  bool get entregadorAguardandoNaLoja =>
+      status == StatusPedido.aceito && chegouEm != null;
 
   /// Valor que vale para este pedido: o acordado, se já houve
   /// negociação; senão, o proposto.

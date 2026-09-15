@@ -30,7 +30,12 @@ class EdicaoDePerfil {
   // inteiro no backend; lista vazia limpa, `null` não mexe.
   final List<FormaPagamento>? formasPagamento;
 
+  /// Upload já confirmado da nova foto (entregador) ou logo
+  /// (estabelecimento). O vínculo é pelo upload, nunca pela chave.
+  final String? fotoUploadId;
+
   const EdicaoDePerfil({
+    this.fotoUploadId,
     this.formasPagamento,
     this.nomeExibicao,
     this.telefone,
@@ -53,7 +58,11 @@ class EdicaoDePerfil {
       lng != null;
 
   bool get estaVazia =>
-      nomeExibicao == null && telefone == null && !temEndereco && formasPagamento == null;
+      nomeExibicao == null &&
+      telefone == null &&
+      !temEndereco &&
+      formasPagamento == null &&
+      fotoUploadId == null;
 
   /// Só o que mudou — nunca o valor inteiro (RF-A05.2, critério 2).
   Map<String, dynamic> paraJson() {
@@ -61,8 +70,9 @@ class EdicaoDePerfil {
     if (nomeExibicao != null) corpo['displayName'] = nomeExibicao;
     if (telefone != null) corpo['telefone'] = telefone;
 
-    if (temEndereco || formasPagamento != null) {
+    if (temEndereco || formasPagamento != null || fotoUploadId != null) {
       corpo['profile'] = {
+        if (fotoUploadId != null) 'photoUploadId': fotoUploadId,
         if (formasPagamento != null)
           'paymentMethods': [for (final forma in formasPagamento!) forma.contrato],
         if (bairro != null) 'bairro': bairro,

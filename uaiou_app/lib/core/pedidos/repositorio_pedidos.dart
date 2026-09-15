@@ -4,6 +4,7 @@ import '../rede/cliente_api.dart';
 import '../rede/idempotencia.dart';
 import '../../others/pedido.dart';
 import 'contraoferta.dart';
+import 'motivos.dart';
 
 /// Página de pedidos + o `warning` específico desta rota.
 class PaginaDePedidos {
@@ -167,6 +168,64 @@ class RepositorioPedidos {
       throw StateError('Resposta de código de entrega fora do contrato.');
     }
     return CodigoDeEntrega.doJson(Map<String, dynamic>.from(resposta));
+  }
+
+  /// `POST /orders/{id}/pickup/arrival` — RF-A15.10, "Cheguei".
+  Future<void> registrarChegada(
+    String pedidoId, {
+    required double lat,
+    required double lng,
+  }) async {
+    await _api.criar(
+      '/orders/$pedidoId/pickup/arrival',
+      corpo: {'lat': lat, 'lng': lng},
+    );
+  }
+
+  /// `POST /orders/{id}/pickup/confirmation` — RF-A15.1/RF-A15.2,
+  /// só o estabelecimento.
+  Future<void> confirmarColeta(String pedidoId) async {
+    await _api.criar('/orders/$pedidoId/pickup/confirmation');
+  }
+
+  /// `POST /orders/{id}/pickup/reminders` — RF-A15.9.
+  Future<void> pedirNovoAvisoDeColeta(String pedidoId) async {
+    await _api.criar('/orders/$pedidoId/pickup/reminders');
+  }
+
+  /// `POST /orders/{id}/cancellation` — RF-A15.4. Devolve a taxa
+  /// cobrada, quando houve.
+  Future<Dinheiro?> cancelar(
+    String pedidoId, {
+    required MotivoCancelamento motivo,
+    String? observacao,
+  }) async {
+    final resposta = await _api.criar(
+      '/orders/$pedidoId/cancellation',
+      corpo: {
+        'reason': motivo.codigo,
+        if (observacao != null && observacao.trim().isNotEmpty)
+          'note': observacao.trim(),
+      },
+    );
+    if (resposta is! Map) return null;
+    return Dinheiro.tentarDeString(resposta['cancellationFee']?.toString());
+  }
+
+  /// `POST /orders/{id}/withdrawal` — RF-A15.15.
+  Future<void> desistir(
+    String pedidoId, {
+    required MotivoDesistencia motivo,
+    String? observacao,
+  }) async {
+    await _api.criar(
+      '/orders/$pedidoId/withdrawal',
+      corpo: {
+        'reason': motivo.codigo,
+        if (observacao != null && observacao.trim().isNotEmpty)
+          'note': observacao.trim(),
+      },
+    );
   }
 
   PaginaDePedidos _converter(Object? resposta) {

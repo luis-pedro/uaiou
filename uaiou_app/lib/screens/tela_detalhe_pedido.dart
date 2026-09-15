@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/contraoferta.dart';
 import 'package:uaiou/core/pedidos/controlador_detalhe_pedido.dart';
+import 'package:uaiou/core/pedidos/motivos.dart';
+import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/screens/widgets/dialogo_motivo.dart';
 import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/screens/widgets/badge_status.dart';
@@ -121,12 +124,32 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
         if (pedido.nomeEntregador != null)
           _cartao(
             titulo: 'Entregador',
-            child: Text(pedido.nomeEntregador!),
+            child: Text(
+              [
+                pedido.nomeEntregador!,
+                if (pedido.placaEntregador != null) 'placa ${pedido.placaEntregador}',
+              ].join(' — '),
+            ),
           ),
+
+        // RF-A15.6 — sem coordenada da loja o servidor não detecta a
+        // chegada; o estabelecimento precisa saber por que não é avisado.
+        if (pedido.status == StatusPedido.aceito &&
+            !pedido.localizacaoRetiradaConhecida) ...[
+          const SizedBox(height: 14),
+          _buildAvisoSemLocalizacao(),
+        ],
+
+        // RF-A15.1/RF-A15.2 — coleta confirmável aqui, não só no aviso.
+        if (_controlador.podeConfirmarColeta) ...[
+          const SizedBox(height: 14),
+          _buildConfirmarColeta(pedido),
+        ],
 
         // RF-A10.7 — código de entrega, grande e fácil de achar: é
         // consultado com o entregador esperando na porta.
-        if (pedido.status == StatusPedido.aceito) ...[
+        if (pedido.status == StatusPedido.aceito ||
+            pedido.status == StatusPedido.coletado) ...[
           const SizedBox(height: 14),
           _buildCodigoEntrega(),
         ],
@@ -141,8 +164,127 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
           const SizedBox(height: 10),
           ..._controlador.contraofertasPendentes.map(_buildContraoferta),
         ],
+
+        // RF-A15.4 — só quando o servidor oferece `cancellation`.
+        if (_controlador.podeCancelar) ...[
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _controlador.executandoAcao ? null : () => _cancelar(pedido),
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Cancelar pedido'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: const BorderSide(color: Colors.red),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+          ),
+        ],
       ],
     );
+  }
+
+  Widget _buildAvisoSemLocalizacao() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.location_off, color: Colors.amber),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Marque a localização do estabelecimento no perfil para ser '
+              'avisado quando o entregador chegar.',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmarColeta(Pedido pedido) {
+    final chegou = pedido.entregadorAguardandoNaLoja;
+    final entregador = [
+      pedido.nomeEntregador ?? 'O entregador',
+      if (pedido.placaEntregador != null) '(placa ${pedido.placaEntregador})',
+    ].join(' ');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.teal, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AvatarRede(
+                url: pedido.fotoEntregador,
+                icone: Icons.delivery_dining,
+                raio: 28,
+                corFundo: Colors.teal,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  chegou ? '$entregador chegou' : 'Coleta do pedido',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text('Entregue o pacote ao entregador e confirme a coleta.'),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _controlador.executandoAcao ? null : _controlador.confirmarColeta,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              child: const Text('Confirmar coleta'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// RF-A15.5 — a taxa aparece antes da confirmação, com o valor vindo
+  /// do servidor (`pendingCancellationFee`).
+  Future<void> _cancelar(Pedido pedido) async {
+    final taxa = pedido.taxaCancelamentoPendente;
+    final escolha = await escolherMotivo<MotivoCancelamento>(
+      context,
+      titulo: 'Cancelar pedido ${pedido.rotuloCurto}',
+      opcoes: MotivoCancelamento.values,
+      rotulo: (m) => m.rotulo,
+      exigeObservacao: (m) => m.exigeObservacao,
+      textoConfirmar: 'Cancelar pedido',
+      aviso: taxa == null
+          ? null
+          : 'O entregador já chegou. Cancelar agora gera taxa de '
+                '${taxa.formatarBRL()} (50% do frete) a pagar a ele.',
+    );
+    if (escolha == null || !mounted) return;
+    await _controlador.cancelar(escolha.motivo, observacao: escolha.observacao);
   }
 
   Widget _cartao({required String titulo, required Widget child}) {

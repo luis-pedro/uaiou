@@ -1,10 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../estado/carregavel.dart';
 import '../rede/erros_api.dart';
 import '../../others/pedido.dart';
 import 'contraoferta.dart';
+import 'motivos.dart';
 import 'repositorio_pedidos.dart';
+
+/// RF-A15.2 — enquanto o pedido aguarda coleta, o detalhe se atualiza
+/// sozinho: a chegada do entregador não pode depender de puxar a tela.
+const Duration _intervaloAguardandoColeta = Duration(seconds: 10);
 
 /// ===============================================================
 /// DETALHE DO PEDIDO — RF-A10.6/RF-A10.7/RF-A10.8
@@ -61,10 +68,73 @@ class ControladorDetalhePedido extends ChangeNotifier {
 
   Future<void> recarregar() => _buscar();
 
+  Timer? _pollTimer;
+
+  bool _executandoAcao = false;
+  bool get executandoAcao => _executandoAcao;
+
+  bool get podeConfirmarColeta => pedido?.links.permite('pickupConfirmation') ?? false;
+  bool get podeCancelar => pedido?.links.permite('cancellation') ?? false;
+
+  /// RF-A15.1/RF-A15.2 — confirma que o pacote foi entregue ao
+  /// entregador. 409/422 (corrida perdida, entregador fora do raio)
+  /// recarregam e mostram a mensagem do servidor (RF-A15.7).
+  Future<bool> confirmarColeta() => _acao(() async {
+    await _repositorio.confirmarColeta(pedidoId);
+    _aviso = 'Coleta confirmada.';
+  });
+
+  /// RF-A15.4/RF-A15.5 — cancela com motivo; a taxa, se houver, vem
+  /// na resposta.
+  Future<bool> cancelar(MotivoCancelamento motivo, {String? observacao}) =>
+      _acao(() async {
+        final taxa = await _repositorio.cancelar(
+          pedidoId,
+          motivo: motivo,
+          observacao: observacao,
+        );
+        _aviso = taxa == null
+            ? 'Pedido cancelado.'
+            : 'Pedido cancelado. Taxa de ${taxa.formatarBRL()} a pagar ao entregador.';
+      });
+
+  Future<bool> _acao(Future<void> Function() executar) async {
+    if (_executandoAcao) return false;
+    _executandoAcao = true;
+    notifyListeners();
+    try {
+      await executar();
+      return true;
+    } on ErroApi catch (erro) {
+      _aviso = erro.mensagemParaUsuario;
+      return false;
+    } finally {
+      _executandoAcao = false;
+      await _buscar();
+    }
+  }
+
+  void _ajustarPolling(Pedido pedido) {
+    final aguardando = pedido.status == StatusPedido.aceito;
+    if (aguardando && _pollTimer == null) {
+      _pollTimer = Timer.periodic(_intervaloAguardandoColeta, (_) => _buscar());
+    } else if (!aguardando) {
+      _pollTimer?.cancel();
+      _pollTimer = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _buscar() async {
     try {
       final pedido = await _repositorio.obter(pedidoId);
       _estado = Pronto(pedido);
+      _ajustarPolling(pedido);
       // RF-A10.6 — contraofertas só existem enquanto o pedido ainda
       // aguarda entregador (publicado ou em negociação); fora disso a
       // rota do servidor devolve lista vazia, e a chamada é evitada.

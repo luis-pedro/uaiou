@@ -7,7 +7,11 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
+import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
+import 'package:uaiou/core/rede/erros_api.dart';
+import 'package:uaiou/screens/tela_detalhe_pedido.dart';
+import 'package:uaiou/screens/widgets/avatar_rede.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/tela_publicar_pedido.dart';
 
@@ -26,6 +30,18 @@ class _TelaPrincipalEstabelecimentoState
   // Cor principal do app (laranja)
   static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
 
+  /// RF-A15.1 — sem push nativo (ver `ControladorNotificacoes`), o
+  /// aviso de chegada vem da inbox consultada periodicamente.
+  static const Duration _intervaloAvisos = Duration(seconds: 15);
+
+  Timer? _timerAvisos;
+  ControladorNotificacoes? _notificacoes;
+
+  /// Avisos de chegada já exibidos nesta sessão da tela — o mesmo aviso
+  /// não reabre a cada consulta.
+  final Set<String> _avisosDeChegadaExibidos = {};
+  bool _dialogoAberto = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,8 +51,106 @@ class _TelaPrincipalEstabelecimentoState
       // estabelecimento, não há campo de origem no contrato.
       context.read<ControladorPerfil>().carregar();
       // RF-A11.7 — contador de não lidas no menu.
-      context.read<ControladorNotificacoes>().carregar();
+      _notificacoes = context.read<ControladorNotificacoes>()
+        ..addListener(_verificarChegadas)
+        ..carregar();
+      _timerAvisos = Timer.periodic(
+        _intervaloAvisos,
+        (_) => _notificacoes?.recarregar(),
+      );
     });
+  }
+
+  @override
+  void dispose() {
+    _timerAvisos?.cancel();
+    _notificacoes?.removeListener(_verificarChegadas);
+    super.dispose();
+  }
+
+  /// RF-A15.1/RF-A15.3 — um aviso por pedido, com identificação do
+  /// entregador e a confirmação ali mesmo. Vários na fila abrem um de
+  /// cada vez.
+  void _verificarChegadas() {
+    if (!mounted || _dialogoAberto) return;
+    final pendente = _notificacoes?.notificacoes
+        .where(
+          (n) =>
+              n.type == 'order.courier_arrived' &&
+              !n.lida &&
+              !_avisosDeChegadaExibidos.contains(n.id),
+        )
+        .firstOrNull;
+    if (pendente == null) return;
+
+    _avisosDeChegadaExibidos.add(pendente.id);
+    final pedidoId = pendente.payload['orderId']?.toString();
+    if (pedidoId == null) return;
+
+    _dialogoAberto = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final acao = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (contexto) => AlertDialog(
+          // RF-26.6 — a foto é o que separa um entregador do outro na porta.
+          icon: AvatarRede(
+            url: pendente.payload['courierPhotoUrl']?.toString(),
+            icone: Icons.delivery_dining,
+            raio: 44,
+            corFundo: Colors.teal,
+          ),
+          title: Text(pendente.title),
+          content: Text(pendente.body, style: const TextStyle(fontSize: 16)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(contexto, 'depois'),
+              child: const Text('Depois'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(contexto, 'ver'),
+              child: const Text('Ver pedido'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(contexto, 'confirmar'),
+              child: const Text('Confirmar coleta'),
+            ),
+          ],
+        ),
+      );
+      _dialogoAberto = false;
+      if (!mounted) return;
+
+      unawaited(_notificacoes?.marcarLida(pendente.id));
+      switch (acao) {
+        case 'confirmar':
+          await _confirmarColeta(pedidoId);
+        case 'ver':
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => TelaDetalhePedido(pedidoId: pedidoId)),
+          );
+      }
+      // Outro entregador pode ter chegado enquanto este aviso estava aberto.
+      _verificarChegadas();
+    });
+  }
+
+  Future<void> _confirmarColeta(String pedidoId) async {
+    final mensageiro = ScaffoldMessenger.of(context);
+    try {
+      await context.read<RepositorioPedidos>().confirmarColeta(pedidoId);
+      mensageiro.showSnackBar(const SnackBar(content: Text('Coleta confirmada.')));
+    } on ErroApi catch (erro) {
+      // RF-A15.7 — corrida perdida ou entregador fora do raio: a
+      // mensagem do servidor explica.
+      mensageiro.showSnackBar(SnackBar(content: Text(erro.mensagemParaUsuario)));
+    }
   }
 
   @override

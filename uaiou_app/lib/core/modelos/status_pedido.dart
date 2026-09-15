@@ -27,6 +27,10 @@ enum StatusPedido {
   /// Atribuído a um entregador (`accepted`).
   aceito('accepted'),
 
+  /// Estabelecimento confirmou a entrega do pacote ao entregador
+  /// (`picked_up`, T-26). Daqui em diante não cancela nem desiste.
+  coletado('picked_up'),
+
   /// Entrega finalizada com código (`finalized`).
   entregue('finalized'),
 
@@ -66,6 +70,7 @@ enum StatusPedido {
     criado || pendente => 'Pendente',
     emNegociacao => 'Em negociação',
     aceito => 'Aceito',
+    coletado => 'Coletado',
     entregue => 'Entregue',
     entregueContestavel => 'Entregue',
     cancelado => 'Cancelado',

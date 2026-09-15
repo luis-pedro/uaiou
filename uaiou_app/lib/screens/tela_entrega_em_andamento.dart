@@ -3,7 +3,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/entregas/controlador_entrega.dart';
+import 'package:uaiou/core/entregas/controlador_retirada.dart';
 import 'package:uaiou/core/entregas/modelo_entrega.dart';
+import 'package:uaiou/core/pedidos/motivos.dart';
+import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
+import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/screens/widgets/dialogo_motivo.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
 import 'package:uaiou/core/uploads/seletor_de_imagem.dart';
@@ -57,8 +62,205 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   void dispose() {
     // RF-A08.3 — o polling não deve continuar depois que a tela fecha.
     context.read<ControladorEntrega>().fechar();
+    _retirada?.removeListener(_avisarRetirada);
+    _retirada?.dispose();
     _codigoController.dispose();
     super.dispose();
+  }
+
+  /// A-15 — só existe durante a fase de retirada.
+  ControladorRetirada? _retirada;
+
+  ControladorRetirada? _sincronizarRetirada(bool emRetirada) {
+    if (emRetirada && _retirada == null) {
+      _retirada = ControladorRetirada(
+        context.read<RepositorioPedidos>(),
+        pedidoId: widget.pedidoId,
+      )..addListener(_avisarRetirada);
+      _retirada!.abrir();
+    } else if (!emRetirada && _retirada != null) {
+      // Coleta confirmada: a fase acabou. Descarta depois do quadro,
+      // nunca durante o build.
+      final antigo = _retirada!;
+      _retirada = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        antigo.removeListener(_avisarRetirada);
+        antigo.dispose();
+      });
+    }
+    return _retirada;
+  }
+
+  void _avisarRetirada() {
+    final retirada = _retirada;
+    if (retirada == null || !mounted) return;
+    final erro = retirada.erro;
+    final aviso = retirada.aviso;
+    if (erro == null && aviso == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      mostrarAviso(context, erro ?? aviso!, erro: erro != null);
+      retirada.limparMensagens();
+    });
+  }
+
+  /// RF-A15.8 a RF-A15.12 e RF-A15.15 — ir à loja, esperar a
+  /// confirmação, pedir reaviso ou desistir.
+  Widget _buildRetirada(BuildContext context, ControladorRetirada retirada) {
+    return ListenableBuilder(
+      listenable: retirada,
+      builder: (context, _) {
+        final pedido = retirada.pedido;
+        if (pedido == null) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator(color: corPrincipal)),
+          );
+        }
+        final chegou = pedido.chegouEm != null;
+        final esperaMin = chegou ? DateTime.now().difference(pedido.chegouEm!).inMinutes : 0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: chegou ? Colors.teal.shade50 : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: chegou ? Colors.teal : Colors.grey.shade400),
+              ),
+              child: Row(
+                children: [
+                  AvatarRede(
+                    url: pedido.logoEstabelecimento,
+                    icone: chegou ? Icons.storefront : Icons.two_wheeler,
+                    raio: 24,
+                    corFundo: chegou ? Colors.teal : Colors.grey.shade600,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      chegou
+                          ? 'Aguardando o estabelecimento confirmar a coleta'
+                                '${esperaMin > 0 ? ' — há $esperaMin min' : ''}.'
+                          : 'Vá até ${pedido.nomeEstabelecimento ?? 'o estabelecimento'} '
+                                'para retirar o pedido ${pedido.rotuloCurto}.',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (retirada.podeRegistrarChegada) ...[
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: retirada.enviando ? null : retirada.registrarChegada,
+                icon: const Icon(Icons.where_to_vote),
+                label: const Text('Cheguei ao estabelecimento'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+            if (retirada.reavisoLiberado) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: retirada.enviando ? null : retirada.pedirNovoAviso,
+                icon: const Icon(Icons.notifications_active),
+                label: const Text('Avisar o estabelecimento de novo'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.teal,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ],
+            if (retirada.podeDesistir) ...[
+              const SizedBox(height: 20),
+              TextButton.icon(
+                onPressed: retirada.enviando ? null : () => _desistir(context, retirada),
+                icon: const Icon(Icons.close, color: Colors.red),
+                label: const Text(
+                  'Desistir da entrega',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  /// RF-A15.15 — avisa antes o que a desistência custa ao entregador.
+  Future<void> _desistir(BuildContext context, ControladorRetirada retirada) async {
+    final chegou = retirada.pedido?.chegouEm != null;
+    final escolha = await escolherMotivo<MotivoDesistencia>(
+      context,
+      titulo: 'Desistir da entrega',
+      opcoes: MotivoDesistencia.values,
+      rotulo: (m) => m.rotulo,
+      exigeObservacao: (m) => m.exigeObservacao,
+      textoConfirmar: 'Desistir',
+      aviso: chegou
+          ? 'A desistência conta no seu score em dobro, porque você já está '
+                'no estabelecimento, e no limite de 3 por dia. Se o '
+                'estabelecimento está demorando mais de 15 minutos, escolha '
+                '"Estabelecimento demorando": aí não há penalidade.'
+          : 'A desistência conta no seu score e no limite de 3 por dia. O '
+                'pedido volta a ser oferecido a outros entregadores.',
+    );
+    if (escolha == null || !mounted) return;
+    final ok = await retirada.desistir(escolha.motivo, observacao: escolha.observacao);
+    if (ok && mounted) {
+      mostrarAviso(this.context, 'Você desistiu da entrega.');
+      Navigator.pushReplacementNamed(this.context, '/entregas_entregador');
+    }
+  }
+
+  /// RF-A15.11 — cancelamento recebido: a navegação para, a entrega sai
+  /// do andamento. A taxa, quando houver, aparece em Ganhos.
+  Widget _buildCancelada(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cancel, size: 72, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'O estabelecimento cancelou este pedido.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Se você já estava no estabelecimento, a taxa de cancelamento '
+              'aparece nos seus ganhos.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: corPrincipal,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                ),
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/entregas_entregador'),
+                child: const Text('Voltar às entregas', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Guarda de repetição: `build` roda a cada tique do polling (10s), e
@@ -117,6 +319,12 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     EstadoEntrega entrega,
   ) {
     if (entrega.finalizada) return _buildFinalizada(context);
+    if (entrega.status == 'cancelled') return _buildCancelada(context);
+
+    // RF-A15.8 — a fase vem do status do pedido, nunca da sequência de
+    // telas: `accepted` é retirada, `picked_up` é entrega.
+    final emRetirada = entrega.status == 'accepted';
+    final retirada = _sincronizarRetirada(emRetirada);
 
     // RF-A14.1 — o mapa é a tela, e o resto flutua por cima numa folha
     // arrastável: rodando, o que importa é o caminho; chegando, o
@@ -152,10 +360,16 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                     ),
                   ),
                 ),
-                _buildGeofence(entrega),
-                const SizedBox(height: 16),
-                _buildAcoesDeNavegacao(context),
-                const SizedBox(height: 20),
+                if (retirada != null) ...[
+                  _buildAcoesDeNavegacao(context),
+                  const SizedBox(height: 16),
+                  _buildRetirada(context, retirada),
+                ] else ...[
+                  _buildGeofence(entrega),
+                  const SizedBox(height: 16),
+                  _buildAcoesDeNavegacao(context),
+                  const SizedBox(height: 20),
+                ],
                 if (entrega.podeFinalizar)
                   _buildCartaoCodigo(context, controlador, entrega),
                 if (entrega.contestavelDisponivel) ...[

@@ -108,7 +108,11 @@ class _TelaAPagarState extends State<TelaAPagar> {
             .map(
               (l) => ListTile(
                 dense: true,
-                title: Text('Pedido ${l.orderNumber}'),
+                title: Text(
+                  l.taxaDeCancelamento
+                      ? 'Taxa de cancelamento — Pedido ${l.orderNumber}'
+                      : 'Pedido ${l.orderNumber}',
+                ),
                 trailing: Text(l.amount.formatarBRL()),
                 subtitle: Text(
                   l.status == StatusLancamento.recebido

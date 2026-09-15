@@ -22,6 +22,9 @@ class LancamentoAPagar {
   final StatusLancamento status;
   final DateTime? createdAt;
 
+  /// RF-A15.13 — taxa de cancelamento (T-26), não frete de entrega.
+  final bool taxaDeCancelamento;
+
   const LancamentoAPagar({
     required this.id,
     required this.orderId,
@@ -29,6 +32,7 @@ class LancamentoAPagar {
     required this.amount,
     required this.status,
     this.createdAt,
+    this.taxaDeCancelamento = false,
   });
 
   factory LancamentoAPagar.doJson(Map<String, dynamic> json) => LancamentoAPagar(
@@ -41,6 +45,7 @@ class LancamentoAPagar {
       final String v => DateTime.tryParse(v)?.toLocal(),
       _ => null,
     },
+    taxaDeCancelamento: json['type'] == 'cancellation_fee',
   );
 }
 

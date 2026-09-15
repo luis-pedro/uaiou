@@ -70,6 +70,9 @@ class Lancamento {
   /// Só existe depois da confirmação de acerto — RF-A09.5.
   final DateTime? settledAt;
 
+  /// RF-A15.13 — taxa de cancelamento (T-26), não frete de entrega.
+  final bool taxaDeCancelamento;
+
   const Lancamento({
     required this.id,
     required this.orderId,
@@ -78,6 +81,7 @@ class Lancamento {
     required this.status,
     this.createdAt,
     this.settledAt,
+    this.taxaDeCancelamento = false,
   });
 
   bool get aReceber => status == StatusLancamento.aReceber;
@@ -90,6 +94,7 @@ class Lancamento {
     status: StatusLancamento.doJson(json['status']),
     createdAt: _dataLocal(json['createdAt']),
     settledAt: _dataLocal(json['settledAt']),
+    taxaDeCancelamento: json['type'] == 'cancellation_fee',
   );
 }
 
