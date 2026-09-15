@@ -1,3 +1,4 @@
+import '../endereco/endereco_publico.dart';
 import '../rede/cliente_api.dart';
 import '../rede/erros_api.dart';
 import 'perfil.dart';
@@ -135,7 +136,9 @@ EdicaoDePerfil? diffDeEdicao({
     rua: seMudou(rua ?? '', endereco?.rua),
     numero: seMudou(numero ?? '', endereco?.numero),
     cidade: seMudou(cidade ?? '', endereco?.cidade),
-    cep: seMudou(cep ?? '', endereco?.cep),
+    // A coluna é `varchar(8)`: o CEP vai só com dígitos, mesmo que a
+    // tela mostre (ou o mapa preencha) `00000-000`.
+    cep: seMudou(EnderecoPublico.apenasDigitos(cep ?? ''), endereco?.cep),
     lat: coordenadaMudou ? lat : null,
     lng: coordenadaMudou ? lng : null,
   );
