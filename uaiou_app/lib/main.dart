@@ -25,6 +25,8 @@ import 'package:uaiou/core/notificacoes/controlador_preferencias_notificacao.dar
 import 'package:uaiou/core/notificacoes/identificador_dispositivo.dart';
 import 'package:uaiou/core/notificacoes/repositorio_dispositivo.dart';
 import 'package:uaiou/core/notificacoes/repositorio_notificacoes.dart';
+import 'package:uaiou/core/notificacoes/servico_push.dart';
+import 'package:uaiou/screens/widgets/receptor_push.dart';
 import 'package:uaiou/core/pagar/controlador_payables.dart';
 import 'package:uaiou/core/pagar/repositorio_payables.dart';
 import 'package:uaiou/core/pedidos/controlador_vitrine.dart';
@@ -123,7 +125,11 @@ void main() async {
     return;
   }
 
-  runApp(const MyApp());
+  // Antes do runApp: o toque que abriu o app a frio precisa estar lido
+  // quando o receptor montar. Sem Firebase (web, falha), segue sem push.
+  final push = await ServicoPushFirebase.iniciar();
+
+  runApp(MyApp(push: push));
 }
 
 /// Tela de bloqueio da RF-A13.2 — nunca a UI normal, nunca crash
@@ -187,7 +193,9 @@ const Set<String> _rotasDeOperacao = {
 };
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.push});
+
+  final ServicoPush? push;
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +223,7 @@ class MyApp extends StatelessWidget {
               // acontecem dentro do próprio ciclo de vida da sessão.
               dispositivos: RepositorioDispositivo(api),
               identificadorDispositivo: IdentificadorDispositivoSeguro(),
+              push: push,
             );
             api.credencial = controlador;
             // RF-A02.6 — sessão persistente entre aberturas.
@@ -429,6 +438,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ControladorTema>(
         builder: (contexto, tema, _) => MaterialApp(
           title: 'UaiOu',
+          navigatorKey: navegadorRaiz,
           debugShowCheckedModeBanner: false,
           theme: temaClaro(_transicoes),
           darkTheme: temaEscuro(_transicoes),
@@ -442,8 +452,9 @@ class MyApp extends StatelessWidget {
           // erro genérico de cada tela.
           builder: (contexto, filho) => ValueListenableBuilder<bool>(
             valueListenable: _atualizacaoObrigatoria,
-            builder: (_, exige, _) =>
-                exige ? const _TelaAtualizacaoObrigatoria() : filho!,
+            builder: (_, exige, _) => exige
+                ? const _TelaAtualizacaoObrigatoria()
+                : ReceptorPush(push: push, child: filho!),
           ),
         ),
       ),

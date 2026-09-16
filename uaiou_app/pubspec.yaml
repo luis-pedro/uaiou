@@ -22,6 +22,9 @@ dependencies:
   intl: ^0.20.3
   # RF-A13.6 — versão real do pacote enviada em POST /me/devices.
   package_info_plus: ^10.0.0
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  flutter_local_notifications: ^22.3.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -21,9 +21,8 @@
          via image_picker (A-04/A-08). API 33+ usa READ_MEDIA_IMAGES
          no lugar do antigo READ_EXTERNAL_STORAGE. -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- Caixa de entrada de notificações (A-11) — sem push efetivo
-         hoje, mas a permissão é o que a plataforma exige a partir do
-         Android 13 para qualquer notificação local futura. -->
+    <!-- Push (FCM) e notificação local com o app aberto — exigida a
+         partir do Android 13 para mostrar qualquer notificação. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:label="UaiOu"
@@ -52,6 +51,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Push sem canal explícito cai aqui; os ids batem com
+             FcmPushSender.java e servico_push.dart. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="geral" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../notificacoes/identificador_dispositivo.dart';
 import '../notificacoes/repositorio_dispositivo.dart';
+import '../notificacoes/servico_push.dart';
 import '../rede/erros_api.dart';
 import '../rede/provedor_de_credencial.dart';
 import 'cofre_sessao.dart';
@@ -41,15 +44,34 @@ class ControladorSessao extends ChangeNotifier implements ProvedorDeCredencial {
   final RepositorioDispositivo? _dispositivos;
   final IdentificadorDispositivo? _identificadorDispositivo;
 
+  /// Push nativo (FCM). `null` em web, em teste ou quando o Firebase não
+  /// subiu: o registro cai no identificador local, como antes.
+  final ServicoPush? _push;
+  StreamSubscription<TokenPush>? _tokenRenovado;
+
   ControladorSessao({
     required RepositorioAuth auth,
     required CofreSessao cofre,
     RepositorioDispositivo? dispositivos,
     IdentificadorDispositivo? identificadorDispositivo,
+    ServicoPush? push,
   }) : _auth = auth,
        _cofre = cofre,
        _dispositivos = dispositivos,
-       _identificadorDispositivo = identificadorDispositivo;
+       _identificadorDispositivo = identificadorDispositivo,
+       _push = push {
+    // O FCM troca o token sozinho: sem reenviar, o backend empurra para
+    // um token morto até o próximo login.
+    _tokenRenovado = push?.tokenRenovado.listen((_) {
+      if (autenticado) _registrarDispositivo();
+    });
+  }
+
+  @override
+  void dispose() {
+    _tokenRenovado?.cancel();
+    super.dispose();
+  }
 
   Sessao? _sessao;
   FaseSessao _fase = FaseSessao.carregando;
@@ -85,13 +107,15 @@ class ControladorSessao extends ChangeNotifier implements ProvedorDeCredencial {
 
     if (guardada.valido) {
       _definir(guardada, FaseSessao.autenticado);
+    } else if (!await renovar()) {
+      await _descartar();
       return;
     }
 
-    final renovou = await renovar();
-    if (!renovou) {
-      await _descartar();
-    }
+    // Quem já estava logado antes do push existir (ou reinstalou o app)
+    // só mandaria token FCM no próximo login. O backend faz upsert pelo
+    // token, então repetir a cada abertura é inofensivo.
+    if (_push != null) unawaited(_registrarDispositivo());
   }
 
   /// RF-A02.1
@@ -221,18 +245,30 @@ class ControladorSessao extends ChangeNotifier implements ProvedorDeCredencial {
     if (dispositivos == null || identificador == null) return;
 
     try {
-      final idLocal = await identificador.obterOuCriarLocal();
+      // Token FCM quando há push nativo; sem ele (web, permissão negada),
+      // o identificador local mantém o comportamento anterior.
+      final token = await _tokenPush();
+      final pushToken = token?.valor ?? await identificador.obterOuCriarLocal();
       // RF-A13.6 — versão real do pacote, não valor fixo: é o que
       // permite ao servidor um dia identificar cliente desatualizado.
       final appVersion = await _versaoDoPacote();
       final registrado = await dispositivos.registrar(
-        pushToken: idLocal,
-        platform: 'web',
+        pushToken: pushToken,
+        platform: token?.plataforma ?? 'web',
         appVersion: appVersion,
       );
       await identificador.gravarRegistroAtual(registrado.id);
     } on ErroApi {
       // Ignorado de propósito — ver doc acima.
+    }
+  }
+
+  Future<TokenPush?> _tokenPush() async {
+    try {
+      return await _push?.obterToken();
+    } on Object {
+      // FCM fora do ar ou sem Play Services: segue com o identificador local.
+      return null;
     }
   }
 
