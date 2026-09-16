@@ -418,7 +418,12 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             onRefresh: vitrine.recarregar,
             child: ListView(
               controller: controlador,
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+              padding: EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                100 + MediaQuery.viewPaddingOf(context).bottom,
+              ),
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 Center(
@@ -479,7 +484,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       right: 0,
       bottom: 0,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 85),
+        // Acompanha a barra, que cresce com a faixa do sistema.
+        margin: EdgeInsets.only(
+          bottom: 85 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: context.cores.superficie,

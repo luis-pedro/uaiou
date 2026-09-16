@@ -362,7 +362,9 @@ class _TelaPrincipalEstabelecimentoState
     return Positioned(
       left: 15,
       right: 15,
-      bottom: 95,
+      // Fica acima da barra, que cresce com a faixa do sistema. Com 95 fixo, o
+      // botão ficava atrás dela em aparelho com botões de navegação.
+      bottom: 95 + MediaQuery.viewPaddingOf(context).bottom,
       child: ElevatedButton(
         onPressed: _abrirFormularioPedido,
         style: ElevatedButton.styleFrom(

@@ -103,7 +103,10 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
         ),
         child: SingleChildScrollView(
           // padding inferior reserva o espaço do menu fixo (85px)
-          padding: const EdgeInsets.only(bottom: 100),
+          // O vão do menu acompanha a faixa do sistema.
+          padding: EdgeInsets.only(
+            bottom: 100 + MediaQuery.viewPaddingOf(context).bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
