@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
@@ -97,9 +98,15 @@ class _TelaNotificacoesState extends State<TelaNotificacoes>
           iconeVazio: Icons.notifications_none,
           construir: (itens) => ListView.separated(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            // O fim da lista respeita a barra de navegação do celular.
+            padding: EdgeInsets.fromLTRB(
+              16,
+              12,
+              16,
+              16 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
             itemCount: itens.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, indice) =>
                 _ItemNotificacao(notificacao: itens[indice]),
           ),
@@ -118,40 +125,91 @@ class _ItemNotificacao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cores = context.cores;
     final lida = notificacao.lida;
     final urgente = notificacao.priority == PrioridadeNotificacao.urgente;
+    final destaque = urgente ? CoresUaiou.perigo : corPrincipal;
+    final data = notificacao.createdAt;
 
-    return ListTile(
-      tileColor: lida ? Colors.white : corPrincipal.withValues(alpha: 0.06),
-      leading: Icon(
-        urgente ? Icons.priority_high : Icons.notifications_outlined,
-        color: urgente
-            ? Colors.red
-            : (lida ? context.cores.textoSuave : corPrincipal),
-      ),
-      title: Text(
-        notificacao.title.isEmpty ? notificacao.type : notificacao.title,
-        style: TextStyle(
-          fontWeight: lida ? FontWeight.normal : FontWeight.bold,
-          color: context.cores.texto,
+    // Cartão com a mesma estrutura em todas: ícone, título de uma linha,
+    // corpo de até duas e data — a lista não fica com alturas aleatórias.
+    return Material(
+      color: lida ? cores.superficie : destaque.withValues(alpha: 0.07),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: lida ? cores.borda : destaque.withValues(alpha: 0.35),
         ),
       ),
-      subtitle: Text(
-        notificacao.body,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: lida
-          ? null
-          : Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: corPrincipal,
-                shape: BoxShape.circle,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _abrir(context),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _IconeNotificacao(urgente: urgente, lida: lida),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title.isEmpty ? notificacao.type : title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: lida
+                                  ? FontWeight.w600
+                                  : FontWeight.w700,
+                              color: cores.texto,
+                            ),
+                          ),
+                        ),
+                        if (!lida)
+                          Container(
+                            margin: const EdgeInsets.only(left: 8),
+                            width: 9,
+                            height: 9,
+                            decoration: BoxDecoration(
+                              color: destaque,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (notificacao.body.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        notificacao.body,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.35,
+                          color: cores.textoSuave,
+                        ),
+                      ),
+                    ],
+                    if (data != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        descreverData(data),
+                        style: TextStyle(fontSize: 12, color: cores.textoSuave),
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
-      onTap: () => _abrir(context),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -204,26 +262,129 @@ class _ItemNotificacao extends StatelessWidget {
     _mostrarDetalhe(context);
   }
 
+  /// Folha com altura estável (não "pula" conforme o tamanho do texto),
+  /// rolável para mensagens longas e com o botão acima da barra de
+  /// navegação do celular.
   void _mostrarDetalhe(BuildContext context) {
+    final urgente = notificacao.priority == PrioridadeNotificacao.urgente;
+    final data = notificacao.createdAt;
+
     showModalBottomSheet<void>(
       context: context,
-      builder: (contexto) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title.isEmpty ? notificacao.type : title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Text(notificacao.body),
-          ],
-        ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (contexto) {
+        final cores = contexto.cores;
+        final altura = MediaQuery.sizeOf(contexto).height;
+        final inferior = MediaQuery.viewPaddingOf(contexto).bottom;
+
+        // Altura fixa: toda notificação abre do mesmo tamanho, e o texto
+        // longo rola dentro dela.
+        return SizedBox(
+          height: altura * 0.6,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24, 0, 24, 16 + inferior),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    _IconeNotificacao(urgente: urgente, lida: false),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title.isEmpty ? notificacao.type : title,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: cores.texto,
+                            ),
+                          ),
+                          if (data != null)
+                            Text(
+                              descreverData(data),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: cores.textoSuave,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(height: 1, color: cores.borda),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      notificacao.body.isEmpty
+                          ? 'Sem detalhes adicionais.'
+                          : notificacao.body,
+                      style: TextStyle(
+                        fontSize: 16,
+                        height: 1.5,
+                        color: cores.texto,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                FilledButton(
+                  onPressed: () => Navigator.pop(contexto),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Entendi'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   String get title => notificacao.title;
+}
+
+class _IconeNotificacao extends StatelessWidget {
+  final bool urgente;
+  final bool lida;
+
+  const _IconeNotificacao({required this.urgente, required this.lida});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = urgente
+        ? CoresUaiou.perigo
+        : (lida ? context.cores.textoSuave : CoresUaiou.principal);
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        urgente
+            ? Icons.notification_important_rounded
+            : Icons.notifications_rounded,
+        color: cor,
+        size: 22,
+      ),
+    );
+  }
 }

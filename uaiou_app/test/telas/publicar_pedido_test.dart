@@ -25,16 +25,23 @@ class _ServidorQueNuncaDeveriaSerChamado implements HttpClientAdapter {
   }
 }
 
-Widget _app(RepositorioPedidos repositorio) => Provider<RepositorioPedidos>.value(
-  value: repositorio,
-  child: const MaterialApp(home: TelaPublicarPedido()),
-);
+Widget _app(RepositorioPedidos repositorio) =>
+    Provider<RepositorioPedidos>.value(
+      value: repositorio,
+      child: const MaterialApp(home: TelaPublicarPedido()),
+    );
 
 Future<void> _preencherTudoMenosOMapa(WidgetTester tester) async {
-  await tester.enterText(find.widgetWithText(TextFormField, 'Ex.: 6,00'), '6,00');
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Ex.: 6,00'),
+    '6,00',
+  );
   await tester.enterText(find.widgetWithText(TextFormField, 'Rua'), 'Rua A');
   await tester.enterText(find.widgetWithText(TextFormField, 'Número'), '10');
-  await tester.enterText(find.widgetWithText(TextFormField, 'Bairro'), 'Centro');
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Bairro'),
+    'Centro',
+  );
   await tester.enterText(
     find.widgetWithText(TextFormField, 'Nome de quem recebe'),
     'Marina',
@@ -44,7 +51,7 @@ Future<void> _preencherTudoMenosOMapa(WidgetTester tester) async {
 
 void main() {
   testWidgets(
-    'sem ponto no mapa, publicar não manda POST e avisa no topo — RF-A10.3',
+    'sem ponto no mapa, publicar não manda POST e avisa no toast — RF-A10.3',
     (tester) async {
       final servidor = _ServidorQueNuncaDeveriaSerChamado();
       final dio = Dio()..httpClientAdapter = servidor;
@@ -73,20 +80,21 @@ void main() {
       // era isto que faltava: o texto sob o mapa fica fora da tela no
       // momento do toque, e o botão parecia morto.
       //
-      // O aviso saiu do `SnackBar` (rodapé, onde ficam o botão de publicar e a
-      // barra de navegação) para o cartão do topo que o resto do app usa.
-      // O mesmo texto aparece duas vezes de propósito: no cartão do topo e sob
+      // O aviso é o toast padrão do app (`mostrarAviso`), flutuando acima do
+      // conteúdo — independe de onde a lista está rolada.
+      // O mesmo texto aparece duas vezes de propósito: no toast e sob
       // o mapa. O que este teste garante é o canal que não depende de rolagem,
-      // identificado pelo ícone de erro do cartão.
+      // identificado pelo ícone de erro do toast.
       expect(
         find.text('Marque o ponto de entrega no mapa antes de publicar.'),
         findsWidgets,
       );
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+      expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
 
-      // O aviso se remove sozinho depois de 5s; sem avançar o relógio, o
+      // O toast se remove sozinho depois de 4s (+ animação); sem avançar o relógio, o
       // temporizador fica pendente e o teste falha por isso, não pelo que mede.
       await tester.pump(const Duration(seconds: 6));
+      await tester.pump(const Duration(seconds: 1));
     },
   );
 }

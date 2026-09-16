@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
 import 'package:uaiou/core/notificacoes/servico_push.dart';
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 
 /// Navegador do `MaterialApp`: o receptor vive no `builder`, acima do
 /// `Navigator`, e precisa abrir telas a partir de um toque em push.
@@ -15,10 +16,9 @@ final GlobalKey<NavigatorState> navegadorRaiz = GlobalKey<NavigatorState>();
 /// RECEPTOR DE PUSH
 /// ===============================================================
 ///
-/// - Chegou com o app aberto: recarrega a inbox (o contador do sino
-///   muda na hora). O aviso visual é do sistema — banner no iOS,
-///   notificação local no Android (ver `servico_push.dart`) —, então
-///   aqui não se desenha nada, para não avisar duas vezes.
+/// - Chegou com o app aberto: recarrega a inbox e mostra um toast no
+///   rodapé (tocar abre a inbox). Com o app aberto não há notificação
+///   do sistema (ver `servico_push.dart`), então o aviso não duplica.
 /// - Tocou na notificação: abre a inbox, que já sabe levar cada `type`
 ///   à tela certa (`tela_notificacoes.dart#_abrir`). Um único lugar
 ///   decidindo o deep link, em vez de duas cópias do mesmo `switch`.
@@ -42,7 +42,7 @@ class _ReceptorPushState extends State<ReceptorPush> {
     if (push == null) return;
 
     _assinaturas
-      ..add(push.recebidas.listen((_) => _recarregarInbox()))
+      ..add(push.recebidas.listen(_aoChegar))
       ..add(push.abertas.listen((_) => _abrirInbox()));
 
     final inicial = push.consumirAberturaInicial();
@@ -57,6 +57,20 @@ class _ReceptorPushState extends State<ReceptorPush> {
       assinatura.cancel();
     }
     super.dispose();
+  }
+
+  void _aoChegar(EventoPush evento) {
+    _recarregarInbox();
+    final overlay = navegadorRaiz.currentState?.overlay;
+    final titulo = evento.titulo ?? 'Nova notificação';
+    if (overlay == null) return;
+    mostrarToast(
+      overlay,
+      titulo: titulo,
+      mensagem: (evento.corpo ?? '').isEmpty ? 'Toque para ver' : evento.corpo!,
+      tom: evento.urgente ? TomAviso.urgente : TomAviso.info,
+      aoTocar: _abrirInbox,
+    );
   }
 
   void _recarregarInbox() {

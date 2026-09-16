@@ -146,11 +146,11 @@ class ServicoPushFirebase implements ServicoPush {
     await android?.createNotificationChannel(_canalUrgente);
     await android?.createNotificationChannel(_canalGeral);
 
-    // iOS mostra o banner mesmo com o app aberto; Android não, por isso
-    // lá a notificação local é disparada em `_aoChegarAberto`.
+    // App aberto: sem banner do sistema no iOS (o Android já não mostra),
+    // quem avisa é o toast do app — assim não aparece duas vezes.
     await FirebaseMessaging.instance
         .setForegroundNotificationPresentationOptions(
-          alert: true,
+          alert: false,
           badge: true,
           sound: true,
         );
@@ -173,28 +173,10 @@ class ServicoPushFirebase implements ServicoPush {
     }
   }
 
-  Future<void> _aoChegarAberto(RemoteMessage mensagem) async {
-    final evento = _evento(mensagem);
-    _recebidas.add(evento);
-
-    if (defaultTargetPlatform != TargetPlatform.android) return;
-    final canal = evento.urgente ? _canalUrgente : _canalGeral;
-    await _locais.show(
-      id: (evento.notificationId ?? mensagem.messageId ?? '').hashCode,
-      title: evento.titulo,
-      body: evento.corpo,
-      payload: evento.notificationId,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          canal.id,
-          canal.name,
-          channelDescription: canal.description,
-          importance: canal.importance,
-          priority: evento.urgente ? Priority.max : Priority.high,
-        ),
-      ),
-    );
-  }
+  /// Com o app aberto não há notificação do sistema: o `ReceptorPush`
+  /// mostra um toast no rodapé, no mesmo padrão dos demais avisos.
+  void _aoChegarAberto(RemoteMessage mensagem) =>
+      _recebidas.add(_evento(mensagem));
 
   @override
   Future<TokenPush?> obterToken() async {

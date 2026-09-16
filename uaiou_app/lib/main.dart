@@ -26,6 +26,7 @@ import 'package:uaiou/core/notificacoes/identificador_dispositivo.dart';
 import 'package:uaiou/core/notificacoes/repositorio_dispositivo.dart';
 import 'package:uaiou/core/notificacoes/repositorio_notificacoes.dart';
 import 'package:uaiou/core/notificacoes/servico_push.dart';
+import 'package:uaiou/screens/widgets/barras_do_sistema.dart';
 import 'package:uaiou/screens/widgets/receptor_push.dart';
 import 'package:uaiou/core/pagar/controlador_payables.dart';
 import 'package:uaiou/core/pagar/repositorio_payables.dart';
@@ -454,7 +455,9 @@ class MyApp extends StatelessWidget {
             valueListenable: _atualizacaoObrigatoria,
             builder: (_, exige, _) => exige
                 ? const _TelaAtualizacaoObrigatoria()
-                : ReceptorPush(push: push, child: filho!),
+                : BarrasDoSistema(
+                    child: ReceptorPush(push: push, child: filho!),
+                  ),
           ),
         ),
       ),
