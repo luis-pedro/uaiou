@@ -93,30 +93,25 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
     return RefreshIndicator(
       // RF-A03.6
       color: corPrincipal,
-      onRefresh: () => Future.wait([
-        estado.emAndamento.recarregar(),
-        estado.concluidas.recarregar(),
-      ]),
+      onRefresh: estado.emAndamento.recarregar,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 25, 20, 95),
+        // O vão do fim acompanha a barra, senão o último card fica atrás dela.
+        padding: EdgeInsets.fromLTRB(
+          20,
+          25,
+          20,
+          95 + MediaQuery.viewPaddingOf(context).bottom,
+        ),
         // Sem isto, puxar não funciona quando a lista é curta demais
         // para rolar — que é justamente o caso do estado vazio.
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          // Só o que está em andamento: concluídas e canceladas viraram
+          // histórico, na tela de Atividades. Misturar as duas coisas fazia o
+          // entregador rolar por entregas antigas para achar a de agora.
           _buildTituloSecao("Entregas pendentes"),
           const SizedBox(height: 10),
           _buildSecao(estado.emAndamento, vazio: "Nenhuma entrega pendente"),
-
-          const SizedBox(height: 20),
-          const Divider(color: Color.fromRGBO(94, 94, 94, 1), height: 1),
-          const SizedBox(height: 20),
-
-          _buildTituloSecao("Entregas concluídas"),
-          const SizedBox(height: 10),
-          _buildSecao(
-            estado.concluidas,
-            vazio: "Nenhuma entrega concluída ainda",
-          ),
         ],
       ),
     );
@@ -286,7 +281,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
       bottom: 0,
       child: Container(
         width: double.infinity,
-        height: 85,
+        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(

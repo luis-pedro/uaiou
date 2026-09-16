@@ -267,7 +267,10 @@ class _TelaPedidosEstabelecimentoState
       bottom: 0,
       child: Container(
         width: double.infinity,
-        height: 85,
+        // A barra CRESCE com a faixa do sistema (botões nativos ou gesto). Com
+        // altura fixa, o SafeArea abaixo só espremia o conteúdo para dentro dos
+        // mesmos 85 px e a barra seguia por baixo dos botões do aparelho.
+        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(

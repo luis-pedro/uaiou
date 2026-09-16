@@ -44,13 +44,16 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   /// recorta visualmente o que já está carregado.
   ListaDePedidos get _lista => context.read<EstadoEntregador>().concluidas;
 
+  /// Esta tela é o histórico: só entrega encerrada entra, em qualquer filtro.
+  /// O que está em andamento vive na tela de Entregas.
   List<Pedido> _aplicarFiltro(List<Pedido> entregas) {
+    final historico = entregas.where((e) => e.status.encerrado).toList();
     return switch (_filtro) {
       _FiltroAtividades.entregues =>
-        entregas.where((e) => e.status.concluido).toList(),
+        historico.where((e) => e.status.concluido).toList(),
       _FiltroAtividades.cancelados =>
-        entregas.where((e) => e.status == StatusPedido.cancelado).toList(),
-      _FiltroAtividades.todos => entregas,
+        historico.where((e) => e.status == StatusPedido.cancelado).toList(),
+      _FiltroAtividades.todos => historico,
     };
   }
 
@@ -134,7 +137,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
             Expanded(child: _buildListaEntregas()),
 
-            const SizedBox(height: 95),
+            SizedBox(height: 95 + MediaQuery.viewPaddingOf(context).bottom),
           ],
         ),
       ),
@@ -445,7 +448,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
       bottom: 0,
       child: Container(
         width: double.infinity,
-        height: 85,
+        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(

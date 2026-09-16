@@ -357,7 +357,7 @@ class _TelaPrincipalEstabelecimentoState
       bottom: 0,
       child: Container(
         width: double.infinity,
-        height: 85,
+        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(

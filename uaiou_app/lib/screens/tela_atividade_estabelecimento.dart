@@ -440,7 +440,9 @@ class _TelaAtividadesEstabelecimentoState
       bottom: 0,
       child: Container(
         width: double.infinity,
-        height: 85,
+        // Ver a nota em `tela_estabelecimento_pedidos`: a barra acompanha a
+        // faixa do sistema em vez de ficar sob ela.
+        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
