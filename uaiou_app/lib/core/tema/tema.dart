@@ -30,7 +30,20 @@ ThemeData _tema(
     onPrimary: CoresUaiou.sobrePrincipal,
     surface: cores.superficie,
     onSurface: cores.texto,
-    error: CoresUaiou.perigo,
+    // O gerador deriva estes do laranja: sai um cinza amarronzado e
+    // lavado que o Material usa em rótulo de campo, subtítulo, aba não
+    // selecionada, ícone de lista e alça de folha. Fixar nos tokens do
+    // app mantém o texto secundário legível e igual nos dois temas.
+    onSurfaceVariant: cores.textoSuave,
+    outline: cores.borda,
+    outlineVariant: cores.borda,
+    surfaceContainerLowest: cores.superficie,
+    surfaceContainerLow: cores.superficie,
+    surfaceContainer: cores.superficie,
+    surfaceContainerHigh: cores.superficieSuave,
+    surfaceContainerHighest: cores.superficieSuave,
+    surfaceTint: Colors.transparent,
+    error: cores.perigo,
   );
 
   return ThemeData(
@@ -49,13 +62,28 @@ ThemeData _tema(
     ),
     // Fundo do campo e da folha seguem a superfície do tema; no escuro, um
     // branco fixo aqui seria uma lanterna na cara de quem usa à noite.
-    dialogTheme: DialogThemeData(backgroundColor: cores.superficie),
+    dialogTheme: DialogThemeData(
+      backgroundColor: cores.superficie,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      titleTextStyle: TextStyle(
+        fontSize: 19,
+        fontWeight: FontWeight.w700,
+        color: cores.texto,
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+    ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: cores.superficie),
     cardTheme: CardThemeData(color: cores.superficie),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: cores.superficie,
       hintStyle: TextStyle(color: cores.textoSuave),
+      labelStyle: TextStyle(color: cores.textoSuave),
+      floatingLabelStyle: const TextStyle(color: CoresUaiou.principal),
+      helperStyle: TextStyle(color: cores.textoSuave),
+      errorStyle: TextStyle(color: cores.perigo),
+      prefixStyle: TextStyle(color: cores.texto),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: BorderSide(color: cores.borda),

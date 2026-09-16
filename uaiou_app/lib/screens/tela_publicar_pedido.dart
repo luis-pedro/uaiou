@@ -214,7 +214,10 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                     padding: const EdgeInsets.only(top: 6),
                     child: Text(
                       _controlador.erro ?? 'Endereço inválido.',
-                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                      style: TextStyle(
+                        color: context.cores.perigo,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
 
@@ -254,16 +257,18 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: .14),
+                      color: context.cores.perigo.withValues(alpha: .14),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.red.shade200),
+                      border: Border.all(
+                        color: context.cores.perigo.withValues(alpha: .4),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _controlador.erro!,
-                          style: const TextStyle(color: Colors.red),
+                          style: TextStyle(color: context.cores.perigo),
                         ),
                         // RF-A10.4 — mensagem de negócio, sem oferta de
                         // compra: a v1 não vende crédito no app.

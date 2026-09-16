@@ -48,14 +48,21 @@ class ListaDeDocumentos extends StatelessWidget {
 
           if (situacao.completo) ...[
             const SizedBox(height: 8),
-            const Row(
+            Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green, size: 18),
+                Icon(
+                  Icons.check_circle,
+                  color: context.cores.positivo,
+                  size: 18,
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Todos os documentos foram enviados.',
-                    style: TextStyle(fontSize: 13, color: Colors.green),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.cores.positivo,
+                    ),
                   ),
                 ),
               ],
@@ -78,12 +85,12 @@ class _Erro extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: .08),
+        color: context.cores.perigo.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         mensagem,
-        style: const TextStyle(color: Colors.red, fontSize: 13),
+        style: TextStyle(color: context.cores.perigo, fontSize: 13),
       ),
     );
   }
@@ -142,7 +149,7 @@ class _LinhaDeDocumento extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               documento!.motivoDaRejeicao!,
-              style: const TextStyle(fontSize: 13, color: Colors.red),
+              style: TextStyle(fontSize: 13, color: context.cores.perigo),
             ),
           ],
 
@@ -166,9 +173,9 @@ class _LinhaDeDocumento extends StatelessWidget {
   };
 
   Color _cor(BuildContext context, StatusDocumento? status) => switch (status) {
-    StatusDocumento.aprovado => Colors.green,
-    StatusDocumento.rejeitado => Colors.red,
-    StatusDocumento.pendente => Colors.orange,
+    StatusDocumento.aprovado => context.cores.positivo,
+    StatusDocumento.rejeitado => context.cores.perigo,
+    StatusDocumento.pendente => context.cores.atencao,
     _ => context.cores.textoSuave,
   };
 }

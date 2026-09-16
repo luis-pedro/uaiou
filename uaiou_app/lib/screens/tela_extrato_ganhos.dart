@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
@@ -165,7 +166,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
       decoration: BoxDecoration(
         color: selecionado
             ? TelaExtratoGanhos.corPrincipal.withValues(alpha: 0.08)
-            : Colors.white,
+            : context.cores.superficie,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: selecionado
@@ -183,9 +184,13 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
               onChanged: (_) => controlador.alternarSelecao(lancamento.id),
             )
           else
-            const Padding(
-              padding: EdgeInsets.only(right: 12),
-              child: Icon(Icons.check_circle, color: Colors.green, size: 22),
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Icon(
+                Icons.check_circle,
+                color: context.cores.positivo,
+                size: 22,
+              ),
             ),
           Expanded(
             child: Column(
@@ -311,30 +316,19 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   /// declara dinheiro **já recebido por fora**, sem estorno na v1.
   Future<void> _confirmar(ControladorGanhos controlador) async {
     final qtd = controlador.selecionados.length;
-    final confirmou = await showDialog<bool>(
-      context: context,
-      builder: (dialogo) => AlertDialog(
-        title: const Text('Confirmar recebimento'),
-        content: Text(
+    final confirmou = await confirmar(
+      context,
+      titulo: 'Confirmar recebimento',
+      mensagem:
           'Você está declarando que já recebeu, por fora da plataforma, '
           'o valor de $qtd lançamento${qtd == 1 ? '' : 's'} selecionado${qtd == 1 ? '' : 's'}.\n\n'
           'Esta ação não pode ser desfeita. Confirmar sem ter recebido o '
           'dinheiro cria uma divergência que só o suporte resolve.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, true),
-            child: const Text('Já recebi, confirmar'),
-          ),
-        ],
-      ),
+      rotuloConfirmar: 'Já recebi, confirmar',
+      icone: Icons.payments_outlined,
     );
 
-    if (confirmou != true || !mounted) return;
+    if (!confirmou || !mounted) return;
 
     final ok = await controlador.confirmarSelecionados();
     if (!mounted) return;

@@ -54,9 +54,11 @@ class PrincipalLogin extends StatelessWidget {
               flex: 4,
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 40,
+                padding: EdgeInsets.fromLTRB(
+                  40,
+                  40,
+                  40,
+                  40 + MediaQuery.viewPaddingOf(context).bottom,
                 ),
                 decoration: BoxDecoration(
                   color: context.cores.superficie,

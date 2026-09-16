@@ -142,7 +142,7 @@ class _Aparencia {
   final String titulo;
   final String descricao;
 
-  const _Aparencia({
+  _Aparencia({
     required this.icone,
     required this.cor,
     required this.titulo,
@@ -155,9 +155,9 @@ class _Aparencia {
     Papel papel,
   ) {
     if (papel == Papel.admin) {
-      return const _Aparencia(
+      return _Aparencia(
         icone: Icons.desktop_windows_outlined,
-        cor: Colors.blueGrey,
+        cor: context.cores.textoSuave,
         titulo: 'Acesso pelo painel web',
         descricao:
             'Contas de administração são atendidas pelo painel web, '
@@ -166,34 +166,34 @@ class _Aparencia {
     }
 
     return switch (status) {
-      StatusConta.pendente => const _Aparencia(
+      StatusConta.pendente => _Aparencia(
         icone: Icons.hourglass_top,
-        cor: Colors.orange,
+        cor: context.cores.atencao,
         titulo: 'Cadastro em análise',
         descricao:
             'Recebemos seus dados e estamos conferindo os documentos. '
             'Assim que a análise terminar, você poderá começar a usar o '
             'aplicativo.',
       ),
-      StatusConta.rejeitado => const _Aparencia(
+      StatusConta.rejeitado => _Aparencia(
         icone: Icons.error_outline,
-        cor: Colors.red,
+        cor: context.cores.perigo,
         titulo: 'Cadastro não aprovado',
         descricao:
             'A análise apontou alguma pendência nos seus documentos. '
             'Você poderá reenviá-los para uma nova avaliação.',
       ),
-      StatusConta.suspenso => const _Aparencia(
+      StatusConta.suspenso => _Aparencia(
         icone: Icons.pause_circle_outline,
-        cor: Colors.red,
+        cor: context.cores.perigo,
         titulo: 'Conta suspensa',
         descricao:
             'Sua conta está temporariamente suspensa. Fale com o suporte '
             'para entender o motivo e o prazo.',
       ),
-      StatusConta.banido => const _Aparencia(
+      StatusConta.banido => _Aparencia(
         icone: Icons.block,
-        cor: Colors.red,
+        cor: context.cores.perigo,
         titulo: 'Conta bloqueada',
         descricao: 'Sua conta foi bloqueada. Fale com o suporte.',
       ),

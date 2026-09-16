@@ -52,7 +52,7 @@ class VisaoCarregavel<T> extends StatelessWidget {
       ),
       falhou: (erro) => _Aviso(
         icone: Icons.cloud_off,
-        cor: Colors.red,
+        cor: context.cores.perigo,
         titulo: 'Não foi possível carregar',
         detalhe: erro.mensagemParaUsuario,
         aoTentarNovamente: aoTentarNovamente,

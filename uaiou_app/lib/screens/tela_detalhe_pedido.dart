@@ -81,7 +81,12 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
 
   Widget _buildConteudo(Pedido pedido) {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        20,
+        20,
+        20 + MediaQuery.viewPaddingOf(context).bottom,
+      ),
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
         Row(
@@ -180,8 +185,8 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
               icon: const Icon(Icons.cancel_outlined),
               label: const Text('Cancelar pedido'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
+                foregroundColor: context.cores.perigo,
+                side: BorderSide(color: context.cores.perigo),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
             ),
@@ -196,13 +201,13 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: .16),
+        color: context.cores.atencao.withValues(alpha: .16),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.amber.shade300),
+        border: Border.all(color: context.cores.atencao),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.location_off, color: Colors.amber),
+          Icon(Icons.location_off, color: context.cores.atencao),
           SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -227,9 +232,9 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.teal.withValues(alpha: .14),
+        color: context.cores.coleta.withValues(alpha: .14),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.teal, width: 1.5),
+        border: Border.all(color: context.cores.coleta, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -347,7 +352,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   _controlador.erroCodigo!,
-                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  style: TextStyle(color: context.cores.perigo, fontSize: 13),
                 ),
               ),
             ElevatedButton.icon(
@@ -410,9 +415,11 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.purple.withValues(alpha: .14),
+        color: context.cores.negociacao.withValues(alpha: .14),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.purple.withValues(alpha: .24)),
+        border: Border.all(
+          color: context.cores.negociacao.withValues(alpha: .24),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

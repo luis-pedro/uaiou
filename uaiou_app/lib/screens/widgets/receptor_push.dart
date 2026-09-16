@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
 import 'package:uaiou/core/notificacoes/servico_push.dart';
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
+import 'package:uaiou/screens/destino_notificacao.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 
 /// Navegador do `MaterialApp`: o receptor vive no `builder`, acima do
@@ -17,11 +18,10 @@ final GlobalKey<NavigatorState> navegadorRaiz = GlobalKey<NavigatorState>();
 /// ===============================================================
 ///
 /// - Chegou com o app aberto: recarrega a inbox e mostra um toast no
-///   rodapé (tocar abre a inbox). Com o app aberto não há notificação
+///   rodapé (tocar abre a tela do evento). Com o app aberto não há notificação
 ///   do sistema (ver `servico_push.dart`), então o aviso não duplica.
-/// - Tocou na notificação: abre a inbox, que já sabe levar cada `type`
-///   à tela certa (`tela_notificacoes.dart#_abrir`). Um único lugar
-///   decidindo o deep link, em vez de duas cópias do mesmo `switch`.
+/// - Tocou na notificação: abre a tela do evento pela mesma regra da
+///   inbox (`destino_notificacao.dart`); sem tela para o tipo, a inbox.
 class ReceptorPush extends StatefulWidget {
   final ServicoPush? push;
   final Widget child;
@@ -43,11 +43,13 @@ class _ReceptorPushState extends State<ReceptorPush> {
 
     _assinaturas
       ..add(push.recebidas.listen(_aoChegar))
-      ..add(push.abertas.listen((_) => _abrirInbox()));
+      ..add(push.abertas.listen(_abrirEvento));
 
     final inicial = push.consumirAberturaInicial();
     if (inicial != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _abrirInbox());
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _abrirEvento(inicial),
+      );
     }
   }
 
@@ -69,7 +71,7 @@ class _ReceptorPushState extends State<ReceptorPush> {
       titulo: titulo,
       mensagem: (evento.corpo ?? '').isEmpty ? 'Toque para ver' : evento.corpo!,
       tom: evento.urgente ? TomAviso.urgente : TomAviso.info,
-      aoTocar: _abrirInbox,
+      aoTocar: () => _abrirEvento(evento),
     );
   }
 
@@ -78,7 +80,9 @@ class _ReceptorPushState extends State<ReceptorPush> {
     context.read<ControladorNotificacoes>().recarregar();
   }
 
-  Future<void> _abrirInbox() async {
+  /// Leva à tela do evento (mesma regra da inbox, `destino_notificacao.dart`)
+  /// e marca como lida. Sem `type` ou sem tela para ele, abre a inbox.
+  Future<void> _abrirEvento(EventoPush evento) async {
     if (!mounted) return;
     final sessao = context.read<ControladorSessao>();
     // Abertura a frio: a sessão ainda pode estar saindo do cofre.
@@ -86,8 +90,24 @@ class _ReceptorPushState extends State<ReceptorPush> {
       await _aguardarSessao(sessao);
     }
     if (!mounted || !sessao.podeOperar) return;
+    final navegador = navegadorRaiz.currentState;
+    if (navegador == null) return;
+
+    final notificacoes = context.read<ControladorNotificacoes>();
+    final id = evento.notificationId;
+    if (id != null && id.isNotEmpty) unawaited(notificacoes.marcarLida(id));
     _recarregarInbox();
-    navegadorRaiz.currentState?.pushNamed('/notificacoes');
+
+    final type = evento.type;
+    final abriu =
+        type != null &&
+        abrirDestinoNotificacao(
+          navegador,
+          papel: sessao.papel,
+          type: type,
+          payload: evento.dados,
+        );
+    if (!abriu) navegador.pushNamed('/notificacoes');
   }
 
   Future<void> _aguardarSessao(ControladorSessao sessao) {

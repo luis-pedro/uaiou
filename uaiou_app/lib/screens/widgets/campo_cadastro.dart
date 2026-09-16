@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/tema/cores.dart';
+
 /// Campo do assistente de cadastro, ligado ao rascunho.
 ///
 /// Os `TextField` originais eram anônimos: ninguém lia o que era
@@ -94,19 +96,19 @@ class AvisoDeErro extends StatelessWidget {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: .08),
+        color: context.cores.perigo.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.red.withValues(alpha: .4)),
+        border: Border.all(color: context.cores.perigo.withValues(alpha: .4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 20),
+          Icon(Icons.error_outline, color: context.cores.perigo, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               mensagem,
-              style: const TextStyle(color: Colors.red, fontSize: 13),
+              style: TextStyle(color: context.cores.perigo, fontSize: 13),
             ),
           ),
         ],

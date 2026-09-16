@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 
 /// Resultado de [escolherMotivo].
 typedef MotivoEscolhido<T> = ({T motivo, String? observacao});
@@ -16,7 +17,7 @@ Future<MotivoEscolhido<T>?> escolherMotivo<T>(
   required bool Function(T) exigeObservacao,
   required String textoConfirmar,
   String? aviso,
-  Color corConfirmar = Colors.red,
+  IconData icone = Icons.help_outline_rounded,
 }) {
   return showDialog<MotivoEscolhido<T>>(
     context: context,
@@ -27,7 +28,7 @@ Future<MotivoEscolhido<T>?> escolherMotivo<T>(
       exigeObservacao: exigeObservacao,
       textoConfirmar: textoConfirmar,
       aviso: aviso,
-      corConfirmar: corConfirmar,
+      icone: icone,
     ),
   );
 }
@@ -39,7 +40,7 @@ class _DialogoMotivo<T> extends StatefulWidget {
   final bool Function(T) exigeObservacao;
   final String textoConfirmar;
   final String? aviso;
-  final Color corConfirmar;
+  final IconData icone;
 
   const _DialogoMotivo({
     required this.titulo,
@@ -48,7 +49,7 @@ class _DialogoMotivo<T> extends StatefulWidget {
     required this.exigeObservacao,
     required this.textoConfirmar,
     required this.aviso,
-    required this.corConfirmar,
+    required this.icone,
   });
 
   @override
@@ -76,9 +77,22 @@ class _DialogoMotivoState<T> extends State<_DialogoMotivo<T>> {
   Widget build(BuildContext context) {
     final motivo = _motivo;
 
-    return AlertDialog(
-      title: Text(widget.titulo),
-      content: SingleChildScrollView(
+    // Cancelar e desistir são destrutivos: vermelho no padrão.
+    return DialogoPadrao(
+      titulo: widget.titulo,
+      icone: widget.icone,
+      destrutivo: true,
+      rotuloCancelar: 'Voltar',
+      rotuloConfirmar: widget.textoConfirmar,
+      aoConfirmar: _podeConfirmar
+          ? () => Navigator.of(context).pop((
+              motivo: motivo as T,
+              observacao: _observacao.text.trim().isEmpty
+                  ? null
+                  : _observacao.text.trim(),
+            ))
+          : null,
+      conteudo: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +103,7 @@ class _DialogoMotivoState<T> extends State<_DialogoMotivo<T>> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: .14),
+                  color: context.cores.atencao.withValues(alpha: .14),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: context.cores.atencao),
                 ),
@@ -127,27 +141,6 @@ class _DialogoMotivoState<T> extends State<_DialogoMotivo<T>> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Voltar'),
-        ),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: widget.corConfirmar,
-            foregroundColor: Colors.white,
-          ),
-          onPressed: _podeConfirmar
-              ? () => Navigator.of(context).pop((
-                  motivo: motivo as T,
-                  observacao: _observacao.text.trim().isEmpty
-                      ? null
-                      : _observacao.text.trim(),
-                ))
-              : null,
-          child: Text(widget.textoConfirmar),
-        ),
-      ],
     );
   }
 }

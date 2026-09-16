@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
@@ -752,9 +753,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     final controladorTexto = TextEditingController();
     final valor = await showDialog<Dinheiro>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Contrapropor frete"),
-        content: TextField(
+      builder: (dialogContext) => DialogoPadrao(
+        titulo: "Contrapropor frete",
+        icone: Icons.request_quote_outlined,
+        conteudo: TextField(
           controller: controladorTexto,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
@@ -763,22 +765,14 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
           ),
           autofocus: true,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("Cancelar"),
-          ),
-          TextButton(
-            onPressed: () {
-              // Aceita vírgula, formato comum de digitação em pt-BR;
-              // `Dinheiro` só entende ponto decimal.
-              final bruto = controladorTexto.text.trim().replaceAll(',', '.');
-              final dinheiro = Dinheiro.tentarDeString(bruto);
-              Navigator.pop(dialogContext, dinheiro);
-            },
-            child: const Text("Enviar"),
-          ),
-        ],
+        rotuloConfirmar: "Enviar",
+        aoConfirmar: () {
+          // Aceita vírgula, formato comum de digitação em pt-BR;
+          // `Dinheiro` só entende ponto decimal.
+          final bruto = controladorTexto.text.trim().replaceAll(',', '.');
+          final dinheiro = Dinheiro.tentarDeString(bruto);
+          Navigator.pop(dialogContext, dinheiro);
+        },
       ),
     );
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
@@ -101,34 +102,26 @@ class _TelaPrincipalEstabelecimentoState
       final acao = await showDialog<String>(
         context: context,
         barrierDismissible: false,
-        builder: (contexto) => AlertDialog(
+        builder: (contexto) => DialogoPadrao(
           // RF-26.6 — a foto é o que separa um entregador do outro na porta.
-          icon: AvatarRede(
+          cabecalho: AvatarRede(
             url: pendente.payload['courierPhotoUrl']?.toString(),
             icone: Icons.delivery_dining,
             raio: 44,
-            corFundo: Colors.teal,
+            corFundo: CoresUaiou.principal,
           ),
-          title: Text(pendente.title),
-          content: Text(pendente.body, style: const TextStyle(fontSize: 16)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(contexto, 'depois'),
-              child: const Text('Depois'),
-            ),
+          titulo: pendente.title,
+          conteudo: Text(pendente.body, textAlign: TextAlign.center),
+          rotuloCancelar: 'Depois',
+          aoCancelar: () => Navigator.pop(contexto, 'depois'),
+          acoesExtras: [
             TextButton(
               onPressed: () => Navigator.pop(contexto, 'ver'),
               child: const Text('Ver pedido'),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () => Navigator.pop(contexto, 'confirmar'),
-              child: const Text('Confirmar coleta'),
-            ),
           ],
+          rotuloConfirmar: 'Confirmar coleta',
+          aoConfirmar: () => Navigator.pop(contexto, 'confirmar'),
         ),
       );
       _dialogoAberto = false;

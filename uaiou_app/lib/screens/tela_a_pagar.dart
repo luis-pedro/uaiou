@@ -52,7 +52,12 @@ class _TelaAPagarState extends State<TelaAPagar> {
           textoVazio: 'Nada a pagar no momento',
           iconeVazio: Icons.payments_outlined,
           construir: (payables) => ListView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              20 + MediaQuery.viewPaddingOf(context).bottom,
+            ),
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
               Container(

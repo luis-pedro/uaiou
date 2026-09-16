@@ -50,12 +50,13 @@ class BadgeStatus extends StatelessWidget {
 
   // Recebe o contexto porque a cor de "desconhecido" vem do tema.
   Color _cor(BuildContext context) => switch (status) {
-    StatusPedido.criado || StatusPedido.pendente => Colors.orange,
-    StatusPedido.emNegociacao => Colors.purple,
-    StatusPedido.aceito => Colors.blue,
-    StatusPedido.coletado => Colors.teal,
-    StatusPedido.entregue || StatusPedido.entregueContestavel => Colors.green,
-    StatusPedido.cancelado => Colors.red,
+    StatusPedido.criado || StatusPedido.pendente => context.cores.atencao,
+    StatusPedido.emNegociacao => context.cores.negociacao,
+    StatusPedido.aceito => context.cores.informacao,
+    StatusPedido.coletado => context.cores.coleta,
+    StatusPedido.entregue ||
+    StatusPedido.entregueContestavel => context.cores.positivo,
+    StatusPedido.cancelado => context.cores.perigo,
     StatusPedido.desconhecido => context.cores.textoSuave,
   };
 

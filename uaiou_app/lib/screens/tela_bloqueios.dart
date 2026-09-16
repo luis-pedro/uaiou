@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
@@ -38,9 +39,14 @@ class _TelaBloqueiosState extends State<TelaBloqueios> {
 
     final confirmou = await showDialog<bool>(
       context: context,
-      builder: (dialogo) => AlertDialog(
-        title: const Text('Bloquear entregador'),
-        content: Column(
+      builder: (dialogo) => DialogoPadrao(
+        titulo: 'Bloquear entregador',
+        icone: Icons.block_rounded,
+        destrutivo: true,
+        rotuloConfirmar: 'Bloquear',
+        aoCancelar: () => Navigator.pop(dialogo, false),
+        aoConfirmar: () => Navigator.pop(dialogo, true),
+        conteudo: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
@@ -54,16 +60,6 @@ class _TelaBloqueiosState extends State<TelaBloqueios> {
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, true),
-            child: const Text('Bloquear'),
-          ),
-        ],
       ),
     );
 

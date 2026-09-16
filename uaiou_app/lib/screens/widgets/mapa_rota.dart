@@ -226,7 +226,8 @@ class _MapaRotaState extends State<MapaRota> {
               child: Icon(
                 icone,
                 size: 22,
-                color: destacado ? Colors.white : context.cores.texto,
+                // Fundo do botão é branco nos dois temas (fica sobre o mapa).
+                color: destacado ? Colors.white : Colors.black87,
               ),
             ),
           ),

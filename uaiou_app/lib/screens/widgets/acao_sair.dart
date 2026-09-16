@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
@@ -15,27 +16,16 @@ class AcaoSair extends StatelessWidget {
   static const Color _corPerigo = Color.fromRGBO(211, 47, 47, 1);
 
   Future<void> _confirmarESair(BuildContext context) async {
-    final confirmou = await showDialog<bool>(
-      context: context,
-      builder: (dialogo) => AlertDialog(
-        title: const Text('Sair da conta'),
-        content: const Text(
-          'Você precisará entrar novamente para usar o aplicativo.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogo, true),
-            child: const Text('Sair', style: TextStyle(color: _corPerigo)),
-          ),
-        ],
-      ),
+    final confirmou = await confirmar(
+      context,
+      titulo: 'Sair da conta',
+      mensagem: 'Você precisará entrar novamente para usar o aplicativo.',
+      rotuloConfirmar: 'Sair',
+      icone: Icons.logout_rounded,
+      destrutivo: true,
     );
 
-    if (confirmou != true || !context.mounted) return;
+    if (!confirmou || !context.mounted) return;
 
     await context.read<ControladorSessao>().sair();
 

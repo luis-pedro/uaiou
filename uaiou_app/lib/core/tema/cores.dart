@@ -41,6 +41,10 @@ class CoresApp extends ThemeExtension<CoresApp> {
     required this.sombra,
     required this.atencao,
     required this.positivo,
+    required this.perigo,
+    required this.informacao,
+    required this.negociacao,
+    required this.coleta,
   });
 
   /// Fundo da tela, atrás de tudo.
@@ -69,6 +73,19 @@ class CoresApp extends ThemeExtension<CoresApp> {
   /// "Recebido", confirmado, concluído.
   final Color positivo;
 
+  /// Erro, cancelamento, recusa — texto e ícone. Botão cheio continua
+  /// [CoresUaiou.perigo], que é igual nos dois temas.
+  final Color perigo;
+
+  /// Aceito, em andamento, informativo.
+  final Color informacao;
+
+  /// Contraoferta em negociação.
+  final Color negociacao;
+
+  /// Entregador na loja / coletado.
+  final Color coleta;
+
   static const CoresApp claro = CoresApp(
     fundo: Colors.white,
     superficie: Colors.white,
@@ -81,6 +98,11 @@ class CoresApp extends ThemeExtension<CoresApp> {
     sombra: Color(0x1F000000),
     atencao: Color(0xFFEF6C00),
     positivo: Color(0xFF2E7D32),
+    // Tons 700/800: passam de 4,5:1 sobre branco em texto de 13px.
+    perigo: Color(0xFFC62828),
+    informacao: Color(0xFF1565C0),
+    negociacao: Color(0xFF6A1B9A),
+    coleta: Color(0xFF00695C),
   );
 
   /// Cinzas quentes, não pretos puros: preto absoluto com texto branco vibra e
@@ -95,6 +117,11 @@ class CoresApp extends ThemeExtension<CoresApp> {
     sombra: Color(0x66000000),
     atencao: Color(0xFFFFB74D),
     positivo: Color(0xFF81C784),
+    // Tons 200/300: o vermelho escuro some no fundo quase preto.
+    perigo: Color(0xFFEF9A9A),
+    informacao: Color(0xFF90CAF9),
+    negociacao: Color(0xFFCE93D8),
+    coleta: Color(0xFF80CBC4),
   );
 
   @override
@@ -108,6 +135,10 @@ class CoresApp extends ThemeExtension<CoresApp> {
     Color? sombra,
     Color? atencao,
     Color? positivo,
+    Color? perigo,
+    Color? informacao,
+    Color? negociacao,
+    Color? coleta,
   }) => CoresApp(
     fundo: fundo ?? this.fundo,
     superficie: superficie ?? this.superficie,
@@ -118,6 +149,10 @@ class CoresApp extends ThemeExtension<CoresApp> {
     sombra: sombra ?? this.sombra,
     atencao: atencao ?? this.atencao,
     positivo: positivo ?? this.positivo,
+    perigo: perigo ?? this.perigo,
+    informacao: informacao ?? this.informacao,
+    negociacao: negociacao ?? this.negociacao,
+    coleta: coleta ?? this.coleta,
   );
 
   @override
@@ -133,6 +168,10 @@ class CoresApp extends ThemeExtension<CoresApp> {
       sombra: Color.lerp(sombra, outro.sombra, t)!,
       atencao: Color.lerp(atencao, outro.atencao, t)!,
       positivo: Color.lerp(positivo, outro.positivo, t)!,
+      perigo: Color.lerp(perigo, outro.perigo, t)!,
+      informacao: Color.lerp(informacao, outro.informacao, t)!,
+      negociacao: Color.lerp(negociacao, outro.negociacao, t)!,
+      coleta: Color.lerp(coleta, outro.coleta, t)!,
     );
   }
 }

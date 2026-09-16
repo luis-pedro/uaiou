@@ -134,11 +134,11 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: chegou
-                    ? Colors.teal.withValues(alpha: .14)
+                    ? context.cores.coleta.withValues(alpha: .14)
                     : context.cores.superficieSuave,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: chegou ? Colors.teal : context.cores.borda,
+                  color: chegou ? context.cores.coleta : context.cores.borda,
                 ),
               ),
               child: Row(
@@ -190,7 +190,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 icon: const Icon(Icons.notifications_active),
                 label: const Text('Avisar o estabelecimento de novo'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.teal,
+                  foregroundColor: context.cores.coleta,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
@@ -201,10 +201,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 onPressed: retirada.enviando
                     ? null
                     : () => _desistir(context, retirada),
-                icon: const Icon(Icons.close, color: Colors.red),
-                label: const Text(
+                icon: Icon(Icons.close, color: context.cores.perigo),
+                label: Text(
                   'Desistir da entrega',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: context.cores.perigo),
                 ),
               ),
             ],
@@ -255,7 +255,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cancel, size: 72, color: Colors.red),
+            Icon(Icons.cancel, size: 72, color: context.cores.perigo),
             const SizedBox(height: 16),
             const Text(
               'O estabelecimento cancelou este pedido.',
@@ -321,7 +321,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.cloud_off, size: 48, color: Colors.red),
+                  Icon(Icons.cloud_off, size: 48, color: context.cores.perigo),
                   const SizedBox(height: 16),
                   Text(erro.mensagemParaUsuario, textAlign: TextAlign.center),
                   const SizedBox(height: 20),
@@ -677,7 +677,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: .14),
+        color: context.cores.atencao.withValues(alpha: .14),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: context.cores.atencao),
       ),

@@ -43,7 +43,12 @@ class _TelaPreferenciasNotificacaoState
         estado: controlador.estado,
         aoTentarNovamente: controlador.carregar,
         construir: (preferencias) => ListView(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            20 + MediaQuery.viewPaddingOf(context).bottom,
+          ),
           children: [
             const Text(
               'Canais',
@@ -107,7 +112,7 @@ class _TelaPreferenciasNotificacaoState
               const SizedBox(height: 16),
               Text(
                 controlador.erro!,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: context.cores.perigo),
               ),
             ],
           ],

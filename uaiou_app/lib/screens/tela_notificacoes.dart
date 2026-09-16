@@ -7,9 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
 import 'package:uaiou/core/notificacoes/modelo_notificacao.dart';
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
-import 'package:uaiou/core/sessao/identidade.dart';
-import 'package:uaiou/screens/tela_detalhe_pedido.dart';
-import 'package:uaiou/screens/tela_entrega_em_andamento.dart';
+import 'package:uaiou/screens/destino_notificacao.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 /// ===============================================================
@@ -225,41 +223,16 @@ class _ItemNotificacao extends StatelessWidget {
     }
     if (!context.mounted) return;
 
-    final orderId = notificacao.payload['orderId'];
-    final papel = context.read<ControladorSessao>().papel;
+    final abriu = abrirDestinoNotificacao(
+      Navigator.of(context),
+      papel: context.read<ControladorSessao>().papel,
+      type: notificacao.type,
+      payload: notificacao.payload,
+    );
 
-    switch (notificacao.type) {
-      case 'counteroffer.received':
-      case 'counteroffer.decided':
-      case 'order.assigned':
-      case 'order.published':
-        if (orderId is String && papel == Papel.estabelecimento) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TelaDetalhePedido(pedidoId: orderId),
-            ),
-          );
-          return;
-        }
-      case 'delivery.code_contingency':
-      case 'delivery.completed':
-      case 'delivery.contestable':
-        if (orderId is String && papel == Papel.entregador) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => TelaEntregaEmAndamento(pedidoId: orderId),
-            ),
-          );
-          return;
-        }
-    }
-
-    // Sem tela correspondente hoje (dispute.*, registration.reviewed,
-    // sanction.applied, goal.*, support.replied, wallet.*): mostra o
-    // detalhe aqui mesmo em vez de tentar abrir algo que não existe.
-    _mostrarDetalhe(context);
+    // Sem tela no app (suporte, disputa sem pedido): mostra o detalhe
+    // aqui mesmo em vez de tentar abrir algo que não existe.
+    if (!abriu) _mostrarDetalhe(context);
   }
 
   /// Folha com altura estável (não "pula" conforme o tamanho do texto),

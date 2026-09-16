@@ -85,7 +85,12 @@ class _AbaPendentes extends StatelessWidget {
         iconeVazio: Icons.check_circle_outline,
         construir: (itens) => ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.viewPaddingOf(context).bottom,
+          ),
           itemCount: itens.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
           itemBuilder: (context, indice) => _CardPendente(item: itens[indice]),
@@ -204,7 +209,11 @@ class _FormularioAvaliacaoState extends State<_FormularioAvaliacao> {
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        // Teclado aberto empurra pelo viewInsets; fechado, a barra do celular.
+        bottom:
+            MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.viewPaddingOf(context).bottom +
+            20,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -243,7 +252,7 @@ class _FormularioAvaliacaoState extends State<_FormularioAvaliacao> {
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
                 widget.controlador.erroEnvio!,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: context.cores.perigo),
               ),
             ),
           SizedBox(
@@ -297,7 +306,12 @@ class _AbaRecebidas extends StatelessWidget {
         iconeVazio: Icons.star_border,
         construir: (resposta) => ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            16 + MediaQuery.viewPaddingOf(context).bottom,
+          ),
           children: [
             _CardResumo(resumo: resposta.resumo),
             const SizedBox(height: 16),
