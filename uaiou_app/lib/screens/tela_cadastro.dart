@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
@@ -56,8 +58,8 @@ class TelaCadastro extends StatelessWidget {
                   horizontal: 32,
                   vertical: 32,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: context.cores.superficie,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(40),
                     topRight: Radius.circular(40),
@@ -166,10 +168,10 @@ class TelaCadastro extends StatelessWidget {
                               onPressed: () {
                                 Navigator.pop(context);
                               },
-                              child: const Text(
+                              child: Text(
                                 'Voltar à tela principal',
                                 style: TextStyle(
-                                  color: Colors.black54,
+                                  color: context.cores.textoSuave,
                                   fontSize: 12,
                                 ),
                               ),

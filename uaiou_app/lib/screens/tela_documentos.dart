@@ -30,7 +30,6 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: TelaDocumentos.corPrincipal,
         foregroundColor: Colors.white,

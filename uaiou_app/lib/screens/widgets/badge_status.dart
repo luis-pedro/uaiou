@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/tema/cores.dart';
+
 import 'package:uaiou/core/modelos/status_pedido.dart';
 
 /// Selo de status do pedido.
@@ -18,7 +20,7 @@ class BadgeStatus extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = _cor;
+    final cor = _cor(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -46,14 +48,15 @@ class BadgeStatus extends StatelessWidget {
     );
   }
 
-  Color get _cor => switch (status) {
+  // Recebe o contexto porque a cor de "desconhecido" vem do tema.
+  Color _cor(BuildContext context) => switch (status) {
     StatusPedido.criado || StatusPedido.pendente => Colors.orange,
     StatusPedido.emNegociacao => Colors.purple,
     StatusPedido.aceito => Colors.blue,
     StatusPedido.coletado => Colors.teal,
     StatusPedido.entregue || StatusPedido.entregueContestavel => Colors.green,
     StatusPedido.cancelado => Colors.red,
-    StatusPedido.desconhecido => Colors.grey,
+    StatusPedido.desconhecido => context.cores.textoSuave,
   };
 
   IconData get _icone => switch (status) {

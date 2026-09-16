@@ -61,7 +61,6 @@ class _TelaNotificacoesState extends State<TelaNotificacoes>
     final controlador = context.watch<ControladorNotificacoes>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -126,13 +125,15 @@ class _ItemNotificacao extends StatelessWidget {
       tileColor: lida ? Colors.white : corPrincipal.withValues(alpha: 0.06),
       leading: Icon(
         urgente ? Icons.priority_high : Icons.notifications_outlined,
-        color: urgente ? Colors.red : (lida ? Colors.grey : corPrincipal),
+        color: urgente
+            ? Colors.red
+            : (lida ? context.cores.textoSuave : corPrincipal),
       ),
       title: Text(
         notificacao.title.isEmpty ? notificacao.type : notificacao.title,
         style: TextStyle(
           fontWeight: lida ? FontWeight.normal : FontWeight.bold,
-          color: const Color.fromRGBO(34, 34, 34, 1),
+          color: context.cores.texto,
         ),
       ),
       subtitle: Text(

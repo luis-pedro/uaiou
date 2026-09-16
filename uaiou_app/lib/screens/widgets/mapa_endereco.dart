@@ -155,11 +155,11 @@ class _MapaEnderecoState extends State<MapaEndereco> {
           _posicao != null
               ? '${_posicao!.latitude.toStringAsFixed(6)}, ${_posicao!.longitude.toStringAsFixed(6)}'
               : 'Toque no mapa para marcar o endereço do estabelecimento.',
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
         ),
         if (_buscando) ...[
           const SizedBox(height: 6),
-          const Row(
+          Row(
             children: [
               SizedBox(
                 width: 12,
@@ -169,7 +169,7 @@ class _MapaEnderecoState extends State<MapaEndereco> {
               SizedBox(width: 8),
               Text(
                 'Buscando o endereço deste ponto…',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
               ),
             ],
           ),
@@ -189,7 +189,7 @@ class _MapaEnderecoState extends State<MapaEndereco> {
           const SizedBox(height: 6),
           Text(
             _avisoBusca!,
-            style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
+            style: TextStyle(fontSize: 12, color: context.cores.atencao),
           ),
         ],
       ],

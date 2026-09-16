@@ -38,7 +38,6 @@ class _TelaAPagarState extends State<TelaAPagar> {
     final controlador = context.watch<ControladorPayables>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -97,7 +96,7 @@ class _TelaAPagarState extends State<TelaAPagar> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.cores.borda),
         borderRadius: BorderRadius.circular(16),
       ),
       child: ExpansionTile(

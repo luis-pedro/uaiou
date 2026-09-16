@@ -252,7 +252,7 @@ class _TelaPrincipalEstabelecimentoState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cores.superficie,
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
@@ -308,7 +308,7 @@ class _TelaPrincipalEstabelecimentoState
       top: 45,
       right: 15,
       child: Material(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(25),
         elevation: 2,
         shadowColor: Colors.black.withValues(alpha: 0.08),
@@ -409,15 +409,15 @@ class _TelaPrincipalEstabelecimentoState
       child: Container(
         width: double.infinity,
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -458,7 +458,7 @@ class _TelaPrincipalEstabelecimentoState
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.

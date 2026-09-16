@@ -51,7 +51,6 @@ class _TelaAvaliacoesState extends State<TelaAvaliacoes> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
           backgroundColor: corPrincipal,
           foregroundColor: Colors.white,
@@ -124,14 +123,20 @@ class _CardPendente extends StatelessWidget {
                   item.counterpartyName.isEmpty
                       ? 'Contraparte'
                       : item.counterpartyName,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.cores.textoSuave,
+                  ),
                 ),
                 if (item.deadline != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       'Prazo: ${_formatarData(item.deadline!)}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.cores.textoSuave,
+                      ),
                     ),
                   ),
               ],
@@ -356,7 +361,10 @@ class _EstatisticaResumo extends StatelessWidget {
           valor,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-        Text(rotulo, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(
+          rotulo,
+          style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
+        ),
       ],
     );
   }
@@ -373,7 +381,7 @@ class _CardRecebida extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color.fromRGBO(94, 94, 94, .2)),
       ),
@@ -395,7 +403,7 @@ class _CardRecebida extends StatelessWidget {
               const Spacer(),
               Text(
                 'Pedido #${item.orderNumber}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
               ),
             ],
           ),
@@ -405,11 +413,11 @@ class _CardRecebida extends StatelessWidget {
           ],
           if (!item.active) ...[
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Automática (padrão positivo)',
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey,
+                color: context.cores.textoSuave,
                 fontStyle: FontStyle.italic,
               ),
             ),

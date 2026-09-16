@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
@@ -14,14 +16,17 @@ class AvatarRede extends StatelessWidget {
   final String? url;
   final IconData icone;
   final double raio;
-  final Color corFundo;
+
+  /// Nulo = cor do tema. Não dá para ter `context` num valor padrão de
+  /// parâmetro, e um cinza fixo aqui ficaria claro demais no tema escuro.
+  final Color? corFundo;
 
   const AvatarRede({
     super.key,
     required this.url,
     required this.icone,
     this.raio = 24,
-    this.corFundo = const Color.fromRGBO(217, 217, 217, 1),
+    this.corFundo,
   });
 
   @override
@@ -34,7 +39,7 @@ class AvatarRede extends StatelessWidget {
       label: temFoto ? 'Foto de perfil' : 'Sem foto de perfil',
       child: CircleAvatar(
         radius: raio,
-        backgroundColor: corFundo,
+        backgroundColor: corFundo ?? context.cores.superficieSuave,
         foregroundImage: temFoto ? NetworkImage(url!) : null,
         onForegroundImageError: temFoto ? (_, _) {} : null,
         child: Icon(icone, color: Colors.white, size: raio * .8),
@@ -114,7 +119,6 @@ class AvatarPerfilEditavel extends StatelessWidget {
             bottom: 0,
             child: CircleAvatar(
               radius: 13,
-              backgroundColor: Colors.white,
               child: controlador.enviandoFoto
                   ? const SizedBox(
                       width: 14,

@@ -56,8 +56,8 @@ class _TelaPedidosEstabelecimentoState
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.only(top: 70),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
@@ -97,16 +97,16 @@ class _TelaPedidosEstabelecimentoState
             context.watch<EstadoEstabelecimento>().nome.isEmpty
                 ? "Carregando…"
                 : context.watch<EstadoEstabelecimento>().nome,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: context.cores.texto,
             ),
           ),
           const SizedBox(height: 5),
-          const Text(
+          Text(
             "Pedidos",
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+            style: TextStyle(fontSize: 16, color: context.cores.textoSuave),
           ),
         ],
       ),
@@ -148,13 +148,13 @@ class _TelaPedidosEstabelecimentoState
     if (pedidos.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
+        children: [
           Padding(
             padding: EdgeInsets.all(40),
             child: Text(
               "Nenhum pedido em andamento.\nOs concluídos ficam em Atividades.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: context.cores.textoSuave),
             ),
           ),
         ],
@@ -191,9 +191,9 @@ class _TelaPedidosEstabelecimentoState
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.grey.shade400, width: 1.5),
+        border: Border.all(color: context.cores.borda, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -228,10 +228,10 @@ class _TelaPedidosEstabelecimentoState
 
           Text(
             "Frete: ${pedido.valor.formatarBRL()}",
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color.fromRGBO(94, 94, 94, 1),
+              color: context.cores.textoSuave,
             ),
           ),
 
@@ -280,15 +280,15 @@ class _TelaPedidosEstabelecimentoState
         // altura fixa, o SafeArea abaixo só espremia o conteúdo para dentro dos
         // mesmos 85 px e a barra seguia por baixo dos botões do aparelho.
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -329,7 +329,7 @@ class _TelaPedidosEstabelecimentoState
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.

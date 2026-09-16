@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -120,7 +122,7 @@ class _MapaRotaState extends State<MapaRota> {
           const SizedBox(height: 6),
           Text(
             widget.rota.atribuicao!,
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: context.cores.textoSuave),
           ),
         ],
       ],
@@ -224,7 +226,7 @@ class _MapaRotaState extends State<MapaRota> {
               child: Icon(
                 icone,
                 size: 22,
-                color: destacado ? Colors.white : Colors.black87,
+                color: destacado ? Colors.white : context.cores.texto,
               ),
             ),
           ),
@@ -257,12 +259,14 @@ class _MapaRotaState extends State<MapaRota> {
     }
     if (tracado.isEmpty) return marcadores;
 
-    marcadores.add(_marcador(tracado.first, Icons.trip_origin, Colors.black54));
+    marcadores.add(
+      _marcador(tracado.first, Icons.trip_origin, context.cores.textoSuave),
+    );
     // O estabelecimento é o ponto onde o trajeto dobra — só existe
     // quando ele marcou a coordenada dele no mapa (RF-25.5).
     if (widget.rota.trajeto.passaPelaRetirada) {
       marcadores.add(
-        _marcador(_pontoDaLoja(tracado), Icons.storefront, Colors.black87),
+        _marcador(_pontoDaLoja(tracado), Icons.storefront, context.cores.texto),
       );
     }
     marcadores.add(
@@ -284,7 +288,7 @@ class _MapaRotaState extends State<MapaRota> {
     height: 44,
     child: Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -333,7 +337,7 @@ class _MapaRotaState extends State<MapaRota> {
       ),
       child: Text(
         widget.rota.atribuicao!,
-        style: const TextStyle(fontSize: 10, color: Colors.black87),
+        style: TextStyle(fontSize: 10, color: context.cores.texto),
       ),
     );
   }
@@ -375,7 +379,7 @@ class _MapaRotaState extends State<MapaRota> {
         const SizedBox(width: 6),
         Text(
           detalhes.isEmpty ? rotulo : '$rotulo — $detalhes',
-          style: const TextStyle(fontSize: 12, color: Colors.black87),
+          style: TextStyle(fontSize: 12, color: context.cores.texto),
         ),
       ],
     );

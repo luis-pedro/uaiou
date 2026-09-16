@@ -95,8 +95,8 @@ class _TelaAtividadesEstabelecimentoState
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.only(top: 70),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
@@ -107,14 +107,14 @@ class _TelaAtividadesEstabelecimentoState
           children: [
             const SizedBox(height: 20),
 
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 "Pedidos anteriores",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: context.cores.texto,
                 ),
               ),
             ),
@@ -137,7 +137,7 @@ class _TelaAtividadesEstabelecimentoState
 
             const SizedBox(height: 10),
 
-            const Divider(height: 1, color: Color.fromRGBO(217, 217, 217, 1)),
+            Divider(height: 1, color: context.cores.borda),
 
             Expanded(child: _buildListaPedidos()),
 
@@ -170,12 +170,9 @@ class _TelaAtividadesEstabelecimentoState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               "Faturamento de hoje",
-              style: TextStyle(
-                color: Color.fromRGBO(218, 218, 218, 1),
-                fontSize: 15,
-              ),
+              style: TextStyle(color: context.cores.textoSuave, fontSize: 15),
             ),
             const SizedBox(height: 5),
             Text(
@@ -251,7 +248,7 @@ class _TelaAtividadesEstabelecimentoState
       children: [
         Text(
           titulo,
-          style: const TextStyle(fontSize: 13, color: Colors.black87),
+          style: TextStyle(fontSize: 13, color: context.cores.texto),
         ),
         const SizedBox(height: 4),
         Text(
@@ -291,13 +288,13 @@ class _TelaAtividadesEstabelecimentoState
         // 12 em vez de 8: com 8 o chip ficava abaixo do alvo mínimo de toque.
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
-          color: selecionado ? corPrincipal : Colors.grey.shade200,
+          color: selecionado ? corPrincipal : context.cores.superficieSuave,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           texto,
           style: TextStyle(
-            color: selecionado ? Colors.white : Colors.black87,
+            color: selecionado ? Colors.white : context.cores.texto,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -326,12 +323,12 @@ class _TelaAtividadesEstabelecimentoState
           construir: (todos) {
             final pedidos = _aplicarFiltro(todos);
             if (pedidos.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
                   padding: EdgeInsets.all(40),
                   child: Text(
                     "Nenhum pedido neste filtro",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: context.cores.textoSuave),
                   ),
                 ),
               );
@@ -359,14 +356,17 @@ class _TelaAtividadesEstabelecimentoState
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.grey.shade400, width: 1.5),
+        border: Border.all(color: context.cores.borda, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(data, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(
+            data,
+            style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
+          ),
 
           const SizedBox(height: 8),
 
@@ -388,7 +388,7 @@ class _TelaAtividadesEstabelecimentoState
 
           Text(
             "Bairro: ${pedido.bairro}",
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
 
           const SizedBox(height: 5),
@@ -397,12 +397,12 @@ class _TelaAtividadesEstabelecimentoState
             children: [
               Text(
                 "Rua: ${pedido.rua}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
               const SizedBox(width: 20),
               Text(
                 "Número: ${pedido.numero}",
-                style: const TextStyle(fontSize: 13, color: Colors.black54),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
             ],
           ),
@@ -450,15 +450,15 @@ class _TelaAtividadesEstabelecimentoState
         // Ver a nota em `tela_estabelecimento_pedidos`: a barra acompanha a
         // faixa do sistema em vez de ficar sob ela.
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -499,7 +499,7 @@ class _TelaAtividadesEstabelecimentoState
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.

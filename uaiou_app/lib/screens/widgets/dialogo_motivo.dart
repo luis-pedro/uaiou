@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/tema/cores.dart';
+
 /// Resultado de [escolherMotivo].
 typedef MotivoEscolhido<T> = ({T motivo, String? observacao});
 
@@ -87,9 +89,9 @@ class _DialogoMotivoState<T> extends State<_DialogoMotivo<T>> {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: Colors.orange.withValues(alpha: .14),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.shade300),
+                  border: Border.all(color: context.cores.atencao),
                 ),
                 child: Text(
                   widget.aviso!,

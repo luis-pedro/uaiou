@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/tema/cores.dart';
+
 import 'package:uaiou/core/estado/carregavel.dart';
 
 /// Renderiza os quatro caminhos de [Carregavel] — RF-A03.3.
@@ -38,7 +40,7 @@ class VisaoCarregavel<T> extends StatelessWidget {
       pronto: construir,
       vazio: () => _Aviso(
         icone: iconeVazio,
-        cor: Colors.grey,
+        cor: context.cores.textoSuave,
         titulo: textoVazio,
         // Vazio com motivo do servidor (ex.: LOCATION_STALE) explica
         // por que a lista veio vazia, em vez de deixar o usuário achar
@@ -87,10 +89,10 @@ class _Aviso extends StatelessWidget {
             Text(
               titulo,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color.fromRGBO(94, 94, 94, 1),
+                color: context.cores.textoSuave,
               ),
             ),
             if (detalhe != null) ...[
@@ -98,7 +100,7 @@ class _Aviso extends StatelessWidget {
               Text(
                 detalhe!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
             ],
             if (aoTentarNovamente != null) ...[

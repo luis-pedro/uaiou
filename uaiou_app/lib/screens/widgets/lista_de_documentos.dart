@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/documentos/documento.dart';
@@ -107,16 +109,16 @@ class _LinhaDeDocumento extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.cores.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(_icone(status), size: 20, color: _cor(status)),
+              Icon(_icone(status), size: 20, color: _cor(context, status)),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -129,7 +131,7 @@ class _LinhaDeDocumento extends StatelessWidget {
               ),
               Text(
                 status?.rotulo ?? 'Pendente de envio',
-                style: TextStyle(fontSize: 12, color: _cor(status)),
+                style: TextStyle(fontSize: 12, color: _cor(context, status)),
               ),
             ],
           ),
@@ -163,11 +165,11 @@ class _LinhaDeDocumento extends StatelessWidget {
     _ => Icons.upload_file,
   };
 
-  Color _cor(StatusDocumento? status) => switch (status) {
+  Color _cor(BuildContext context, StatusDocumento? status) => switch (status) {
     StatusDocumento.aprovado => Colors.green,
     StatusDocumento.rejeitado => Colors.red,
     StatusDocumento.pendente => Colors.orange,
-    _ => Colors.grey,
+    _ => context.cores.textoSuave,
   };
 }
 
@@ -188,7 +190,7 @@ class _Progresso extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progresso == 0 ? null : progresso,
               minHeight: 8,
-              backgroundColor: Colors.grey.shade300,
+              backgroundColor: context.cores.borda,
               valueColor: const AlwaysStoppedAnimation(
                 ListaDeDocumentos._corPrincipal,
               ),

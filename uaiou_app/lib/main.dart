@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:uaiou/core/tema/tema.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/avaliacoes/controlador_avaliacoes.dart';
@@ -422,17 +423,11 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'UaiOu',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          // Troca de tela é instantânea: o app é usado de moto parada, em pé na
-          // porta do cliente, com pressa. Meio segundo de deslize por toque, em
-          // quatro abas, é tempo de espera sem informação nenhuma.
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: _SemTransicao(),
-              TargetPlatform.iOS: _SemTransicao(),
-            },
-          ),
-        ),
+        theme: temaClaro(_transicoes),
+        darkTheme: temaEscuro(_transicoes),
+        // Segue o aparelho: quem entrega à noite já deixou o sistema no escuro,
+        // e obrigar a escolher de novo dentro do app é trabalho à toa.
+        themeMode: ThemeMode.system,
         home: const _Raiz(),
         onGenerateRoute: _gerarRota,
         // RF-A13.6 — qualquer tela, a qualquer momento: um 426 aciona
@@ -447,6 +442,16 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+/// Troca de tela é instantânea: o app é usado de moto parada, em pé na porta do
+/// cliente, com pressa. Meio segundo de deslize por toque, em quatro abas, é
+/// tempo de espera sem informação nenhuma.
+const PageTransitionsTheme _transicoes = PageTransitionsTheme(
+  builders: {
+    TargetPlatform.android: _SemTransicao(),
+    TargetPlatform.iOS: _SemTransicao(),
+  },
+);
 
 /// Sem animação nenhuma: a tela nova aparece pronta.
 ///

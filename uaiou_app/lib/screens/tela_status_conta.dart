@@ -42,7 +42,7 @@ class _TelaStatusContaState extends State<TelaStatusConta> {
   @override
   Widget build(BuildContext context) {
     final sessao = context.watch<ControladorSessao>();
-    final aparencia = _Aparencia.para(sessao.status, sessao.papel);
+    final aparencia = _Aparencia.para(context, sessao.status, sessao.papel);
 
     /// Só faz sentido pedir documento de quem ainda está sendo
     /// avaliado. Conta suspensa ou banida não se resolve reenviando
@@ -52,7 +52,6 @@ class _TelaStatusContaState extends State<TelaStatusConta> {
         sessao.status == StatusConta.rejeitado;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -67,32 +66,32 @@ class _TelaStatusContaState extends State<TelaStatusConta> {
                   Text(
                     aparencia.titulo,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromRGBO(34, 34, 34, 1),
+                      color: context.cores.texto,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     aparencia.descricao,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       height: 1.5,
-                      color: Color.fromRGBO(94, 94, 94, 1),
+                      color: context.cores.textoSuave,
                     ),
                   ),
                   if (podeEnviarDocumentos) ...[
                     const SizedBox(height: 32),
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'Seus documentos',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color.fromRGBO(34, 34, 34, 1),
+                          color: context.cores.texto,
                         ),
                       ),
                     ),
@@ -150,7 +149,11 @@ class _Aparencia {
     required this.descricao,
   });
 
-  static _Aparencia para(StatusConta status, Papel papel) {
+  static _Aparencia para(
+    BuildContext context,
+    StatusConta status,
+    Papel papel,
+  ) {
     if (papel == Papel.admin) {
       return const _Aparencia(
         icone: Icons.desktop_windows_outlined,
@@ -194,9 +197,9 @@ class _Aparencia {
         titulo: 'Conta bloqueada',
         descricao: 'Sua conta foi bloqueada. Fale com o suporte.',
       ),
-      StatusConta.ativo || StatusConta.desconhecido => const _Aparencia(
+      StatusConta.ativo || StatusConta.desconhecido => _Aparencia(
         icone: Icons.help_outline,
-        cor: Colors.grey,
+        cor: context.cores.textoSuave,
         titulo: 'Não foi possível abrir o aplicativo',
         descricao:
             'Não conseguimos identificar o estado da sua conta. '

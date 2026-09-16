@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/tema/cores.dart';
+
 /// ===============================================================
 /// AVISO NO CANTO SUPERIOR ESQUERDO
 /// ===============================================================
@@ -53,7 +55,7 @@ class _CartaoDeAviso extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = erro ? Colors.red.shade700 : Colors.black87;
+    final cor = erro ? Colors.red.shade700 : context.cores.texto;
 
     return Material(
       color: Colors.transparent,

@@ -116,7 +116,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final larguraTela = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -210,9 +209,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Spacer(),
                       TextButton(
                         onPressed: _enviando ? null : _recuperarSenha,
-                        child: const Text(
+                        child: Text(
                           'Esqueceu sua senha?',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.cores.textoSuave,
+                          ),
                         ),
                       ),
                     ],
@@ -275,9 +277,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         'assets/imagens/google_icon_novo.png',
                         height: 22,
                       ),
-                      label: const Text(
+                      label: Text(
                         'Entrar com Google',
-                        style: TextStyle(color: Colors.black87),
+                        style: TextStyle(color: context.cores.texto),
                       ),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(

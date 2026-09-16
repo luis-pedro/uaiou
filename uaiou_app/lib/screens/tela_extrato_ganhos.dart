@@ -39,7 +39,6 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: TelaExtratoGanhos.corPrincipal,
         foregroundColor: Colors.white,
@@ -71,21 +70,21 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
             child: _buildValorResumo(
               'Total do período',
               resumo.total.formatarBRL(),
-              Colors.black87,
+              context.cores.texto,
             ),
           ),
           Expanded(
             child: _buildValorResumo(
               'A receber',
               resumo.receivable.formatarBRL(),
-              Colors.orange.shade800,
+              context.cores.atencao,
             ),
           ),
           Expanded(
             child: _buildValorResumo(
               'Recebido',
               resumo.settled.formatarBRL(),
-              Colors.green.shade700,
+              context.cores.positivo,
             ),
           ),
         ],
@@ -99,7 +98,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
       children: [
         Text(
           rotulo,
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
+          style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
         ),
         const SizedBox(height: 4),
         Text(
@@ -157,8 +156,8 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   ) {
     final selecionado = controlador.selecionados.contains(lancamento.id);
     final corStatus = lancamento.aReceber
-        ? Colors.orange.shade800
-        : Colors.green.shade700;
+        ? context.cores.atencao
+        : context.cores.positivo;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -171,7 +170,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
         border: Border.all(
           color: selecionado
               ? TelaExtratoGanhos.corPrincipal
-              : Colors.grey.shade300,
+              : context.cores.borda,
           width: selecionado ? 1.5 : 1,
         ),
       ),
@@ -207,7 +206,10 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
                 const SizedBox(height: 4),
                 Text(
                   _descricaoData(lancamento),
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.cores.textoSuave,
+                  ),
                 ),
               ],
             ),
@@ -263,10 +265,10 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cores.superficie,
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),

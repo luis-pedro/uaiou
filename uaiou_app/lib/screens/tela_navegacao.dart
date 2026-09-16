@@ -48,7 +48,6 @@ class TelaNavegacao extends StatelessWidget {
         : PontoGeo(posicaoLida.lat, posicaoLida.lng);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -142,7 +141,7 @@ class TelaNavegacao extends StatelessWidget {
     final restante = trajeto.metrosRestantes(posicao);
 
     return Material(
-      color: Colors.white,
+      color: context.cores.superficie,
       borderRadius: BorderRadius.circular(18),
       elevation: 6,
       child: Padding(
@@ -165,7 +164,10 @@ class TelaNavegacao extends StatelessWidget {
                 if (trajeto.duracaoMinutos != null)
                   Text(
                     '${trajeto.duracaoMinutos} min no total',
-                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: context.cores.textoSuave,
+                    ),
                   ),
               ],
             ),
@@ -177,7 +179,7 @@ class TelaNavegacao extends StatelessWidget {
               trajeto.passaPelaRetirada
                   ? 'Trajeto passando pelo estabelecimento antes da entrega.'
                   : 'Trajeto direto ao destino — o estabelecimento não marcou o ponto dele.',
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
             ),
             if (trajeto.passos.length > 1) ...[
               const SizedBox(height: 10),
@@ -224,7 +226,7 @@ class TelaNavegacao extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.map_outlined, size: 44, color: Colors.grey.shade500),
+            Icon(Icons.map_outlined, size: 44, color: context.cores.textoSuave),
             const SizedBox(height: 14),
             Text(
               rota?.trajeto.explicacao ?? 'Carregando o trajeto…',
@@ -232,10 +234,10 @@ class TelaNavegacao extends StatelessWidget {
               style: const TextStyle(fontSize: 15),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Você continua podendo entregar e finalizar normalmente.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
             ),
             const SizedBox(height: 18),
             OutlinedButton.icon(

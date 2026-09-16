@@ -34,7 +34,6 @@ class _TelaPreferenciasNotificacaoState
     final controlador = context.watch<ControladorPreferenciasNotificacao>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -87,15 +86,18 @@ class _TelaPreferenciasNotificacaoState
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'O servidor não permite silenciar estes eventos — não '
                 'há como desligá-los.',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
               const SizedBox(height: 12),
               ...preferencias.mandatory.map(
                 (tipo) => ListTile(
-                  leading: const Icon(Icons.lock_outline, color: Colors.grey),
+                  leading: Icon(
+                    Icons.lock_outline,
+                    color: context.cores.textoSuave,
+                  ),
                   title: Text(tipo),
                   dense: true,
                 ),

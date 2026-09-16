@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
@@ -55,7 +57,7 @@ class AcaoSair extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cores.superficie,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: _corPerigo.withValues(alpha: .4)),
           ),

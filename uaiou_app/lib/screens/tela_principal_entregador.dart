@@ -168,7 +168,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cores.superficie,
           borderRadius: BorderRadius.circular(25),
         ),
         child: Row(
@@ -189,10 +189,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                     ',',
                   ) ??
                   "—",
-              style: const TextStyle(
-                color: Color.fromRGBO(94, 94, 94, 1),
-                fontSize: 15,
-              ),
+              style: TextStyle(color: context.cores.textoSuave, fontSize: 15),
             ),
           ],
         ),
@@ -211,7 +208,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
     final Color corTexto = disponivel
         ? const Color.fromRGBO(108, 201, 80, 1)
-        : Colors.grey.shade300;
+        : context.cores.borda;
 
     final Color corFundo = disponivel
         ? const Color.fromRGBO(17, 76, 0, 0.73)
@@ -219,7 +216,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
     final Color corBorda = disponivel
         ? const Color.fromRGBO(108, 201, 80, 1)
-        : Colors.grey;
+        : context.cores.textoSuave;
 
     return Positioned(
       top: 40,
@@ -295,7 +292,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cores.superficie,
           borderRadius: BorderRadius.circular(25),
         ),
         child: Column(
@@ -304,10 +301,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   "Ganhos do período",
                   style: TextStyle(
-                    color: Color.fromRGBO(94, 94, 94, 1),
+                    color: context.cores.textoSuave,
                     fontSize: 15,
                   ),
                 ),
@@ -327,8 +324,8 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             const SizedBox(height: 8),
             Text(
               resumo.total.formatarBRL(),
-              style: const TextStyle(
-                color: Color.fromRGBO(34, 34, 34, 1),
+              style: TextStyle(
+                color: context.cores.texto,
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
               ),
@@ -339,13 +336,13 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 Expanded(
                   child: _buildRotuloGanho(
                     resumo.receivable.formatarBRL(),
-                    Colors.orange.shade800,
+                    context.cores.atencao,
                   ),
                 ),
                 Expanded(
                   child: _buildRotuloGanho(
                     resumo.settled.formatarBRL(),
-                    Colors.green.shade700,
+                    context.cores.positivo,
                   ),
                 ),
               ],
@@ -399,15 +396,15 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       minChildSize: 0.12,
       maxChildSize: 0.92,
       builder: (context, controlador) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(25),
             topRight: Radius.circular(25),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
+              color: context.cores.sombra,
               blurRadius: 12,
               offset: Offset(0, -2),
             ),
@@ -430,7 +427,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: context.cores.borda,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -438,12 +435,12 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       "Pedidos disponíveis",
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Color.fromRGBO(34, 34, 34, 1),
+                        color: context.cores.texto,
                       ),
                     ),
                     IconButton(
@@ -484,8 +481,8 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 85),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(25),
             topRight: Radius.circular(25),
@@ -493,15 +490,12 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
         ),
         child: Row(
           children: [
-            Icon(Icons.visibility_off, color: Colors.grey.shade500),
+            Icon(Icons.visibility_off, color: context.cores.textoSuave),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
                 "Fique disponível para ver os pedidos por perto.",
-                style: TextStyle(
-                  color: Color.fromRGBO(94, 94, 94, 1),
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: context.cores.textoSuave, fontSize: 14),
               ),
             ),
             TextButton(
@@ -546,12 +540,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color.fromRGBO(94, 94, 94, 1),
-          width: 1,
-        ),
+        border: Border.all(color: context.cores.textoSuave, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -563,10 +554,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                   pedido.nomeEstabelecimento?.isNotEmpty == true
                       ? pedido.nomeEstabelecimento!
                       : "Pedido ${pedido.rotuloCurto}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color.fromRGBO(34, 34, 34, 1),
+                    color: context.cores.texto,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -587,10 +578,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             pedido.distanciaKm != null
                 ? "${pedido.enderecoResumido} · ${pedido.distanciaKm!.toStringAsFixed(1)} km"
                 : pedido.enderecoResumido,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color.fromRGBO(94, 94, 94, 1),
-            ),
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
           // RF-A14.4 — a distância que decide o aceite é a por via, e
           // ela custa uma chamada ao provedor: fica atrás de um toque,
@@ -614,12 +602,12 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 Icon(
                   Icons.hourglass_top,
                   size: 16,
-                  color: Colors.orange.shade700,
+                  color: context.cores.atencao,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   "Contraproposta enviada — aguardando o estabelecimento",
-                  style: TextStyle(fontSize: 12, color: Colors.orange.shade700),
+                  style: TextStyle(fontSize: 12, color: context.cores.atencao),
                 ),
               ],
             ),
@@ -714,7 +702,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
               const SizedBox(height: 4),
               Text(
                 pedido.enderecoResumido,
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
               const SizedBox(height: 16),
               PainelRota(
@@ -812,15 +800,15 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       child: Container(
         width: double.infinity,
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -861,7 +849,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.
@@ -899,7 +887,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       top: 40,
       left: 100,
       child: Material(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(25),
         child: InkWell(
           borderRadius: BorderRadius.circular(25),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
@@ -33,8 +35,6 @@ class _CadastroEstabelecimento1State extends State<CadastroEstabelecimento1> {
         : const <String, String>{};
 
     return Scaffold(
-      backgroundColor: Colors.white,
-
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -74,7 +74,7 @@ class _CadastroEstabelecimento1State extends State<CadastroEstabelecimento1> {
                     child: LinearProgressIndicator(
                       value: 0.33,
                       minHeight: 10,
-                      backgroundColor: Colors.grey.shade300,
+                      backgroundColor: context.cores.borda,
                       valueColor: const AlwaysStoppedAnimation(
                         Color.fromRGBO(108, 201, 80, 1),
                       ),
@@ -166,9 +166,12 @@ class _CadastroEstabelecimento1State extends State<CadastroEstabelecimento1> {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text(
+                      child: Text(
                         'Voltar a tela principal',
-                        style: TextStyle(color: Colors.black54, fontSize: 12),
+                        style: TextStyle(
+                          color: context.cores.textoSuave,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),

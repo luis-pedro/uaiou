@@ -89,12 +89,12 @@ class PainelRota extends StatelessWidget {
   }) {
     return Row(
       children: [
-        Icon(Icons.map_outlined, size: 18, color: Colors.grey.shade600),
+        Icon(Icons.map_outlined, size: 18, color: context.cores.textoSuave),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             mensagem,
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
         ),
         if (comTentarNovamente)
@@ -123,7 +123,7 @@ class PainelRota extends StatelessWidget {
         // RF-A14.5 — onde as duas medidas convivem, cada uma é dita
         // pelo nome. "2,1 km" da lista contra "3,0 km" da rota, sem
         // explicação, é chamado de suporte aberto.
-        ..._comparacaoDeDistancias(rota),
+        ..._comparacaoDeDistancias(context, rota),
 
         // RF-25.5 — a rota existe, mas não passa pela loja: dizer isso
         // evita o entregador achar que o app o mandou pular a retirada.
@@ -168,7 +168,10 @@ class PainelRota extends StatelessWidget {
     );
   }
 
-  List<Widget> _comparacaoDeDistancias(RotaDoPedido rota) {
+  List<Widget> _comparacaoDeDistancias(
+    BuildContext context,
+    RotaDoPedido rota,
+  ) {
     final linhaReta = distanciaEmLinhaRetaKm ?? rota.distanciaEmLinhaRetaKm;
     final porVia = rota.trajeto.distanciaPorViaKm;
     if (linhaReta == null && porVia == null) return const [];
@@ -181,7 +184,7 @@ class PainelRota extends StatelessWidget {
           if (linhaReta != null)
             '${linhaReta.toStringAsFixed(1)} km em linha reta (o número da lista)',
         ].join(' · '),
-        style: const TextStyle(fontSize: 13, color: Colors.black87),
+        style: TextStyle(fontSize: 13, color: context.cores.texto),
       ),
     ];
   }

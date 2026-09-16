@@ -59,7 +59,6 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -197,7 +196,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50,
+        color: Colors.amber.withValues(alpha: .16),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.amber.shade300),
       ),
@@ -228,7 +227,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.teal.shade50,
+        color: Colors.teal.withValues(alpha: .14),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.teal, width: 1.5),
       ),
@@ -306,16 +305,16 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.cores.superficieSuave,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.cores.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             titulo,
-            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
           const SizedBox(height: 6),
           child,
@@ -338,9 +337,9 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Código de entrega',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
             ),
             const SizedBox(height: 10),
             if (_controlador.erroCodigo != null)
@@ -411,9 +410,9 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.purple.shade50,
+        color: Colors.purple.withValues(alpha: .14),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.purple.shade100),
+        border: Border.all(color: Colors.purple.withValues(alpha: .24)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

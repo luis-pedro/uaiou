@@ -92,8 +92,8 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.only(top: 70),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
@@ -220,9 +220,12 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
-                const Text(
+                Text(
                   "Marque todas que você aceita",
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.cores.textoSuave,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 for (final forma in FormaPagamento.values)
@@ -300,10 +303,10 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
                 // "Nome do entregador" parecia dado real; é só o `GET /me` que
                 // ainda não voltou.
                 nomeEntregador.isEmpty ? "Carregando…" : nomeEntregador,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color.fromRGBO(34, 34, 34, 1),
+                  color: context.cores.texto,
                 ),
               ),
               // A cidade não existe no perfil do entregador (`MeProfile` só tem
@@ -313,9 +316,9 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
                 const SizedBox(height: 5),
                 Text(
                   cidadeEntregador,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: CoresUaiou.textoSecundario,
+                    color: context.cores.textoSuave,
                   ),
                 ),
               ],
@@ -380,9 +383,9 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
                   child: Text(
                     '${componente.metrica}: ${componente.valor}'
                     '${componente.contribuicao != null ? ' (${componente.contribuicao})' : ''}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color.fromRGBO(94, 94, 94, 1),
+                      color: context.cores.textoSuave,
                     ),
                   ),
                 ),
@@ -411,29 +414,23 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cores.superficie,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color.fromRGBO(94, 94, 94, 1),
-              width: 1.5,
-            ),
+            border: Border.all(color: context.cores.textoSuave, width: 1.5),
           ),
           child: Row(
             children: [
-              Icon(icone, size: 20, color: const Color.fromRGBO(34, 34, 34, 1)),
+              Icon(icone, size: 20, color: context.cores.texto),
               const SizedBox(width: 14),
               Text(
                 texto,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Color.fromRGBO(34, 34, 34, 1),
-                ),
+                style: TextStyle(fontSize: 15, color: context.cores.texto),
               ),
               const Spacer(),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: Color.fromRGBO(94, 94, 94, 1),
+                color: context.cores.textoSuave,
               ),
             ],
           ),
@@ -454,15 +451,15 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
       child: Container(
         width: double.infinity,
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -503,7 +500,7 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.

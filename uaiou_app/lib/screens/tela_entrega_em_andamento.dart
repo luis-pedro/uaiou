@@ -133,10 +133,12 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: chegou ? Colors.teal.shade50 : Colors.grey.shade100,
+                color: chegou
+                    ? Colors.teal.withValues(alpha: .14)
+                    : context.cores.superficieSuave,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: chegou ? Colors.teal : Colors.grey.shade400,
+                  color: chegou ? Colors.teal : context.cores.borda,
                 ),
               ),
               child: Row(
@@ -145,7 +147,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                     url: pedido.logoEstabelecimento,
                     icone: chegou ? Icons.storefront : Icons.two_wheeler,
                     raio: 24,
-                    corFundo: chegou ? Colors.teal : Colors.grey.shade600,
+                    corFundo: chegou ? Colors.teal : context.cores.textoSuave,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -301,7 +303,6 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     _avisarErro(controlador);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -363,12 +364,12 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
           minChildSize: .16,
           maxChildSize: .92,
           builder: (contexto, rolagem) => Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: context.cores.superficie,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black26,
+                  color: context.cores.sombra,
                   blurRadius: 12,
                   offset: Offset(0, -2),
                 ),
@@ -384,7 +385,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                     height: 5,
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade400,
+                      color: context.cores.borda,
                       borderRadius: BorderRadius.circular(3),
                     ),
                   ),
@@ -494,17 +495,17 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
 
     if (rota == null || !rota.temTracado) {
       return Container(
-        color: Colors.grey.shade200,
+        color: context.cores.superficieSuave,
         alignment: Alignment.topCenter,
         padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
         child: Row(
           children: [
-            Icon(Icons.map_outlined, color: Colors.grey.shade600),
+            Icon(Icons.map_outlined, color: context.cores.textoSuave),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 rota?.trajeto.explicacao ?? 'Carregando o trajeto…',
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
             ),
           ],
@@ -530,15 +531,15 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       decoration: BoxDecoration(
         color: dentro
             ? corSucesso.withValues(alpha: .12)
-            : Colors.grey.shade100,
+            : context.cores.superficieSuave,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: dentro ? corSucesso : Colors.grey.shade400),
+        border: Border.all(color: dentro ? corSucesso : context.cores.borda),
       ),
       child: Row(
         children: [
           Icon(
             dentro ? Icons.location_on : Icons.location_searching,
-            color: dentro ? corSucesso : Colors.grey.shade600,
+            color: dentro ? corSucesso : context.cores.textoSuave,
             size: 32,
           ),
           const SizedBox(width: 14),
@@ -569,9 +570,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color.fromRGBO(94, 94, 94, 1)),
+        border: Border.all(color: context.cores.textoSuave),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,7 +585,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             const SizedBox(height: 4),
             Text(
               '$tentativas tentativa(s) restante(s)',
-              style: const TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
             ),
           ],
           const SizedBox(height: 14),
@@ -676,16 +677,16 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: Colors.orange.withValues(alpha: .14),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.orange.shade300),
+        border: Border.all(color: context.cores.atencao),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.support_agent, color: Colors.orange.shade700),
+              Icon(Icons.support_agent, color: context.cores.atencao),
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
@@ -704,10 +705,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               '${_formatarHora(contingencia.prazoDoEstabelecimento!)}',
             ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'O aplicativo atualiza sozinho assim que houver novidade — '
             'não é preciso ficar tentando o código.',
-            style: TextStyle(fontSize: 13, color: Colors.black87),
+            style: TextStyle(fontSize: 13, color: context.cores.texto),
           ),
           const SizedBox(height: 10),
           Align(
@@ -737,7 +738,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: corPrincipal, width: 1.5),
       ),
@@ -749,10 +750,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'O código não chegou ao destinatário a tempo. Tire uma foto '
             'do local de entrega para comprovar.',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
           const SizedBox(height: 14),
           if (controlador.enviandoFoto)

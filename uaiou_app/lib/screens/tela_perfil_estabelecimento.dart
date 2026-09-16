@@ -104,8 +104,8 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.only(top: 70),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
@@ -213,20 +213,14 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
                 // Placeholder que parecia nome real enquanto `GET /me` não
                 // voltava.
                 nomeRestaurante.isEmpty ? "Carregando…" : nomeRestaurante,
-                style: const TextStyle(
-                  fontSize: 20,
-                  color: Color.fromRGBO(34, 34, 34, 1),
-                ),
+                style: TextStyle(fontSize: 20, color: context.cores.texto),
               ),
               const SizedBox(height: 5),
               Text(
                 cidadeRestaurante.isEmpty
                     ? "Cidade não cadastrada — toque em Informações pessoais"
                     : cidadeRestaurante,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color.fromRGBO(94, 94, 94, 1),
-                ),
+                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
             ],
           ),
@@ -276,7 +270,10 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
                   if (assinatura != null)
                     Text(
                       '${assinatura.consumidosNoCiclo}/${assinatura.creditosMensais} usados neste ciclo',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.cores.textoSuave,
+                      ),
                     ),
                 ],
               ),
@@ -334,9 +331,9 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
                   child: Text(
                     '${componente.metrica}: ${componente.valor}'
                     '${componente.contribuicao != null ? ' (${componente.contribuicao})' : ''}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Color.fromRGBO(94, 94, 94, 1),
+                      color: context.cores.textoSuave,
                     ),
                   ),
                 ),
@@ -365,29 +362,23 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.cores.superficie,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: const Color.fromRGBO(94, 94, 94, 1),
-              width: 1.5,
-            ),
+            border: Border.all(color: context.cores.textoSuave, width: 1.5),
           ),
           child: Row(
             children: [
-              Icon(icone, size: 20, color: const Color.fromRGBO(34, 34, 34, 1)),
+              Icon(icone, size: 20, color: context.cores.texto),
               const SizedBox(width: 14),
               Text(
                 texto,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Color.fromRGBO(34, 34, 34, 1),
-                ),
+                style: TextStyle(fontSize: 15, color: context.cores.texto),
               ),
               const Spacer(),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
                 size: 20,
-                color: Color.fromRGBO(94, 94, 94, 1),
+                color: context.cores.textoSuave,
               ),
             ],
           ),
@@ -408,15 +399,15 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
       child: Container(
         width: double.infinity,
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -457,7 +448,7 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.

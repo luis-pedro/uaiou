@@ -129,7 +129,6 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
@@ -238,10 +237,13 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                   decoration: _decoracao('Telefone (opcional)'),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Sem telefone, o código de entrega só pode ser repassado '
                   'por você diretamente ao recebedor.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.cores.textoSuave,
+                  ),
                 ),
 
                 const SizedBox(height: 24),
@@ -252,7 +254,7 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                     padding: const EdgeInsets.all(12),
                     margin: const EdgeInsets.only(bottom: 14),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: Colors.red.withValues(alpha: .14),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.red.shade200),
                     ),
@@ -328,7 +330,7 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
   InputDecoration _decoracao(String rotulo) => InputDecoration(
     labelText: rotulo,
     filled: true,
-    fillColor: Colors.grey.shade100,
+    fillColor: context.cores.superficieSuave,
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide.none,

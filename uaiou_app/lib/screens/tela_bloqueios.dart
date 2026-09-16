@@ -83,7 +83,6 @@ class _TelaBloqueiosState extends State<TelaBloqueios> {
     final estado = context.watch<EstadoBloqueios>();
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: TelaBloqueios.corPrincipal,
         foregroundColor: Colors.white,

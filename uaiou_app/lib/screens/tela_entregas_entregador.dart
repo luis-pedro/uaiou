@@ -71,8 +71,8 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
     return Positioned.fill(
       child: Container(
         margin: const EdgeInsets.only(top: 70),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
@@ -161,10 +161,10 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   Widget _buildTituloSecao(String texto) {
     return Text(
       texto,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: Color.fromRGBO(34, 34, 34, 1),
+        color: context.cores.texto,
       ),
     );
   }
@@ -178,12 +178,9 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cores.superficie,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: const Color.fromRGBO(94, 94, 94, 1),
-          width: 1.5,
-        ),
+        border: Border.all(color: context.cores.textoSuave, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,10 +192,10 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
                   entrega.nomeEstabelecimento?.isNotEmpty == true
                       ? entrega.nomeEstabelecimento!
                       : "Pedido ${entrega.rotuloCurto}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Color.fromRGBO(34, 34, 34, 1),
+                    color: context.cores.texto,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -214,10 +211,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
           // vitrine, só o bairro (RF-11.6).
           Text(
             entrega.enderecoResumido,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color.fromRGBO(94, 94, 94, 1),
-            ),
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
 
           const SizedBox(height: 14),
@@ -260,14 +254,11 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color.fromRGBO(94, 94, 94, 1)),
+        border: Border.all(color: context.cores.textoSuave),
       ),
       child: Text(
         "há $minutos min",
-        style: const TextStyle(
-          fontSize: 13,
-          color: Color.fromRGBO(34, 34, 34, 1),
-        ),
+        style: TextStyle(fontSize: 13, color: context.cores.texto),
       ),
     );
   }
@@ -284,15 +275,15 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
       child: Container(
         width: double.infinity,
         height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: context.cores.superficie,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(40),
             topRight: Radius.circular(40),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: context.cores.sombra,
               blurRadius: 15,
               offset: Offset(0, -3),
             ),
@@ -333,7 +324,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   }) {
     final bool selecionado = paginaAtual == index;
 
-    final Color cor = selecionado ? corPrincipal : Colors.grey;
+    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
 
     // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
     // os quatro itens soavam iguais.

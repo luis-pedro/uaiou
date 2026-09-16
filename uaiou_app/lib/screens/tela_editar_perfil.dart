@@ -140,7 +140,6 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
     final ehEstabelecimento = perfil?.papel == Papel.estabelecimento;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: TelaEditarPerfil.corPrincipal,
         foregroundColor: Colors.white,
@@ -206,9 +205,12 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'É o ponto de referência para orientar a retirada dos pedidos — não substitui o endereço em texto acima.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.cores.textoSuave,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 MapaEndereco(

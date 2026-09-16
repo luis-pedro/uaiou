@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:uaiou/core/tema/cores.dart';
+
 class PrincipalLogin extends StatelessWidget {
   const PrincipalLogin({super.key});
 
@@ -56,8 +58,8 @@ class PrincipalLogin extends StatelessWidget {
                   horizontal: 40,
                   vertical: 40,
                 ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: context.cores.superficie,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(40),
                     topRight: Radius.circular(40),

@@ -41,10 +41,7 @@ class _RodapeVersaoState extends State<RodapeVersao> {
       child: Center(
         child: Text(
           versao,
-          style: const TextStyle(
-            fontSize: 12,
-            color: CoresUaiou.textoSecundario,
-          ),
+          style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
         ),
       ),
     );
