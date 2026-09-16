@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:uaiou/core/tema/controlador_tema.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:uaiou/core/tema/tema.dart';
 
@@ -55,6 +56,34 @@ void main() {
       );
 
       expect(lidas.fundo, CoresApp.escuro.fundo);
+    });
+
+    test('a escolha do usuário troca o modo e avisa a tela', () async {
+      final controlador = ControladorTema();
+      var avisos = 0;
+      controlador.addListener(() => avisos++);
+
+      expect(controlador.modo, ThemeMode.system);
+      expect(controlador.rotulo, 'Tema: do sistema');
+
+      // Sem plugin de armazenamento no ambiente de teste, gravar falha — e é
+      // justamente o que se quer garantir: a tela troca mesmo assim, porque
+      // não conseguir lembrar a preferência é menos grave que travar a troca.
+      await controlador.definir(ThemeMode.dark);
+
+      expect(controlador.modo, ThemeMode.dark);
+      expect(controlador.rotulo, 'Tema: escuro');
+      expect(avisos, 1);
+
+      // Repetir a mesma escolha não reconstrói a árvore à toa.
+      await controlador.definir(ThemeMode.dark);
+      expect(avisos, 1);
+    });
+
+    test('carregar sem cofre disponível mantém o padrão do sistema', () async {
+      final controlador = ControladorTema();
+      await controlador.carregar();
+      expect(controlador.modo, ThemeMode.system);
     });
 
     test('texto de apoio tem contraste legível nos dois temas', () {

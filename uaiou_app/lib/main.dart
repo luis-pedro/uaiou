@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:uaiou/core/tema/controlador_tema.dart';
 import 'package:uaiou/core/tema/tema.dart';
 import 'package:provider/provider.dart';
 
@@ -192,6 +193,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        // Preferência de tema: fora do ciclo da sessão de propósito — sair da
+        // conta não deve devolver o app ao tema que a pessoa não quer.
+        ChangeNotifierProvider<ControladorTema>(
+          create: (_) => ControladorTema()..carregar(),
+        ),
         // Cliente e controlador nascem juntos e se conhecem: o
         // controlador É o ProvedorDeCredencial do cliente (RF-A01.3).
         Provider<ClienteApi>(
@@ -420,23 +426,25 @@ class MyApp extends StatelessWidget {
               _sincronizar(estado!, sessao, estado.limpar),
         ),
       ],
-      child: MaterialApp(
-        title: 'UaiOu',
-        debugShowCheckedModeBanner: false,
-        theme: temaClaro(_transicoes),
-        darkTheme: temaEscuro(_transicoes),
-        // Segue o aparelho: quem entrega à noite já deixou o sistema no escuro,
-        // e obrigar a escolher de novo dentro do app é trabalho à toa.
-        themeMode: ThemeMode.system,
-        home: const _Raiz(),
-        onGenerateRoute: _gerarRota,
-        // RF-A13.6 — qualquer tela, a qualquer momento: um 426 aciona
-        // o bloqueio por cima de tudo, sem passar pelo tratamento de
-        // erro genérico de cada tela.
-        builder: (contexto, filho) => ValueListenableBuilder<bool>(
-          valueListenable: _atualizacaoObrigatoria,
-          builder: (_, exige, _) =>
-              exige ? const _TelaAtualizacaoObrigatoria() : filho!,
+      child: Consumer<ControladorTema>(
+        builder: (contexto, tema, _) => MaterialApp(
+          title: 'UaiOu',
+          debugShowCheckedModeBanner: false,
+          theme: temaClaro(_transicoes),
+          darkTheme: temaEscuro(_transicoes),
+          // Padrão é seguir o aparelho: quem entrega à noite já deixou o sistema
+          // no escuro. A escolha no perfil existe para quem discorda dele.
+          themeMode: tema.modo,
+          home: const _Raiz(),
+          onGenerateRoute: _gerarRota,
+          // RF-A13.6 — qualquer tela, a qualquer momento: um 426 aciona
+          // o bloqueio por cima de tudo, sem passar pelo tratamento de
+          // erro genérico de cada tela.
+          builder: (contexto, filho) => ValueListenableBuilder<bool>(
+            valueListenable: _atualizacaoObrigatoria,
+            builder: (_, exige, _) =>
+                exige ? const _TelaAtualizacaoObrigatoria() : filho!,
+          ),
         ),
       ),
     );

@@ -10,7 +10,9 @@ import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/rede/cliente_api.dart';
 import 'package:uaiou/core/uploads/repositorio_uploads.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/core/tema/controlador_tema.dart';
 import 'package:uaiou/screens/widgets/rodape_versao.dart';
+import 'package:uaiou/screens/widgets/seletor_de_tema.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/widgets/acao_sair.dart';
 
@@ -178,6 +180,16 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
                 texto: "Preferências de notificação",
                 onTap: () =>
                     Navigator.pushNamed(context, '/preferencias_notificacao'),
+              ),
+
+              const SizedBox(height: 15),
+
+              _buildOpcao(
+                icone: context.watch<ControladorTema>().modo == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
+                texto: context.watch<ControladorTema>().rotulo,
+                onTap: () => escolherTema(context),
               ),
 
               const SizedBox(height: 30),
