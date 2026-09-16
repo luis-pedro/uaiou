@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:uaiou/core/rotas/controlador_rota.dart';
@@ -48,7 +50,7 @@ class PainelRota extends StatelessWidget {
     this.alturaDoMapa = 260,
   });
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +162,9 @@ class PainelRota extends StatelessWidget {
 
   void _abrirNavegacao(BuildContext context) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => TelaNavegacao(pedidoId: pedidoId)),
+      MaterialPageRoute<void>(
+        builder: (_) => TelaNavegacao(pedidoId: pedidoId),
+      ),
     );
   }
 

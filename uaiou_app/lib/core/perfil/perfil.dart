@@ -110,6 +110,7 @@ class PerfilDetalhado {
   final bool? disponivel;
   final LocalizacaoEntregador? localizacao;
   final int? entregasConcluidas;
+
   /// Vazia enquanto o entregador não informou nenhuma.
   final List<FormaPagamento> formasPagamento;
 
@@ -148,19 +149,26 @@ class PerfilDetalhado {
     placaDoVeiculo: json['vehiclePlate'] as String?,
     disponivel: json['available'] as bool?,
     localizacao: json['location'] is Map
-        ? LocalizacaoEntregador.doJson(Map<String, dynamic>.from(json['location'] as Map))
+        ? LocalizacaoEntregador.doJson(
+            Map<String, dynamic>.from(json['location'] as Map),
+          )
         : null,
     entregasConcluidas: (json['completedDeliveries'] as num?)?.toInt(),
     formasPagamento: switch (json['paymentMethods']) {
       final List<dynamic> lista =>
-        lista.map(FormaPagamento.doContrato).whereType<FormaPagamento>().toList(),
+        lista
+            .map(FormaPagamento.doContrato)
+            .whereType<FormaPagamento>()
+            .toList(),
       _ => const [],
     },
     cnpj: json['cnpj'] as String?,
     nomeDoNegocio: json['businessName'] as String?,
     logoObjectKey: json['logoObjectKey'] as String?,
     endereco: json['address'] is Map
-        ? EnderecoEstabelecimento.doJson(Map<String, dynamic>.from(json['address'] as Map))
+        ? EnderecoEstabelecimento.doJson(
+            Map<String, dynamic>.from(json['address'] as Map),
+          )
         : null,
     score: json['score'] as String?,
     fotoUrl: json['photoUrl'] as String?,
@@ -203,7 +211,9 @@ class Perfil {
     email: json['email'] as String? ?? '',
     telefone: json['telefone'] as String?,
     detalhes: json['profile'] is Map
-        ? PerfilDetalhado.doJson(Map<String, dynamic>.from(json['profile'] as Map))
+        ? PerfilDetalhado.doJson(
+            Map<String, dynamic>.from(json['profile'] as Map),
+          )
         : null,
     camposPendentes: json['pendingFields'] is List
         ? List<String>.from(json['pendingFields'] as List)

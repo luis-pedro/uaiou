@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/documentos/estado_documentos.dart';
@@ -10,7 +12,7 @@ import 'package:uaiou/screens/widgets/lista_de_documentos.dart';
 class TelaDocumentos extends StatefulWidget {
   const TelaDocumentos({super.key});
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   State<TelaDocumentos> createState() => _TelaDocumentosState();

@@ -250,7 +250,8 @@ String _mensagemPadrao(int? status) => switch (status) {
   404 => 'Não encontramos o que você procura.',
   409 => 'Isso mudou enquanto você olhava. Atualize e tente de novo.',
   422 => 'Não foi possível concluir a operação.',
-  426 => 'Esta versão do UaiOu não é mais compatível com o servidor. '
-      'Atualize o aplicativo para continuar.',
+  426 =>
+    'Esta versão do UaiOu não é mais compatível com o servidor. '
+        'Atualize o aplicativo para continuar.',
   _ => 'Algo deu errado. Tente novamente em instantes.',
 };

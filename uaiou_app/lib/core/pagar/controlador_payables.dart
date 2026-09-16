@@ -23,7 +23,9 @@ class ControladorPayables extends ChangeNotifier {
     notifyListeners();
     try {
       final resultado = await _repositorio.obter();
-      _estado = resultado.porEntregador.isEmpty ? const Vazio() : Pronto(resultado);
+      _estado = resultado.porEntregador.isEmpty
+          ? const Vazio()
+          : Pronto(resultado);
     } on ErroApi catch (erro) {
       _estado = Falhou(erro);
     } finally {

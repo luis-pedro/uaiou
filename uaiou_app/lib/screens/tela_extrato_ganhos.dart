@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/formato/data.dart';
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/ganhos/controlador_ganhos.dart';
 import 'package:uaiou/core/ganhos/modelo_ganhos.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 /// ===============================================================
@@ -17,7 +21,7 @@ import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 class TelaExtratoGanhos extends StatefulWidget {
   const TelaExtratoGanhos({super.key});
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   State<TelaExtratoGanhos> createState() => _TelaExtratoGanhosState();
@@ -46,7 +50,8 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
           children: [
             _buildResumo(controlador),
             Expanded(child: _buildLista(controlador)),
-            if (controlador.selecionados.isNotEmpty) _buildBarraConfirmar(controlador),
+            if (controlador.selecionados.isNotEmpty)
+              _buildBarraConfirmar(controlador),
           ],
         ),
       ),
@@ -63,13 +68,25 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
       child: Row(
         children: [
           Expanded(
-            child: _buildValorResumo('Total do período', resumo.total.formatarBRL(), Colors.black87),
+            child: _buildValorResumo(
+              'Total do período',
+              resumo.total.formatarBRL(),
+              Colors.black87,
+            ),
           ),
           Expanded(
-            child: _buildValorResumo('A receber', resumo.receivable.formatarBRL(), Colors.orange.shade800),
+            child: _buildValorResumo(
+              'A receber',
+              resumo.receivable.formatarBRL(),
+              Colors.orange.shade800,
+            ),
           ),
           Expanded(
-            child: _buildValorResumo('Recebido', resumo.settled.formatarBRL(), Colors.green.shade700),
+            child: _buildValorResumo(
+              'Recebido',
+              resumo.settled.formatarBRL(),
+              Colors.green.shade700,
+            ),
           ),
         ],
       ),
@@ -80,11 +97,18 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(rotulo, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+        Text(
+          rotulo,
+          style: const TextStyle(fontSize: 12, color: Colors.black54),
+        ),
         const SizedBox(height: 4),
         Text(
           valor,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: cor),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: cor,
+          ),
         ),
       ],
     );
@@ -120,23 +144,34 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
 
   void _pedirMais(ControladorGanhos controlador) {
     if (controlador.carregandoMais) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) => controlador.carregarMais());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => controlador.carregarMais(),
+    );
   }
 
   // RF-A09.5 — leitura visualmente distinta entre a receber e
   // recebido, e data + pedido de origem de cada lançamento.
-  Widget _buildCardLancamento(Lancamento lancamento, ControladorGanhos controlador) {
+  Widget _buildCardLancamento(
+    Lancamento lancamento,
+    ControladorGanhos controlador,
+  ) {
     final selecionado = controlador.selecionados.contains(lancamento.id);
-    final corStatus = lancamento.aReceber ? Colors.orange.shade800 : Colors.green.shade700;
+    final corStatus = lancamento.aReceber
+        ? Colors.orange.shade800
+        : Colors.green.shade700;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: selecionado ? TelaExtratoGanhos.corPrincipal.withValues(alpha: 0.08) : Colors.white,
+        color: selecionado
+            ? TelaExtratoGanhos.corPrincipal.withValues(alpha: 0.08)
+            : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: selecionado ? TelaExtratoGanhos.corPrincipal : Colors.grey.shade300,
+          color: selecionado
+              ? TelaExtratoGanhos.corPrincipal
+              : Colors.grey.shade300,
           width: selecionado ? 1.5 : 1,
         ),
       ),
@@ -164,10 +199,16 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
                         ? 'Pedido ${lancamento.orderNumber}'
                         : 'Pedido',
                   ].join(' '),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Text(_descricaoData(lancamento), style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                Text(
+                  _descricaoData(lancamento),
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
               ],
             ),
           ),
@@ -176,7 +217,10 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
             children: [
               Text(
                 lancamento.amount.formatarBRL(),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
               ),
               const SizedBox(height: 4),
               Container(
@@ -187,7 +231,11 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
                 ),
                 child: Text(
                   lancamento.aReceber ? 'A receber' : 'Recebido',
-                  style: TextStyle(color: corStatus, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: corStatus,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -205,8 +253,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
     return 'Entregue em $formatado · recebido em ${_formatarData(acertado)}';
   }
 
-  String _formatarData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+  String _formatarData(DateTime data) => formatarData(data);
 
   // BARRA DE CONFIRMAÇÃO — RF-A09.3.
   Widget _buildBarraConfirmar(ControladorGanhos controlador) {
@@ -217,7 +264,13 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: const Offset(0, -2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -228,7 +281,9 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
               ),
             ),
             ElevatedButton(
-              onPressed: controlador.confirmando ? null : () => _confirmar(controlador),
+              onPressed: controlador.confirmando
+                  ? null
+                  : () => _confirmar(controlador),
               style: ElevatedButton.styleFrom(
                 backgroundColor: TelaExtratoGanhos.corPrincipal,
                 foregroundColor: Colors.white,
@@ -237,7 +292,10 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Confirmar recebimento'),
             ),
@@ -280,14 +338,10 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
     if (!mounted) return;
 
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Recebimento confirmado.')),
-      );
+      mostrarAviso(context, 'Recebimento confirmado.');
     } else {
       final erro = controlador.erro;
-      if (erro != null) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(erro)));
-      }
+      if (erro != null) mostrarAviso(context, erro, erro: true);
     }
   }
 }

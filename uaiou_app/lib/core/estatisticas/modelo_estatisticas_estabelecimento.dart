@@ -32,7 +32,9 @@ class EstatisticasEstabelecimento {
   });
 
   factory EstatisticasEstabelecimento.doJson(Object? json) {
-    final mapa = json is Map ? Map<String, dynamic>.from(json) : const <String, dynamic>{};
+    final mapa = json is Map
+        ? Map<String, dynamic>.from(json)
+        : const <String, dynamic>{};
     final periodo = mapa['period'] is Map
         ? Map<String, dynamic>.from(mapa['period'] as Map)
         : const <String, dynamic>{};

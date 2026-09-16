@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
@@ -19,7 +21,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   int paginaAtual = 1;
 
   /// Cor principal do aplicativo
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   void initState() {
@@ -333,18 +335,25 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

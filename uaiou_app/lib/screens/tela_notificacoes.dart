@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
@@ -26,7 +28,7 @@ class TelaNotificacoes extends StatefulWidget {
 
 class _TelaNotificacoesState extends State<TelaNotificacoes>
     with WidgetsBindingObserver {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   void initState() {
@@ -113,7 +115,7 @@ class _ItemNotificacao extends StatelessWidget {
 
   const _ItemNotificacao({required this.notificacao});
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   Widget build(BuildContext context) {

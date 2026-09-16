@@ -152,7 +152,9 @@ class ControladorEntrega extends ChangeNotifier {
   }
 
   /// RF-A08.5 — aciona o próximo degrau da escada de contingência.
-  Future<void> acionarContingencia({String motivo = 'receiver_without_code'}) async {
+  Future<void> acionarContingencia({
+    String motivo = 'receiver_without_code',
+  }) async {
     if (_solicitandoRecuperacao) return;
     final id = _pedidoId;
     if (id == null) return;
@@ -162,7 +164,10 @@ class ControladorEntrega extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _ultimaRecuperacao = await _repositorio.solicitarRecuperacao(id, motivo: motivo);
+      _ultimaRecuperacao = await _repositorio.solicitarRecuperacao(
+        id,
+        motivo: motivo,
+      );
       await _carregar();
     } on ErroApi catch (erro) {
       _erro = erro.mensagemParaUsuario;

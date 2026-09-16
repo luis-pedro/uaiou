@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map/flutter_map.dart';
@@ -29,7 +31,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
   int paginaAtual = 0;
 
   // Cor principal do app (laranja)
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   // Santa Rita do Sapucaí — só o ponto de partida enquanto a primeira
   // leitura real do aparelho não chega (RF-A06.2).
@@ -182,7 +184,11 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
               // nulo) expunha. Sem score ainda (entregador novo, 404),
               // mostra "—" em vez de "0,0", que seria uma afirmação
               // falsa de nota ruim.
-              context.watch<ControladorScore>().score?.valor.replaceAll('.', ',') ?? "—",
+              context.watch<ControladorScore>().score?.valor.replaceAll(
+                    '.',
+                    ',',
+                  ) ??
+                  "—",
               style: const TextStyle(
                 color: Color.fromRGBO(94, 94, 94, 1),
                 fontSize: 15,
@@ -220,7 +226,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       right: 20,
       child: InkWell(
         borderRadius: BorderRadius.circular(25),
-        onTap: enviando ? null : () => _alternarDisponibilidade(presenca, !disponivel),
+        onTap: enviando
+            ? null
+            : () => _alternarDisponibilidade(presenca, !disponivel),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
@@ -452,7 +460,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                   iconeVazio: Icons.local_shipping_outlined,
                   construir: (pedidos) => Column(
                     children: pedidos
-                        .map((pedido) => _buildCardPedidoVitrine(pedido, vitrine))
+                        .map(
+                          (pedido) => _buildCardPedidoVitrine(pedido, vitrine),
+                        )
                         .toList(),
                   ),
                 ),
@@ -501,7 +511,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
               ),
               child: const Text(
                 "Ativar",
-                style: TextStyle(color: corPrincipal, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: corPrincipal,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
@@ -535,7 +548,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color.fromRGBO(94, 94, 94, 1), width: 1),
+        border: Border.all(
+          color: const Color.fromRGBO(94, 94, 94, 1),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,7 +587,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             pedido.distanciaKm != null
                 ? "${pedido.enderecoResumido} · ${pedido.distanciaKm!.toStringAsFixed(1)} km"
                 : pedido.enderecoResumido,
-            style: const TextStyle(fontSize: 13, color: Color.fromRGBO(94, 94, 94, 1)),
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color.fromRGBO(94, 94, 94, 1),
+            ),
           ),
           // RF-A14.4 — a distância que decide o aceite é a por via, e
           // ela custa uma chamada ao provedor: fica atrás de um toque,
@@ -592,7 +611,11 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.hourglass_top, size: 16, color: Colors.orange.shade700),
+                Icon(
+                  Icons.hourglass_top,
+                  size: 16,
+                  color: Colors.orange.shade700,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   "Contraproposta enviada — aguardando o estabelecimento",
@@ -612,7 +635,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                       onPressed: vitrine.haContrapropostaEmVoo
                           ? null
                           : () => _abrirDialogoContraoferta(pedido, vitrine),
-                      style: OutlinedButton.styleFrom(foregroundColor: corPrincipal),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: corPrincipal,
+                      ),
                       child: contrapondoEste
                           ? const SizedBox(
                               width: 16,
@@ -623,7 +648,8 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                     ),
                   ),
                 if (podeAceitar) ...[
-                  if (podeContrapropor && !propostaPendente) const SizedBox(width: 10),
+                  if (podeContrapropor && !propostaPendente)
+                    const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
                       // RNF-A07.1 — bloqueado enquanto há aceite em
@@ -680,7 +706,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 pedido.nomeEstabelecimento?.isNotEmpty == true
                     ? pedido.nomeEstabelecimento!
                     : 'Pedido ${pedido.rotuloCurto}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -834,18 +863,25 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

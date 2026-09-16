@@ -12,13 +12,14 @@ class EntregadorBloqueado {
     this.bloqueadoEm,
   });
 
-  factory EntregadorBloqueado.doJson(Map<String, dynamic> json) => EntregadorBloqueado(
-    entregadorId: json['courierId'] as String? ?? '',
-    nome: json['courierName'] as String? ?? json['displayName'] as String?,
-    motivo: json['reason'] as String?,
-    bloqueadoEm: switch (json['createdAt'] ?? json['blockedAt']) {
-      final String v => DateTime.tryParse(v)?.toLocal(),
-      _ => null,
-    },
-  );
+  factory EntregadorBloqueado.doJson(Map<String, dynamic> json) =>
+      EntregadorBloqueado(
+        entregadorId: json['courierId'] as String? ?? '',
+        nome: json['courierName'] as String? ?? json['displayName'] as String?,
+        motivo: json['reason'] as String?,
+        bloqueadoEm: switch (json['createdAt'] ?? json['blockedAt']) {
+          final String v => DateTime.tryParse(v)?.toLocal(),
+          _ => null,
+        },
+      );
 }

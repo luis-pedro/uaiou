@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/rede/erros_api.dart';
@@ -17,7 +20,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   final _login = TextEditingController();
   final _senha = TextEditingController();
@@ -89,12 +92,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await context.read<ControladorSessao>().pedirRecuperacaoDeSenha(email);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Se existir uma conta com esse e-mail, enviamos as instruções.',
-          ),
-        ),
+      mostrarAviso(
+        context,
+        'Se existir uma conta com esse e-mail, enviamos as instruções.',
       );
     } on ErroApi catch (erro) {
       if (mounted) setState(() => _erro = erro.mensagemParaUsuario);

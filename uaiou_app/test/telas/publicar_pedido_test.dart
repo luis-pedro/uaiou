@@ -44,7 +44,7 @@ Future<void> _preencherTudoMenosOMapa(WidgetTester tester) async {
 
 void main() {
   testWidgets(
-    'sem ponto no mapa, publicar não manda POST e avisa em SnackBar — RF-A10.3',
+    'sem ponto no mapa, publicar não manda POST e avisa no topo — RF-A10.3',
     (tester) async {
       final servidor = _ServidorQueNuncaDeveriaSerChamado();
       final dio = Dio()..httpClientAdapter = servidor;
@@ -72,13 +72,21 @@ void main() {
       // E o usuário é avisado por um canal que não depende de scroll —
       // era isto que faltava: o texto sob o mapa fica fora da tela no
       // momento do toque, e o botão parecia morto.
+      //
+      // O aviso saiu do `SnackBar` (rodapé, onde ficam o botão de publicar e a
+      // barra de navegação) para o cartão do topo que o resto do app usa.
+      // O mesmo texto aparece duas vezes de propósito: no cartão do topo e sob
+      // o mapa. O que este teste garante é o canal que não depende de rolagem,
+      // identificado pelo ícone de erro do cartão.
       expect(
-        find.widgetWithText(
-          SnackBar,
-          'Marque o ponto de entrega no mapa antes de publicar.',
-        ),
-        findsOneWidget,
+        find.text('Marque o ponto de entrega no mapa antes de publicar.'),
+        findsWidgets,
       );
+      expect(find.byIcon(Icons.error_outline), findsOneWidget);
+
+      // O aviso se remove sozinho depois de 5s; sem avançar o relógio, o
+      // temporizador fica pendente e o teste falha por isso, não pelo que mede.
+      await tester.pump(const Duration(seconds: 6));
     },
   );
 }

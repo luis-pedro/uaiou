@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/bloqueios/bloqueio.dart';
@@ -15,7 +17,7 @@ import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 class TelaBloqueios extends StatefulWidget {
   const TelaBloqueios({super.key});
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   State<TelaBloqueios> createState() => _TelaBloqueiosState();
@@ -70,7 +72,9 @@ class _TelaBloqueiosState extends State<TelaBloqueios> {
 
     await context.read<EstadoBloqueios>().bloquear(
       entregadorId: idControle.text.trim(),
-      motivo: motivoControle.text.trim().isEmpty ? null : motivoControle.text.trim(),
+      motivo: motivoControle.text.trim().isEmpty
+          ? null
+          : motivoControle.text.trim(),
     );
   }
 
@@ -107,10 +111,13 @@ class _TelaBloqueiosState extends State<TelaBloqueios> {
                   child: ListTile(
                     leading: const Icon(Icons.person_off),
                     title: Text(bloqueado.nome ?? bloqueado.entregadorId),
-                    subtitle: bloqueado.motivo != null ? Text(bloqueado.motivo!) : null,
+                    subtitle: bloqueado.motivo != null
+                        ? Text(bloqueado.motivo!)
+                        : null,
                     trailing: TextButton(
-                      onPressed: () =>
-                          context.read<EstadoBloqueios>().desbloquear(bloqueado.entregadorId),
+                      onPressed: () => context
+                          .read<EstadoBloqueios>()
+                          .desbloquear(bloqueado.entregadorId),
                       child: const Text('Desbloquear'),
                     ),
                   ),

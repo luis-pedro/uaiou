@@ -17,10 +17,14 @@ class RepositorioBloqueios {
         .toList();
   }
 
-  Future<void> bloquear({required String entregadorId, String? motivo}) => _api.criar(
-    '/me/blocked-couriers',
-    corpo: {'courierId': entregadorId, if (motivo != null && motivo.isNotEmpty) 'reason': motivo},
-  );
+  Future<void> bloquear({required String entregadorId, String? motivo}) =>
+      _api.criar(
+        '/me/blocked-couriers',
+        corpo: {
+          'courierId': entregadorId,
+          if (motivo != null && motivo.isNotEmpty) 'reason': motivo,
+        },
+      );
 
   Future<void> desbloquear(String entregadorId) =>
       _api.remover('/me/blocked-couriers/$entregadorId');

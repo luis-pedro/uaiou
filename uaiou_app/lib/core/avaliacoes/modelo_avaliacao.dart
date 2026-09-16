@@ -69,16 +69,17 @@ class AvaliacaoPendente {
     this.deadline,
   });
 
-  factory AvaliacaoPendente.doJson(Map<String, dynamic> json) => AvaliacaoPendente(
-    orderId: json['orderId']?.toString() ?? '',
-    orderNumber: json['orderNumber']?.toString() ?? '',
-    counterpartyId: json['counterpartyId']?.toString() ?? '',
-    counterpartyName: json['counterpartyName'] as String? ?? '',
-    deadline: switch (json['deadline']) {
-      final String v => DateTime.tryParse(v)?.toLocal(),
-      _ => null,
-    },
-  );
+  factory AvaliacaoPendente.doJson(Map<String, dynamic> json) =>
+      AvaliacaoPendente(
+        orderId: json['orderId']?.toString() ?? '',
+        orderNumber: json['orderNumber']?.toString() ?? '',
+        counterpartyId: json['counterpartyId']?.toString() ?? '',
+        counterpartyName: json['counterpartyName'] as String? ?? '',
+        deadline: switch (json['deadline']) {
+          final String v => DateTime.tryParse(v)?.toLocal(),
+          _ => null,
+        },
+      );
 }
 
 /// Um item de `GET /me/reviews?direction=received` — o que a outra
@@ -109,18 +110,19 @@ class AvaliacaoRecebida {
     this.createdAt,
   });
 
-  factory AvaliacaoRecebida.doJson(Map<String, dynamic> json) => AvaliacaoRecebida(
-    id: json['id']?.toString() ?? '',
-    orderId: json['orderId']?.toString() ?? '',
-    orderNumber: json['orderNumber']?.toString() ?? '',
-    rating: (json['rating'] as num?)?.toInt() ?? 0,
-    comment: json['comment'] as String?,
-    active: json['active'] == true,
-    createdAt: switch (json['createdAt']) {
-      final String v => DateTime.tryParse(v)?.toLocal(),
-      _ => null,
-    },
-  );
+  factory AvaliacaoRecebida.doJson(Map<String, dynamic> json) =>
+      AvaliacaoRecebida(
+        id: json['id']?.toString() ?? '',
+        orderId: json['orderId']?.toString() ?? '',
+        orderNumber: json['orderNumber']?.toString() ?? '',
+        rating: (json['rating'] as num?)?.toInt() ?? 0,
+        comment: json['comment'] as String?,
+        active: json['active'] == true,
+        createdAt: switch (json['createdAt']) {
+          final String v => DateTime.tryParse(v)?.toLocal(),
+          _ => null,
+        },
+      );
 }
 
 /// `summary` de `GET /me/reviews?direction=received`. `activeRate`
@@ -157,17 +159,29 @@ class RespostaAvaliacoesRecebidas {
   final ResumoAvaliacoesRecebidas resumo;
   final List<AvaliacaoRecebida> itens;
 
-  const RespostaAvaliacoesRecebidas({required this.resumo, this.itens = const []});
+  const RespostaAvaliacoesRecebidas({
+    required this.resumo,
+    this.itens = const [],
+  });
 
   factory RespostaAvaliacoesRecebidas.doJson(Map<String, dynamic> json) =>
       RespostaAvaliacoesRecebidas(
         resumo: json['summary'] is Map
-            ? ResumoAvaliacoesRecebidas.doJson(Map<String, dynamic>.from(json['summary'] as Map))
-            : const ResumoAvaliacoesRecebidas(average: 0, activeRate: 0, count: 0),
+            ? ResumoAvaliacoesRecebidas.doJson(
+                Map<String, dynamic>.from(json['summary'] as Map),
+              )
+            : const ResumoAvaliacoesRecebidas(
+                average: 0,
+                activeRate: 0,
+                count: 0,
+              ),
         itens: json['data'] is List
             ? (json['data'] as List)
                   .whereType<Map>()
-                  .map((e) => AvaliacaoRecebida.doJson(Map<String, dynamic>.from(e)))
+                  .map(
+                    (e) =>
+                        AvaliacaoRecebida.doJson(Map<String, dynamic>.from(e)),
+                  )
                   .toList()
             : const [],
       );

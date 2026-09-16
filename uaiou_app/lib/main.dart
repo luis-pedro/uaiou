@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/avaliacoes/controlador_avaliacoes.dart';
@@ -96,11 +97,19 @@ void _registrarFalhaNaoTratada(Object erro, StackTrace pilha) {
 bool get _configuracaoDeBuildInvalida =>
     !Ambiente.modoDesenvolvedor && Ambiente.usaTextoPuro;
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // `DateFormat` com locale pt_BR precisa dos dados carregados antes do
+  // primeiro uso — sem isto, a primeira data formatada lança em runtime, e
+  // nenhum teste de unidade pegaria, porque o erro é de dados de locale.
+  await initializeDateFormatting('pt_BR');
+
   FlutterError.onError = (details) {
-    _registrarFalhaNaoTratada(details.exception, details.stack ?? StackTrace.empty);
+    _registrarFalhaNaoTratada(
+      details.exception,
+      details.stack ?? StackTrace.empty,
+    );
   };
   WidgetsBinding.instance.platformDispatcher.onError = (erro, pilha) {
     _registrarFalhaNaoTratada(erro, pilha);
@@ -291,7 +300,8 @@ class MyApp extends StatelessWidget {
         // Execução da entrega (A-08) — geofence, código e contestável,
         // tudo lido de `_links` de `GET /orders/{id}/delivery`.
         Provider<RepositorioEntregas>(
-          create: (contexto) => RepositorioEntregas(contexto.read<ClienteApi>()),
+          create: (contexto) =>
+              RepositorioEntregas(contexto.read<ClienteApi>()),
         ),
         ChangeNotifierProxyProvider<ControladorSessao, ControladorEntrega>(
           create: (contexto) => ControladorEntrega(
@@ -310,9 +320,8 @@ class MyApp extends StatelessWidget {
           create: (contexto) => RepositorioRotas(contexto.read<ClienteApi>()),
         ),
         ChangeNotifierProxyProvider<ControladorSessao, ControladorRota>(
-          create: (contexto) => ControladorRota(
-            repositorio: contexto.read<RepositorioRotas>(),
-          ),
+          create: (contexto) =>
+              ControladorRota(repositorio: contexto.read<RepositorioRotas>()),
           update: (_, sessao, estado) =>
               _sincronizar(estado!, sessao, estado.limpar),
         ),
@@ -330,7 +339,8 @@ class MyApp extends StatelessWidget {
         ),
         // Estatísticas do entregador (A-09/RF-A09.7) — `GET /me/stats`.
         Provider<RepositorioEstatisticas>(
-          create: (contexto) => RepositorioEstatisticas(contexto.read<ClienteApi>()),
+          create: (contexto) =>
+              RepositorioEstatisticas(contexto.read<ClienteApi>()),
         ),
         ChangeNotifierProxyProvider<ControladorSessao, ControladorEstatisticas>(
           create: (contexto) => ControladorEstatisticas(
@@ -351,7 +361,8 @@ class MyApp extends StatelessWidget {
         // A pagar (A-10/RF-A10.9) — espelho de ganhos (A-09), do lado
         // do estabelecimento (`GET /me/payables`).
         Provider<RepositorioPayables>(
-          create: (contexto) => RepositorioPayables(contexto.read<ClienteApi>()),
+          create: (contexto) =>
+              RepositorioPayables(contexto.read<ClienteApi>()),
         ),
         ChangeNotifierProxyProvider<ControladorSessao, ControladorPayables>(
           create: (contexto) => ControladorPayables(
@@ -397,7 +408,8 @@ class MyApp extends StatelessWidget {
         // Avaliações (A-12) — `POST /orders/{id}/reviews` e
         // `GET /me/reviews`, mútuo aos dois papéis.
         Provider<RepositorioAvaliacoes>(
-          create: (contexto) => RepositorioAvaliacoes(contexto.read<ClienteApi>()),
+          create: (contexto) =>
+              RepositorioAvaliacoes(contexto.read<ClienteApi>()),
         ),
         ChangeNotifierProxyProvider<ControladorSessao, ControladorAvaliacoes>(
           create: (contexto) => ControladorAvaliacoes(

@@ -12,7 +12,9 @@ class RepositorioScore {
   Future<Score> obter() async {
     final resposta = await _api.obter('/me/score');
     if (resposta is! Map) {
-      throw const ErroInesperado(mensagem: 'Resposta de score fora do contrato.');
+      throw const ErroInesperado(
+        mensagem: 'Resposta de score fora do contrato.',
+      );
     }
     return Score.doJson(Map<String, dynamic>.from(resposta));
   }

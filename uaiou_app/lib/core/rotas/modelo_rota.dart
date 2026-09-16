@@ -69,7 +69,11 @@ class PassoDaRota {
 
   factory PassoDaRota.doJson(Object? json) {
     if (json is! Map) {
-      return const PassoDaRota(instrucao: '', distanciaMetros: 0, indiceNoTracado: 0);
+      return const PassoDaRota(
+        instrucao: '',
+        distanciaMetros: 0,
+        indiceNoTracado: 0,
+      );
     }
     return PassoDaRota(
       instrucao: json['instruction'] as String? ?? '',
@@ -229,7 +233,8 @@ class RotaDoPedido {
 
   factory RotaDoPedido.doJson(Map<String, dynamic> json) => RotaDoPedido(
     orderId: json['orderId'] as String? ?? '',
-    distanciaEmLinhaRetaKm: (json['straightLineDistanceKm'] as num?)?.toDouble(),
+    distanciaEmLinhaRetaKm: (json['straightLineDistanceKm'] as num?)
+        ?.toDouble(),
     trajeto: Trajeto.doJson(json['route']),
     atribuicao: json['attribution'] as String?,
   );

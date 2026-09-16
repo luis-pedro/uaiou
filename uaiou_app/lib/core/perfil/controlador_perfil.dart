@@ -55,7 +55,10 @@ class ControladorPerfil extends ChangeNotifier {
   /// Envia a imagem (três fases de upload) e vincula ao perfil por
   /// `PATCH /me` com `photoUploadId`. O [proposito] é o do papel:
   /// `fotoEntregador` ou `logoEstabelecimento`.
-  Future<bool> trocarFoto(ImagemEscolhida imagem, PropositoUpload proposito) async {
+  Future<bool> trocarFoto(
+    ImagemEscolhida imagem,
+    PropositoUpload proposito,
+  ) async {
     final uploads = _uploads;
     if (uploads == null || _enviandoFoto) return false;
 

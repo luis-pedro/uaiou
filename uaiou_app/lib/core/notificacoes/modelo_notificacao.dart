@@ -19,8 +19,9 @@ enum PrioridadeNotificacao {
   normal,
   urgente;
 
-  static PrioridadeNotificacao doJson(Object? valor) =>
-      valor == 'urgent' ? PrioridadeNotificacao.urgente : PrioridadeNotificacao.normal;
+  static PrioridadeNotificacao doJson(Object? valor) => valor == 'urgent'
+      ? PrioridadeNotificacao.urgente
+      : PrioridadeNotificacao.normal;
 }
 
 class Notificacao {
@@ -159,7 +160,10 @@ class PreferenciasNotificacao {
   /// mostra cadeado, não um botão que não funciona.
   final List<String> mandatory;
 
-  const PreferenciasNotificacao({required this.channels, required this.mandatory});
+  const PreferenciasNotificacao({
+    required this.channels,
+    required this.mandatory,
+  });
 
   static const PreferenciasNotificacao vazia = PreferenciasNotificacao(
     channels: {},

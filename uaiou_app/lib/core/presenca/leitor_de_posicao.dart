@@ -56,9 +56,7 @@ class LeitorDePosicaoGeolocator implements LeitorDePosicao {
   @override
   Future<PosicaoLida> posicaoAtual() async {
     final posicao = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
     );
     return _paraPosicaoLida(posicao);
   }

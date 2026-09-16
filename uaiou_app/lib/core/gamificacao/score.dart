@@ -16,12 +16,13 @@ class ComponenteDeScore {
     this.contribuicao,
   });
 
-  factory ComponenteDeScore.doJson(Map<String, dynamic> json) => ComponenteDeScore(
-    metrica: json['metric'] as String? ?? '',
-    valor: json['value']?.toString() ?? '',
-    peso: (json['weight'] as num?)?.toDouble() ?? 0,
-    contribuicao: json['contribution']?.toString(),
-  );
+  factory ComponenteDeScore.doJson(Map<String, dynamic> json) =>
+      ComponenteDeScore(
+        metrica: json['metric'] as String? ?? '',
+        valor: json['value']?.toString() ?? '',
+        peso: (json['weight'] as num?)?.toDouble() ?? 0,
+        contribuicao: json['contribution']?.toString(),
+      );
 }
 
 /// Penalidade individual (estabelecimento) — RN-09.4: cada desconto
@@ -41,16 +42,17 @@ class PenalidadeDeScore {
     this.aplicadaEm,
   });
 
-  factory PenalidadeDeScore.doJson(Map<String, dynamic> json) => PenalidadeDeScore(
-    regra: json['rule'] as String? ?? '',
-    motivo: json['reason'] as String? ?? '',
-    pontos: (json['points'] as num?)?.toInt() ?? 0,
-    pedidoId: json['orderId'] as String?,
-    aplicadaEm: switch (json['appliedAt']) {
-      final String v => DateTime.tryParse(v)?.toLocal(),
-      _ => null,
-    },
-  );
+  factory PenalidadeDeScore.doJson(Map<String, dynamic> json) =>
+      PenalidadeDeScore(
+        regra: json['rule'] as String? ?? '',
+        motivo: json['reason'] as String? ?? '',
+        pontos: (json['points'] as num?)?.toInt() ?? 0,
+        pedidoId: json['orderId'] as String?,
+        aplicadaEm: switch (json['appliedAt']) {
+          final String v => DateTime.tryParse(v)?.toLocal(),
+          _ => null,
+        },
+      );
 }
 
 class Score {
@@ -78,13 +80,17 @@ class Score {
     componentes: json['components'] is List
         ? (json['components'] as List)
               .whereType<Map>()
-              .map((c) => ComponenteDeScore.doJson(Map<String, dynamic>.from(c)))
+              .map(
+                (c) => ComponenteDeScore.doJson(Map<String, dynamic>.from(c)),
+              )
               .toList()
         : const [],
     penalidades: json['penalties'] is List
         ? (json['penalties'] as List)
               .whereType<Map>()
-              .map((p) => PenalidadeDeScore.doJson(Map<String, dynamic>.from(p)))
+              .map(
+                (p) => PenalidadeDeScore.doJson(Map<String, dynamic>.from(p)),
+              )
               .toList()
         : const [],
   );

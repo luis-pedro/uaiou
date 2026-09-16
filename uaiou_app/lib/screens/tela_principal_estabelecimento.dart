@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map/flutter_map.dart';
@@ -12,6 +14,7 @@ import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/rede/erros_api.dart';
 import 'package:uaiou/screens/tela_detalhe_pedido.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/tela_publicar_pedido.dart';
 
@@ -27,8 +30,13 @@ class _TelaPrincipalEstabelecimentoState
     extends State<TelaPrincipalEstabelecimento> {
   int paginaAtual = 0;
 
+  final MapController _mapController = MapController();
+
+  /// Centro da praça — usado só enquanto não há coordenada da loja.
+  static const LatLng _centroPadrao = LatLng(-22.2526, -45.7033);
+
   // Cor principal do app (laranja)
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   /// RF-A15.1 — sem push nativo (ver `ControladorNotificacoes`), o
   /// aviso de chegada vem da inbox consultada periodicamente.
@@ -133,7 +141,9 @@ class _TelaPrincipalEstabelecimentoState
         case 'ver':
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => TelaDetalhePedido(pedidoId: pedidoId)),
+            MaterialPageRoute(
+              builder: (_) => TelaDetalhePedido(pedidoId: pedidoId),
+            ),
           );
       }
       // Outro entregador pode ter chegado enquanto este aviso estava aberto.
@@ -142,14 +152,13 @@ class _TelaPrincipalEstabelecimentoState
   }
 
   Future<void> _confirmarColeta(String pedidoId) async {
-    final mensageiro = ScaffoldMessenger.of(context);
     try {
       await context.read<RepositorioPedidos>().confirmarColeta(pedidoId);
-      mensageiro.showSnackBar(const SnackBar(content: Text('Coleta confirmada.')));
+      if (mounted) mostrarAviso(context, 'Coleta confirmada.');
     } on ErroApi catch (erro) {
       // RF-A15.7 — corrida perdida ou entregador fora do raio: a
       // mensagem do servidor explica.
-      mensageiro.showSnackBar(SnackBar(content: Text(erro.mensagemParaUsuario)));
+      if (mounted) mostrarAviso(context, erro.mensagemParaUsuario, erro: true);
     }
   }
 
@@ -168,18 +177,62 @@ class _TelaPrincipalEstabelecimentoState
     );
   }
 
-  // MAPA
+  /// O mapa mostrava sempre o centro de Santa Rita do Sapucaí, sem marcador
+  /// nenhum — bonito e inútil. Agora mostra o ponto de retirada do próprio
+  /// estabelecimento, que é de onde o entregador vai sair com o pacote.
+  ///
+  /// Enquanto o perfil não carrega (ou se a loja nunca marcou o ponto), fica no
+  /// centro padrão da praça, sem pino: sem coordenada não há o que apontar.
   Widget _buildMapa() {
+    final endereco = context
+        .watch<ControladorPerfil>()
+        .estado
+        .valorOuNulo
+        ?.detalhes
+        ?.endereco;
+    final ponto = endereco != null && endereco.temCoordenada
+        ? LatLng(endereco.lat!, endereco.lng!)
+        : null;
+
+    if (ponto != null) {
+      // O mapa nasce com `initialCenter`; recentrar depois exige o controller,
+      // fora do build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        try {
+          _mapController.move(ponto, _mapController.camera.zoom);
+        } catch (_) {
+          // Controller ainda não anexado no primeiro quadro.
+        }
+      });
+    }
+
     return Positioned.fill(
       child: FlutterMap(
-        options: const MapOptions(
-          initialCenter: LatLng(-22.2526, -45.7033), // Santa Rita do Sapucaí
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: ponto ?? _centroPadrao,
           initialZoom: 15,
         ),
         children: [
           TileLayer(
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.uaiou.app',
+          ),
+          MarkerLayer(
+            markers: [
+              if (ponto != null)
+                Marker(
+                  point: ponto,
+                  width: 45,
+                  height: 45,
+                  child: const Icon(
+                    Icons.storefront,
+                    color: corPrincipal,
+                    size: 40,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -340,9 +393,7 @@ class _TelaPrincipalEstabelecimentoState
       // RF-A10.5 — a lista de pedidos passa a refletir o novo pedido
       // na próxima visita à tela de pedidos.
       unawaited(context.read<EstadoEstabelecimento>().carregar());
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Pedido publicado.')));
+      mostrarAviso(context, 'Pedido publicado.');
     }
   }
 
@@ -409,18 +460,25 @@ class _TelaPrincipalEstabelecimentoState
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

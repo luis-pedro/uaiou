@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/endereco/endereco_publico.dart';
@@ -16,7 +19,7 @@ import 'package:uaiou/screens/widgets/mapa_endereco.dart';
 class TelaEditarPerfil extends StatefulWidget {
   const TelaEditarPerfil({super.key});
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   State<TelaEditarPerfil> createState() => _TelaEditarPerfilState();
@@ -51,7 +54,15 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
 
   @override
   void dispose() {
-    for (final controle in [_nome, _telefone, _bairro, _rua, _numero, _cidade, _cep]) {
+    for (final controle in [
+      _nome,
+      _telefone,
+      _bairro,
+      _rua,
+      _numero,
+      _cidade,
+      _cep,
+    ]) {
       controle.dispose();
     }
     super.dispose();
@@ -77,7 +88,10 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
     _inicializado = true;
   }
 
-  Future<void> _salvar(BuildContext context, ControladorPerfil controlador) async {
+  Future<void> _salvar(
+    BuildContext context,
+    ControladorPerfil controlador,
+  ) async {
     final perfil = controlador.estado.valorOuNulo;
     if (perfil == null) return;
 
@@ -109,9 +123,11 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
     if (salvou) {
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(
+      mostrarAviso(
         context,
-      ).showSnackBar(SnackBar(content: Text(controlador.ultimoErro ?? 'Não foi possível salvar.')));
+        controlador.ultimoErro ?? 'Não foi possível salvar.',
+        erro: true,
+      );
     }
   }
 
@@ -210,7 +226,9 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: _salvando ? null : () => _salvar(context, controlador),
+                  onPressed: _salvando
+                      ? null
+                      : () => _salvar(context, controlador),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: TelaEditarPerfil.corPrincipal,
                     foregroundColor: Colors.white,
@@ -222,7 +240,10 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
                       : const Text('Salvar'),
                 ),

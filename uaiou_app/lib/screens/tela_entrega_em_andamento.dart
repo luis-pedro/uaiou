@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/entregas/controlador_entrega.dart';
+import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/entregas/controlador_retirada.dart';
 import 'package:uaiou/core/entregas/modelo_entrega.dart';
 import 'package:uaiou/core/pedidos/motivos.dart';
@@ -35,7 +38,7 @@ class TelaEntregaEmAndamento extends StatefulWidget {
 }
 
 class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
   static const Color corSucesso = Color.fromRGBO(108, 201, 80, 1);
 
   final TextEditingController _codigoController = TextEditingController();
@@ -114,11 +117,15 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
         if (pedido == null) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator(color: corPrincipal)),
+            child: Center(
+              child: CircularProgressIndicator(color: corPrincipal),
+            ),
           );
         }
         final chegou = pedido.chegouEm != null;
-        final esperaMin = chegou ? DateTime.now().difference(pedido.chegouEm!).inMinutes : 0;
+        final esperaMin = chegou
+            ? DateTime.now().difference(pedido.chegouEm!).inMinutes
+            : 0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,7 +135,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               decoration: BoxDecoration(
                 color: chegou ? Colors.teal.shade50 : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: chegou ? Colors.teal : Colors.grey.shade400),
+                border: Border.all(
+                  color: chegou ? Colors.teal : Colors.grey.shade400,
+                ),
               ),
               child: Row(
                 children: [
@@ -146,7 +155,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                                 '${esperaMin > 0 ? ' — há $esperaMin min' : ''}.'
                           : 'Vá até ${pedido.nomeEstabelecimento ?? 'o estabelecimento'} '
                                 'para retirar o pedido ${pedido.rotuloCurto}.',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -162,7 +174,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                   backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -181,7 +196,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             if (retirada.podeDesistir) ...[
               const SizedBox(height: 20),
               TextButton.icon(
-                onPressed: retirada.enviando ? null : () => _desistir(context, retirada),
+                onPressed: retirada.enviando
+                    ? null
+                    : () => _desistir(context, retirada),
                 icon: const Icon(Icons.close, color: Colors.red),
                 label: const Text(
                   'Desistir da entrega',
@@ -196,7 +213,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   }
 
   /// RF-A15.15 — avisa antes o que a desistência custa ao entregador.
-  Future<void> _desistir(BuildContext context, ControladorRetirada retirada) async {
+  Future<void> _desistir(
+    BuildContext context,
+    ControladorRetirada retirada,
+  ) async {
     final chegou = retirada.pedido?.chegouEm != null;
     final escolha = await escolherMotivo<MotivoDesistencia>(
       context,
@@ -214,7 +234,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 'pedido volta a ser oferecido a outros entregadores.',
     );
     if (escolha == null || !mounted) return;
-    final ok = await retirada.desistir(escolha.motivo, observacao: escolha.observacao);
+    final ok = await retirada.desistir(
+      escolha.motivo,
+      observacao: escolha.observacao,
+    );
     if (ok && mounted) {
       mostrarAviso(this.context, 'Você desistiu da entrega.');
       Navigator.pushReplacementNamed(this.context, '/entregas_entregador');
@@ -252,9 +275,14 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                 ),
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/entregas_entregador'),
-                child: const Text('Voltar às entregas', style: TextStyle(fontSize: 16)),
+                onPressed: () => Navigator.pushReplacementNamed(
+                  context,
+                  '/entregas_entregador',
+                ),
+                child: const Text(
+                  'Voltar às entregas',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],
@@ -294,10 +322,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 children: [
                   const Icon(Icons.cloud_off, size: 48, color: Colors.red),
                   const SizedBox(height: 16),
-                  Text(
-                    erro.mensagemParaUsuario,
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(erro.mensagemParaUsuario, textAlign: TextAlign.center),
                   const SizedBox(height: 20),
                   OutlinedButton.icon(
                     onPressed: () => controlador.abrir(widget.pedidoId),
@@ -342,7 +367,11 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               boxShadow: [
-                BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0, -2)),
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 12,
+                  offset: Offset(0, -2),
+                ),
               ],
             ),
             child: ListView(
@@ -437,9 +466,14 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                 ),
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, '/entregas_entregador'),
-                child: const Text('Voltar às entregas', style: TextStyle(fontSize: 16)),
+                onPressed: () => Navigator.pushReplacementNamed(
+                  context,
+                  '/entregas_entregador',
+                ),
+                child: const Text(
+                  'Voltar às entregas',
+                  style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
           ],
@@ -494,7 +528,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: dentro ? corSucesso.withValues(alpha: .12) : Colors.grey.shade100,
+        color: dentro
+            ? corSucesso.withValues(alpha: .12)
+            : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: dentro ? corSucesso : Colors.grey.shade400),
       ),
@@ -511,8 +547,8 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               dentro
                   ? 'Você está no local de entrega.'
                   : geofence.distanciaMetros != null
-                      ? 'Aproxime-se para finalizar — faltam ${geofence.distanciaMetros}m.'
-                      : 'Aproxime-se do local de entrega.',
+                  ? 'Aproxime-se para finalizar — faltam ${geofence.distanciaMetros}m.'
+                  : 'Aproxime-se do local de entrega.',
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
             ),
           ),
@@ -574,16 +610,26 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 backgroundColor: corSucesso,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               onPressed: controlador.enviando
                   ? null
-                  : () => _finalizarPorCodigo(context, controlador, entrega.codigo.tamanho),
+                  : () => _finalizarPorCodigo(
+                      context,
+                      controlador,
+                      entrega.codigo.tamanho,
+                    ),
               child: controlador.enviando
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Finalizar entrega'),
             ),
@@ -609,7 +655,11 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   ) async {
     final codigo = _codigoController.text.trim();
     if (codigo.length != tamanho) {
-      mostrarAviso(context, 'Informe os $tamanho dígitos do código.', erro: true);
+      mostrarAviso(
+        context,
+        'Informe os $tamanho dígitos do código.',
+        erro: true,
+      );
       return;
     }
     await controlador.finalizarComCodigo(codigo);
@@ -674,12 +724,14 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     );
   }
 
-  String _formatarHora(DateTime dt) =>
-      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  String _formatarHora(DateTime dt) => formatarHora(dt);
 
   /// RF-A08.6/RF-A08.7 — só aparece quando `contestableReleased` vem
   /// `true`. Exige foto confirmada antes de oferecer o botão final.
-  Widget _buildCartaoContestavel(BuildContext context, ControladorEntrega controlador) {
+  Widget _buildCartaoContestavel(
+    BuildContext context,
+    ControladorEntrega controlador,
+  ) {
     final temFoto = controlador.uploadIdConfirmado != null;
 
     return Container(
@@ -732,7 +784,8 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => controlador.capturarEEnviarFoto(OrigemDaImagem.camera),
+                onPressed: () =>
+                    controlador.capturarEEnviarFoto(OrigemDaImagem.camera),
                 icon: const Icon(Icons.camera_alt),
                 label: const Text('Tirar foto'),
                 style: OutlinedButton.styleFrom(
@@ -749,7 +802,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 backgroundColor: corSucesso,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               // RF-A08.6 — sem foto, sem botão utilizável.
               onPressed: (!temFoto || controlador.enviando)
@@ -759,7 +815,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Finalizar com foto'),
             ),

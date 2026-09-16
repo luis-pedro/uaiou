@@ -66,7 +66,8 @@ class _DialogoMotivoState<T> extends State<_DialogoMotivo<T>> {
   bool get _podeConfirmar {
     final motivo = _motivo;
     if (motivo == null) return false;
-    return !widget.exigeObservacao(motivo) || _observacao.text.trim().isNotEmpty;
+    return !widget.exigeObservacao(motivo) ||
+        _observacao.text.trim().isNotEmpty;
   }
 
   @override
@@ -90,7 +91,10 @@ class _DialogoMotivoState<T> extends State<_DialogoMotivo<T>> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.orange.shade300),
                 ),
-                child: Text(widget.aviso!, style: const TextStyle(fontSize: 14)),
+                child: Text(
+                  widget.aviso!,
+                  style: const TextStyle(fontSize: 14),
+                ),
               ),
             RadioGroup<T>(
               groupValue: motivo,

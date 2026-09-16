@@ -18,16 +18,17 @@ class AssinaturaDeCreditos {
     required this.status,
   });
 
-  factory AssinaturaDeCreditos.doJson(Map<String, dynamic> json) => AssinaturaDeCreditos(
-    nomeDoPlano: json['planName'] as String? ?? '',
-    creditosMensais: (json['monthlyCredits'] as num?)?.toInt() ?? 0,
-    consumidosNoCiclo: (json['consumedThisCycle'] as num?)?.toInt() ?? 0,
-    renovaEm: switch (json['renewsAt']) {
-      final String v => DateTime.tryParse(v),
-      _ => null,
-    },
-    status: json['status'] as String? ?? '',
-  );
+  factory AssinaturaDeCreditos.doJson(Map<String, dynamic> json) =>
+      AssinaturaDeCreditos(
+        nomeDoPlano: json['planName'] as String? ?? '',
+        creditosMensais: (json['monthlyCredits'] as num?)?.toInt() ?? 0,
+        consumidosNoCiclo: (json['consumedThisCycle'] as num?)?.toInt() ?? 0,
+        renovaEm: switch (json['renewsAt']) {
+          final String v => DateTime.tryParse(v),
+          _ => null,
+        },
+        status: json['status'] as String? ?? '',
+      );
 }
 
 class Creditos {
@@ -39,7 +40,9 @@ class Creditos {
   factory Creditos.doJson(Map<String, dynamic> json) => Creditos(
     saldo: (json['creditsBalance'] as num?)?.toInt() ?? 0,
     assinatura: json['subscription'] is Map
-        ? AssinaturaDeCreditos.doJson(Map<String, dynamic>.from(json['subscription'] as Map))
+        ? AssinaturaDeCreditos.doJson(
+            Map<String, dynamic>.from(json['subscription'] as Map),
+          )
         : null,
   );
 }

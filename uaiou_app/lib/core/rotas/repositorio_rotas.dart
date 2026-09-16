@@ -16,7 +16,9 @@ class RepositorioRotas {
   Future<RotaDoPedido> obter(String pedidoId) async {
     final resposta = await _api.obter('/orders/$pedidoId/route');
     if (resposta is! Map) {
-      throw const ErroInesperado(mensagem: 'Resposta de rota fora do contrato.');
+      throw const ErroInesperado(
+        mensagem: 'Resposta de rota fora do contrato.',
+      );
     }
     return RotaDoPedido.doJson(Map<String, dynamic>.from(resposta));
   }

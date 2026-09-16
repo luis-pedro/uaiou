@@ -65,10 +65,7 @@ class RepositorioDispositivo {
   Future<List<DispositivoRegistrado>> listar() async {
     final resposta = await _api.obter('/me/devices');
     if (resposta is! List) return const [];
-    return resposta
-        .whereType<Map>()
-        .map(DispositivoRegistrado.doJson)
-        .toList();
+    return resposta.whereType<Map>().map(DispositivoRegistrado.doJson).toList();
   }
 
   Future<void> remover(String id) => _api.remover('/me/devices/$id');

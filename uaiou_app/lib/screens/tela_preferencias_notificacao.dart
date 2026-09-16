@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/notificacoes/controlador_preferencias_notificacao.dart';
@@ -16,7 +18,7 @@ class TelaPreferenciasNotificacao extends StatefulWidget {
 
 class _TelaPreferenciasNotificacaoState
     extends State<TelaPreferenciasNotificacao> {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   void initState() {

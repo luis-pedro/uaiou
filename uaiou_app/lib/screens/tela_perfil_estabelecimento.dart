@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/financeiro/creditos.dart';
@@ -8,6 +10,7 @@ import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/rede/cliente_api.dart';
 import 'package:uaiou/core/uploads/repositorio_uploads.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/screens/widgets/rodape_versao.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/widgets/acao_sair.dart';
 
@@ -24,7 +27,7 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
   int paginaAtual = 3;
 
   /// Cor principal do aplicativo
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   Creditos? _creditos;
 
@@ -36,7 +39,9 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
       await context.read<ControladorPerfil>().carregar();
       if (!mounted) return;
       try {
-        final creditos = await RepositorioCreditos(context.read<ClienteApi>()).obter();
+        final creditos = await RepositorioCreditos(
+          context.read<ClienteApi>(),
+        ).obter();
         if (mounted) setState(() => _creditos = creditos);
       } on Exception {
         // Sem crédito ainda não é erro de tela.
@@ -60,7 +65,6 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
     final perfil = context.watch<ControladorPerfil>().estado.valorOuNulo;
     return perfil?.detalhes?.endereco?.cidade ?? '';
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -179,6 +183,8 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
               const SizedBox(height: 30),
 
               const AcaoSair(),
+
+              const RodapeVersao(),
             ],
           ),
         ),
@@ -204,9 +210,9 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                nomeRestaurante.isEmpty
-                    ? "Nome do restaurante"
-                    : nomeRestaurante,
+                // Placeholder que parecia nome real enquanto `GET /me` não
+                // voltava.
+                nomeRestaurante.isEmpty ? "Carregando…" : nomeRestaurante,
                 style: const TextStyle(
                   fontSize: 20,
                   color: Color.fromRGBO(34, 34, 34, 1),
@@ -215,7 +221,7 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
               const SizedBox(height: 5),
               Text(
                 cidadeRestaurante.isEmpty
-                    ? "Cidade não informada"
+                    ? "Cidade não cadastrada — toque em Informações pessoais"
                     : cidadeRestaurante,
                 style: const TextStyle(
                   fontSize: 13,
@@ -254,7 +260,10 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.account_balance_wallet_outlined, color: corPrincipal),
+            const Icon(
+              Icons.account_balance_wallet_outlined,
+              color: corPrincipal,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -321,13 +330,14 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
               // `bottom: 4` no último item era o branco sobrando no fim do card.
               for (final (indice, componente) in score.componentes.indexed)
                 Padding(
-                  padding: EdgeInsets.only(
-                    top: indice == 0 ? 0 : 4,
-                  ),
+                  padding: EdgeInsets.only(top: indice == 0 ? 0 : 4),
                   child: Text(
                     '${componente.metrica}: ${componente.valor}'
                     '${componente.contribuicao != null ? ' (${componente.contribuicao})' : ''}',
-                    style: const TextStyle(fontSize: 12, color: Color.fromRGBO(94, 94, 94, 1)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color.fromRGBO(94, 94, 94, 1),
+                    ),
                   ),
                 ),
             ],
@@ -449,18 +459,25 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

@@ -22,7 +22,8 @@ class RepositorioAvaliacoes {
   }) async {
     final corpo = <String, dynamic>{
       'rating': rating,
-      if (comment != null && comment.trim().isNotEmpty) 'comment': comment.trim(),
+      if (comment != null && comment.trim().isNotEmpty)
+        'comment': comment.trim(),
     };
     final resposta = await _api.criar(
       '/orders/$orderId/reviews',
@@ -30,7 +31,9 @@ class RepositorioAvaliacoes {
       chaveIdempotencia: gerarChaveIdempotencia('review-$orderId'),
     );
     if (resposta is! Map) {
-      throw const ErroInesperado(mensagem: 'Resposta de avaliação fora do contrato.');
+      throw const ErroInesperado(
+        mensagem: 'Resposta de avaliação fora do contrato.',
+      );
     }
     return AvaliacaoCriada.doJson(Map<String, dynamic>.from(resposta));
   }
@@ -39,9 +42,14 @@ class RepositorioAvaliacoes {
   /// envelope `data`/paginação (`MyReviewsController.pending` devolve
   /// `List<PendingReviewEntry>` puro, não um objeto com `_links`).
   Future<List<AvaliacaoPendente>> pendentes() async {
-    final resposta = await _api.obter('/me/reviews', query: const {'direction': 'pending'});
+    final resposta = await _api.obter(
+      '/me/reviews',
+      query: const {'direction': 'pending'},
+    );
     if (resposta is! List) {
-      throw const ErroInesperado(mensagem: 'Resposta de pendentes fora do contrato.');
+      throw const ErroInesperado(
+        mensagem: 'Resposta de pendentes fora do contrato.',
+      );
     }
     return resposta
         .whereType<Map>()
@@ -52,10 +60,17 @@ class RepositorioAvaliacoes {
   /// `GET /me/reviews?direction=received` — `summary` + `data`
   /// completo, também sem paginação (ver `RespostaAvaliacoesRecebidas`).
   Future<RespostaAvaliacoesRecebidas> recebidas() async {
-    final resposta = await _api.obter('/me/reviews', query: const {'direction': 'received'});
+    final resposta = await _api.obter(
+      '/me/reviews',
+      query: const {'direction': 'received'},
+    );
     if (resposta is! Map) {
-      throw const ErroInesperado(mensagem: 'Resposta de recebidas fora do contrato.');
+      throw const ErroInesperado(
+        mensagem: 'Resposta de recebidas fora do contrato.',
+      );
     }
-    return RespostaAvaliacoesRecebidas.doJson(Map<String, dynamic>.from(resposta));
+    return RespostaAvaliacoesRecebidas.doJson(
+      Map<String, dynamic>.from(resposta),
+    );
   }
 }

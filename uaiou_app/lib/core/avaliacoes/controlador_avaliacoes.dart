@@ -62,7 +62,11 @@ class ControladorAvaliacoes extends ChangeNotifier {
   /// RF-A12.1 — envia a avaliação de um pedido pendente. Em sucesso,
   /// recarrega a lista de pendentes (o pedido some dela) e a de
   /// recebidas não muda aqui (é o que a *outra* parte escreveu).
-  Future<bool> avaliar(String orderId, {required int rating, String? comment}) async {
+  Future<bool> avaliar(
+    String orderId, {
+    required int rating,
+    String? comment,
+  }) async {
     if (_enviando) return false;
     _enviando = true;
     _erroEnvio = null;

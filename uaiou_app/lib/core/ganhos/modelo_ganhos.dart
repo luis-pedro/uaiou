@@ -51,8 +51,10 @@ class ResumoGanhos {
     return ResumoGanhos(
       total: Dinheiro.tentarDeString(json['total'] as String?) ?? Dinheiro.zero,
       receivable:
-          Dinheiro.tentarDeString(json['receivable'] as String?) ?? Dinheiro.zero,
-      settled: Dinheiro.tentarDeString(json['settled'] as String?) ?? Dinheiro.zero,
+          Dinheiro.tentarDeString(json['receivable'] as String?) ??
+          Dinheiro.zero,
+      settled:
+          Dinheiro.tentarDeString(json['settled'] as String?) ?? Dinheiro.zero,
     );
   }
 }
@@ -117,7 +119,9 @@ class RespostaGanhos {
   );
 
   factory RespostaGanhos.doJson(Object? json) {
-    final mapa = json is Map ? Map<String, dynamic>.from(json) : const <String, dynamic>{};
+    final mapa = json is Map
+        ? Map<String, dynamic>.from(json)
+        : const <String, dynamic>{};
     return RespostaGanhos(
       resumo: ResumoGanhos.doJson(mapa['summary']),
       pagina: Pagina<Lancamento>.doJson(mapa, Lancamento.doJson),

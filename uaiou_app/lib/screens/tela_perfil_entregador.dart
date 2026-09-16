@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
@@ -7,6 +9,8 @@ import 'package:uaiou/core/perfil/perfil.dart';
 import 'package:uaiou/core/perfil/repositorio_perfil.dart';
 import 'package:uaiou/core/uploads/repositorio_uploads.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
+import 'package:uaiou/screens/widgets/rodape_versao.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/screens/widgets/acao_sair.dart';
 
@@ -22,7 +26,7 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
   int paginaAtual = 3;
 
   /// Cor principal do aplicativo
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   void initState() {
@@ -163,6 +167,8 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
               const SizedBox(height: 30),
 
               const AcaoSair(),
+
+              const RodapeVersao(),
             ],
           ),
         ),
@@ -251,8 +257,7 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
     );
 
     if (escolhidas == null || !mounted) return;
-    if (escolhidas.length == atuais.length &&
-        escolhidas.containsAll(atuais)) {
+    if (escolhidas.length == atuais.length && escolhidas.containsAll(atuais)) {
       return;
     }
 
@@ -265,14 +270,12 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
       ),
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          salvou
-              ? "Formas de pagamento atualizadas."
-              : controlador.ultimoErro ?? "Não foi possível salvar.",
-        ),
-      ),
+    mostrarAviso(
+      context,
+      salvou
+          ? "Formas de pagamento atualizadas."
+          : controlador.ultimoErro ?? "Não foi possível salvar.",
+      erro: !salvou,
     );
   }
 
@@ -294,23 +297,28 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                nomeEntregador.isEmpty ? "Nome do entregador" : nomeEntregador,
+                // "Nome do entregador" parecia dado real; é só o `GET /me` que
+                // ainda não voltou.
+                nomeEntregador.isEmpty ? "Carregando…" : nomeEntregador,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Color.fromRGBO(34, 34, 34, 1),
                 ),
               ),
-              const SizedBox(height: 5),
-              Text(
-                cidadeEntregador.isEmpty
-                    ? "Cidade não informada"
-                    : cidadeEntregador,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color.fromRGBO(94, 94, 94, 1),
+              // A cidade não existe no perfil do entregador (`MeProfile` só tem
+              // endereço para estabelecimento), então a linha era um "não
+              // informada" permanente. Some enquanto não houver o dado.
+              if (cidadeEntregador.isNotEmpty) ...[
+                const SizedBox(height: 5),
+                Text(
+                  cidadeEntregador,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: CoresUaiou.textoSecundario,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
@@ -368,13 +376,14 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
               // `bottom: 4` no último item era o branco sobrando no fim do card.
               for (final (indice, componente) in score.componentes.indexed)
                 Padding(
-                  padding: EdgeInsets.only(
-                    top: indice == 0 ? 0 : 4,
-                  ),
+                  padding: EdgeInsets.only(top: indice == 0 ? 0 : 4),
                   child: Text(
                     '${componente.metrica}: ${componente.valor}'
                     '${componente.contribuicao != null ? ' (${componente.contribuicao})' : ''}',
-                    style: const TextStyle(fontSize: 12, color: Color.fromRGBO(94, 94, 94, 1)),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color.fromRGBO(94, 94, 94, 1),
+                    ),
                   ),
                 ),
             ],
@@ -496,18 +505,25 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

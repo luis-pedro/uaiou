@@ -35,18 +35,21 @@ class LancamentoAPagar {
     this.taxaDeCancelamento = false,
   });
 
-  factory LancamentoAPagar.doJson(Map<String, dynamic> json) => LancamentoAPagar(
-    id: json['id'] as String? ?? '',
-    orderId: json['orderId'] as String? ?? '',
-    orderNumber: json['orderNumber'] as String? ?? '',
-    amount: Dinheiro.tentarDeString(json['amount']?.toString()) ?? Dinheiro.zero,
-    status: StatusLancamento.doJson(json['status']),
-    createdAt: switch (json['createdAt']) {
-      final String v => DateTime.tryParse(v)?.toLocal(),
-      _ => null,
-    },
-    taxaDeCancelamento: json['type'] == 'cancellation_fee',
-  );
+  factory LancamentoAPagar.doJson(Map<String, dynamic> json) =>
+      LancamentoAPagar(
+        id: json['id'] as String? ?? '',
+        orderId: json['orderId'] as String? ?? '',
+        orderNumber: json['orderNumber'] as String? ?? '',
+        amount:
+            Dinheiro.tentarDeString(json['amount']?.toString()) ??
+            Dinheiro.zero,
+        status: StatusLancamento.doJson(json['status']),
+        createdAt: switch (json['createdAt']) {
+          final String v => DateTime.tryParse(v)?.toLocal(),
+          _ => null,
+        },
+        taxaDeCancelamento: json['type'] == 'cancellation_fee',
+      );
 }
 
 /// `PayablesResponse.ByCourier` — um entregador e o que se deve a ele.
@@ -68,11 +71,14 @@ class APagarPorEntregador {
     return APagarPorEntregador(
       courierId: json['courierId'] as String? ?? '',
       courierName: json['courierName'] as String? ?? 'Entregador',
-      total: Dinheiro.tentarDeString(json['total']?.toString()) ?? Dinheiro.zero,
+      total:
+          Dinheiro.tentarDeString(json['total']?.toString()) ?? Dinheiro.zero,
       lancamentos: entradas is List
           ? entradas
                 .whereType<Map>()
-                .map((e) => LancamentoAPagar.doJson(Map<String, dynamic>.from(e)))
+                .map(
+                  (e) => LancamentoAPagar.doJson(Map<String, dynamic>.from(e)),
+                )
                 .toList()
           : const [],
     );
@@ -87,17 +93,26 @@ class Payables {
 
   const Payables({required this.total, required this.porEntregador});
 
-  static const Payables vazio = Payables(total: Dinheiro.zero, porEntregador: []);
+  static const Payables vazio = Payables(
+    total: Dinheiro.zero,
+    porEntregador: [],
+  );
 
   factory Payables.doJson(Object? json) {
-    final mapa = json is Map ? Map<String, dynamic>.from(json) : const <String, dynamic>{};
+    final mapa = json is Map
+        ? Map<String, dynamic>.from(json)
+        : const <String, dynamic>{};
     final porEntregador = mapa['byCourier'];
     return Payables(
-      total: Dinheiro.tentarDeString(mapa['total']?.toString()) ?? Dinheiro.zero,
+      total:
+          Dinheiro.tentarDeString(mapa['total']?.toString()) ?? Dinheiro.zero,
       porEntregador: porEntregador is List
           ? porEntregador
                 .whereType<Map>()
-                .map((e) => APagarPorEntregador.doJson(Map<String, dynamic>.from(e)))
+                .map(
+                  (e) =>
+                      APagarPorEntregador.doJson(Map<String, dynamic>.from(e)),
+                )
                 .toList()
           : const [],
     );

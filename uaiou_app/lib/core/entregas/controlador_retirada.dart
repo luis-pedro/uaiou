@@ -49,8 +49,10 @@ class ControladorRetirada extends ChangeNotifier {
   String? _aviso;
   String? get aviso => _aviso;
 
-  bool get podeRegistrarChegada => pedido?.links.permite('pickupArrival') ?? false;
-  bool get podePedirNovoAviso => pedido?.links.permite('pickupReminders') ?? false;
+  bool get podeRegistrarChegada =>
+      pedido?.links.permite('pickupArrival') ?? false;
+  bool get podePedirNovoAviso =>
+      pedido?.links.permite('pickupReminders') ?? false;
   bool get podeDesistir => pedido?.links.permite('withdrawal') ?? false;
 
   /// RF-A15.9 — o botão de reaviso só aparece depois de 5 min de
@@ -84,7 +86,11 @@ class ControladorRetirada extends ChangeNotifier {
   /// servidor.
   Future<void> registrarChegada() => _executar(() async {
     final posicao = await _leitor.posicaoAtual();
-    await _repositorio.registrarChegada(pedidoId, lat: posicao.lat, lng: posicao.lng);
+    await _repositorio.registrarChegada(
+      pedidoId,
+      lat: posicao.lat,
+      lng: posicao.lng,
+    );
     _aviso = 'Chegada registrada. O estabelecimento foi avisado.';
   });
 
@@ -100,7 +106,11 @@ class ControladorRetirada extends ChangeNotifier {
   Future<bool> desistir(MotivoDesistencia motivo, {String? observacao}) async {
     var ok = false;
     await _executar(() async {
-      await _repositorio.desistir(pedidoId, motivo: motivo, observacao: observacao);
+      await _repositorio.desistir(
+        pedidoId,
+        motivo: motivo,
+        observacao: observacao,
+      );
       ok = true;
     }, recarregarDepois: false);
     if (ok) _pararPolling();

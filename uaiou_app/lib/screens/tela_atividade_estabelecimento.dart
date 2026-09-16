@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/formato/data.dart';
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
@@ -26,7 +29,7 @@ class _TelaAtividadesEstabelecimentoState
   int paginaAtual = 2;
 
   /// Cor principal do aplicativo
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   _FiltroAtividades _filtro = _FiltroAtividades.todos;
 
@@ -285,7 +288,8 @@ class _TelaAtividadesEstabelecimentoState
       borderRadius: BorderRadius.circular(20),
       onTap: () => setState(() => _filtro = valor),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        // 12 em vez de 8: com 8 o chip ficava abaixo do alvo mínimo de toque.
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
           color: selecionado ? corPrincipal : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(20),
@@ -349,8 +353,7 @@ class _TelaAtividadesEstabelecimentoState
   /// ============================================================
 
   Widget _buildCardPedido(Pedido pedido) {
-    final data =
-        "${pedido.criadoEm.day.toString().padLeft(2, '0')}/${pedido.criadoEm.month.toString().padLeft(2, '0')}/${pedido.criadoEm.year.toString().substring(2)}";
+    final data = descreverData(pedido.criadoEm);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -414,12 +417,16 @@ class _TelaAtividadesEstabelecimentoState
                   builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
                 ),
               ),
-              child: const Text(
-                "Visualizar pedido",
-                style: TextStyle(
-                  color: corPrincipal,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              // Alvo de toque com altura de dedo (48dp).
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                child: Text(
+                  "Visualizar pedido",
+                  style: TextStyle(
+                    color: corPrincipal,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -494,18 +501,25 @@ class _TelaAtividadesEstabelecimentoState
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

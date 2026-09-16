@@ -74,7 +74,9 @@ class EdicaoDePerfil {
       corpo['profile'] = {
         if (fotoUploadId != null) 'photoUploadId': fotoUploadId,
         if (formasPagamento != null)
-          'paymentMethods': [for (final forma in formasPagamento!) forma.contrato],
+          'paymentMethods': [
+            for (final forma in formasPagamento!) forma.contrato,
+          ],
         if (bairro != null) 'bairro': bairro,
         if (rua != null) 'rua': rua,
         if (numero != null) 'numero': numero,
@@ -106,7 +108,9 @@ class RepositorioPerfil {
 
   Perfil _decodificar(Object? resposta) {
     if (resposta is! Map) {
-      throw const ErroInesperado(mensagem: 'Resposta de perfil fora do contrato.');
+      throw const ErroInesperado(
+        mensagem: 'Resposta de perfil fora do contrato.',
+      );
     }
     return Perfil.doJson(Map<String, dynamic>.from(resposta));
   }
@@ -137,7 +141,9 @@ EdicaoDePerfil? diffDeEdicao({
   // Coordenada não é texto: manda o par inteiro sempre que o mapa foi
   // tocado, em vez de comparar ponto flutuante contra o valor salvo.
   final coordenadaMudou =
-      lat != null && lng != null && (lat != endereco?.lat || lng != endereco?.lng);
+      lat != null &&
+      lng != null &&
+      (lat != endereco?.lat || lng != endereco?.lng);
 
   final edicao = EdicaoDePerfil(
     nomeExibicao: seMudou(nomeExibicao, original.nomeExibicao),

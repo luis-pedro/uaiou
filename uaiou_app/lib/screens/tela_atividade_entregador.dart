@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/formato/data.dart';
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/estatisticas/controlador_estatisticas.dart';
@@ -25,7 +28,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   int paginaAtual = 2;
 
   /// Cor principal do aplicativo
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   _FiltroAtividades _filtro = _FiltroAtividades.todos;
 
@@ -125,10 +128,6 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
             const SizedBox(height: 20),
 
-            _buildBotaoFiltrarPedidos(),
-
-            const SizedBox(height: 15),
-
             _buildFiltros(),
 
             const SizedBox(height: 10),
@@ -210,7 +209,11 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
         children: [
           Text(
             valor,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: corPrincipal),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: corPrincipal,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -223,50 +226,9 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
     );
   }
 
-  /// ============================================================
-  /// "FILTRAR PEDIDOS" — abre filtros mais avançados no futuro
-  /// (ex: por data, por bairro). Por enquanto é só um indicador visual.
-  /// ============================================================
-
-  Widget _buildBotaoFiltrarPedidos() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(25),
-        onTap: () {
-          // TODO: abrir filtros avançados (ex: por data).
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: const Color.fromRGBO(94, 94, 94, 1),
-              width: 1.5,
-            ),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Filtrar pedidos",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color.fromRGBO(94, 94, 94, 1),
-                ),
-              ),
-              SizedBox(width: 8),
-              Icon(
-                Icons.keyboard_arrow_down,
-                size: 18,
-                color: Color.fromRGBO(94, 94, 94, 1),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // O botão "Filtrar pedidos" saiu daqui: tinha seta, aparência de controle e
+  // nenhum comportamento (era um TODO aberto). Controle que não faz nada gasta
+  // o toque de quem está com pressa. Volta quando houver filtro de verdade.
 
   /// ============================================================
   /// FILTROS (Todos / Entregues / Cancelados)
@@ -294,7 +256,8 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
       borderRadius: BorderRadius.circular(20),
       onTap: () => setState(() => _filtro = valor),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        // 12 em vez de 8: com 8 o chip ficava abaixo do alvo mínimo de toque.
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         decoration: BoxDecoration(
           color: selecionado ? corPrincipal : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(20),
@@ -359,8 +322,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   /// ============================================================
 
   Widget _buildCardEntrega(Pedido entrega) {
-    final data =
-        "${entrega.criadoEm.day.toString().padLeft(2, '0')}/${entrega.criadoEm.month.toString().padLeft(2, '0')}/${entrega.criadoEm.year.toString().substring(2)}";
+    final data = descreverData(entrega.criadoEm);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -414,24 +376,9 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
             ],
           ),
 
-          const SizedBox(height: 14),
-
-          Center(
-            child: InkWell(
-              onTap: () {
-                // TODO:
-                // Abrir tela com informações completas da entrega.
-              },
-              child: const Text(
-                "Visualizar pedido",
-                style: TextStyle(
-                  color: corPrincipal,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+          // Não há "Visualizar pedido" aqui: o entregador não tem tela de
+          // detalhe de entrega encerrada, e o botão que existia não fazia nada
+          // ao ser tocado. Botão morto engana mais que ausência de botão.
         ],
       ),
     );
@@ -500,18 +447,25 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

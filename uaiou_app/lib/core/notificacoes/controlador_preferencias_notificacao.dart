@@ -16,8 +16,9 @@ import 'repositorio_notificacoes.dart';
 class ControladorPreferenciasNotificacao extends ChangeNotifier {
   final RepositorioNotificacoes _repositorio;
 
-  ControladorPreferenciasNotificacao({required RepositorioNotificacoes repositorio})
-    : _repositorio = repositorio;
+  ControladorPreferenciasNotificacao({
+    required RepositorioNotificacoes repositorio,
+  }) : _repositorio = repositorio;
 
   Carregavel<PreferenciasNotificacao> _estado = const Carregando();
   Carregavel<PreferenciasNotificacao> get estado => _estado;

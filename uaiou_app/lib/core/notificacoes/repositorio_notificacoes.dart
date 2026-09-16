@@ -48,7 +48,9 @@ class RepositorioNotificacoes {
   }
 
   Future<PreferenciasNotificacao> obterPreferencias() async =>
-      PreferenciasNotificacao.doJson(await _api.obter('/me/notification-preferences'));
+      PreferenciasNotificacao.doJson(
+        await _api.obter('/me/notification-preferences'),
+      );
 
   /// `PUT /me/notification-preferences` — **campo ausente mantém o
   /// valor atual no servidor**: nunca manda um canal que o usuário

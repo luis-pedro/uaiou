@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/endereco/endereco_publico.dart';
 import 'package:uaiou/core/modelos/dinheiro.dart';
 import 'package:uaiou/core/pedidos/controlador_publicar_pedido.dart';
 import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/mapa_endereco.dart';
 
 /// ===============================================================
@@ -26,7 +29,7 @@ class TelaPublicarPedido extends StatefulWidget {
 }
 
 class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   final _formKey = GlobalKey<FormState>();
   final _freteController = TextEditingController();
@@ -82,9 +85,9 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
       _freteController.text.replaceAll(',', '.'),
     );
     if (valor == null || !valor.ePositivo) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe um valor de frete válido.')),
-      );
+      // Aviso no topo, como no resto do app: o `SnackBar` nasce no rodapé,
+      // justamente onde ficam o botão de publicar e a barra de navegação.
+      mostrarAviso(context, 'Informe um valor de frete válido.', erro: true);
       return;
     }
 
@@ -119,9 +122,7 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
     // botão parece morto.
     final erro = _controlador.erro;
     if (erro != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(erro)));
+      mostrarAviso(context, erro, erro: true);
     }
   }
 
@@ -148,6 +149,9 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  // Sem isto o teclado mostrava "concluir" em cada campo e o
+                  // usuário tinha de tocar no próximo à mão, um por um.
+                  textInputAction: TextInputAction.next,
                   decoration: _decoracao('Ex.: 6,00'),
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Informe o valor do frete.'
@@ -158,6 +162,8 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                 _rotulo('Destino da entrega'),
                 TextFormField(
                   controller: _ruaController,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
                   decoration: _decoracao('Rua'),
                   validator: _obrigatorio,
                 ),
@@ -167,6 +173,8 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                     Expanded(
                       child: TextFormField(
                         controller: _numeroController,
+                        keyboardType: TextInputType.streetAddress,
+                        textInputAction: TextInputAction.next,
                         decoration: _decoracao('Número'),
                         validator: _obrigatorio,
                       ),
@@ -184,6 +192,8 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: _bairroController,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
                   decoration: _decoracao('Bairro'),
                   validator: _obrigatorio,
                 ),
@@ -213,6 +223,9 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                 _rotulo('Recebedor'),
                 TextFormField(
                   controller: _nomeRecebedorController,
+                  textInputAction: TextInputAction.next,
+                  textCapitalization: TextCapitalization.words,
+                  autofillHints: const [AutofillHints.name],
                   decoration: _decoracao('Nome de quem recebe'),
                   validator: _obrigatorio,
                 ),
@@ -220,6 +233,8 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                 TextFormField(
                   controller: _telefoneRecebedorController,
                   keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const [AutofillHints.telephoneNumber],
                   decoration: _decoracao('Telefone (opcional)'),
                 ),
                 const SizedBox(height: 4),
@@ -257,9 +272,7 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
                               context,
                               '/perfil_estabelecimento',
                             ),
-                            child: const Text(
-                              'Ver meus créditos no perfil',
-                            ),
+                            child: const Text('Ver meus créditos no perfil'),
                           ),
                         ],
                       ],

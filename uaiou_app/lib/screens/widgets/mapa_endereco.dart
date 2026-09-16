@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +37,7 @@ class MapaEndereco extends StatefulWidget {
     this.aoResolverEndereco,
   });
 
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   /// Santa Rita do Sapucaí — mesmo centro padrão usado no resto do
   /// app, até o estabelecimento marcar o próprio ponto.

@@ -107,10 +107,7 @@ class _MapaRotaState extends State<MapaRota> {
           child: SizedBox(
             height: widget.altura,
             child: Stack(
-              children: [
-                _buildMapa(todos, tracado),
-                _buildControles(),
-              ],
+              children: [_buildMapa(todos, tracado), _buildControles()],
             ),
           ),
         ),
@@ -188,11 +185,7 @@ class _MapaRotaState extends State<MapaRota> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (widget.aoExpandir != null)
-            _botao(
-              Icons.open_in_full,
-              'Ampliar o mapa',
-              widget.aoExpandir!,
-            ),
+            _botao(Icons.open_in_full, 'Ampliar o mapa', widget.aoExpandir!),
           _botao(Icons.add, 'Aproximar', () => _zoom(1)),
           _botao(Icons.remove, 'Afastar', () => _zoom(-1)),
           if (widget.posicaoAtual != null)
@@ -258,7 +251,9 @@ class _MapaRotaState extends State<MapaRota> {
     final posicao = widget.posicaoAtual;
 
     if (posicao != null) {
-      marcadores.add(_marcador(posicao, Icons.navigation, MapaRota.corRetirada));
+      marcadores.add(
+        _marcador(posicao, Icons.navigation, MapaRota.corRetirada),
+      );
     }
     if (tracado.isEmpty) return marcadores;
 
@@ -266,9 +261,13 @@ class _MapaRotaState extends State<MapaRota> {
     // O estabelecimento é o ponto onde o trajeto dobra — só existe
     // quando ele marcou a coordenada dele no mapa (RF-25.5).
     if (widget.rota.trajeto.passaPelaRetirada) {
-      marcadores.add(_marcador(_pontoDaLoja(tracado), Icons.storefront, Colors.black87));
+      marcadores.add(
+        _marcador(_pontoDaLoja(tracado), Icons.storefront, Colors.black87),
+      );
     }
-    marcadores.add(_marcador(tracado.last, Icons.location_on, MapaRota.corEntrega));
+    marcadores.add(
+      _marcador(tracado.last, Icons.location_on, MapaRota.corEntrega),
+    );
     return marcadores;
   }
 

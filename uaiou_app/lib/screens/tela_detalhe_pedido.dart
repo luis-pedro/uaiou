@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/contraoferta.dart';
 import 'package:uaiou/core/pedidos/controlador_detalhe_pedido.dart';
 import 'package:uaiou/core/pedidos/motivos.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/dialogo_motivo.dart';
 import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
@@ -24,7 +27,7 @@ class TelaDetalhePedido extends StatefulWidget {
 }
 
 class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   late final ControladorDetalhePedido _controlador;
 
@@ -49,7 +52,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
   void _mostrarAviso() {
     final aviso = _controlador.aviso;
     if (aviso == null || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(aviso)));
+    mostrarAviso(context, aviso);
     _controlador.limparAviso();
   }
 
@@ -127,7 +130,8 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
             child: Text(
               [
                 pedido.nomeEntregador!,
-                if (pedido.placaEntregador != null) 'placa ${pedido.placaEntregador}',
+                if (pedido.placaEntregador != null)
+                  'placa ${pedido.placaEntregador}',
               ].join(' — '),
             ),
           ),
@@ -171,7 +175,9 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: _controlador.executandoAcao ? null : () => _cancelar(pedido),
+              onPressed: _controlador.executandoAcao
+                  ? null
+                  : () => _cancelar(pedido),
               icon: const Icon(Icons.cancel_outlined),
               label: const Text('Cancelar pedido'),
               style: OutlinedButton.styleFrom(
@@ -241,7 +247,10 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
               Expanded(
                 child: Text(
                   chegou ? '$entregador chegou' : 'Coleta do pedido',
-                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -252,12 +261,17 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _controlador.executandoAcao ? null : _controlador.confirmarColeta,
+              onPressed: _controlador.executandoAcao
+                  ? null
+                  : _controlador.confirmarColeta,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               child: const Text('Confirmar coleta'),
             ),
@@ -420,7 +434,10 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
                 child: OutlinedButton(
                   onPressed: decidindo
                       ? null
-                      : () => _controlador.decidir(contraoferta.id, aceitar: false),
+                      : () => _controlador.decidir(
+                          contraoferta.id,
+                          aceitar: false,
+                        ),
                   child: const Text('Recusar'),
                 ),
               ),
@@ -429,7 +446,10 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
                 child: ElevatedButton(
                   onPressed: decidindo
                       ? null
-                      : () => _controlador.decidir(contraoferta.id, aceitar: true),
+                      : () => _controlador.decidir(
+                          contraoferta.id,
+                          aceitar: true,
+                        ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: corPrincipal,
                     foregroundColor: Colors.white,

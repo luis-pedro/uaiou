@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
@@ -22,7 +24,7 @@ class _TelaPedidosEstabelecimentoState
   int paginaAtual = 1;
 
   /// Cor principal do aplicativo
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   void initState() {
@@ -93,7 +95,7 @@ class _TelaPedidosEstabelecimentoState
             // Nome real da sessão (A-02), no lugar do campo vazio do
             // antigo singleton.
             context.watch<EstadoEstabelecimento>().nome.isEmpty
-                ? "Meu restaurante"
+                ? "Carregando…"
                 : context.watch<EstadoEstabelecimento>().nome,
             style: const TextStyle(
               fontSize: 22,
@@ -170,7 +172,9 @@ class _TelaPedidosEstabelecimentoState
           if (!lista.carregandoMais) lista.carregarMais();
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: CircularProgressIndicator(color: corPrincipal)),
+            child: Center(
+              child: CircularProgressIndicator(color: corPrincipal),
+            ),
           );
         }
         return _buildCardPedido(pedidos[index]);
@@ -241,12 +245,17 @@ class _TelaPedidosEstabelecimentoState
                   builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
                 ),
               ),
-              child: const Text(
-                "Visualizar pedido",
-                style: TextStyle(
-                  color: corPrincipal,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              // Alvo de toque com altura de dedo (48dp): era texto puro, e
+              // quem usa isto está de moto, com pressa.
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                child: Text(
+                  "Visualizar pedido",
+                  style: TextStyle(
+                    color: corPrincipal,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -322,18 +331,25 @@ class _TelaPedidosEstabelecimentoState
 
     final Color cor = selecionado ? corPrincipal : Colors.grey;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => _onItemMenuTap(index),
-      child: SizedBox(
-        width: 85,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icone, color: cor, size: 27),
-            const SizedBox(height: 5),
-            Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-          ],
+    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
+    // os quatro itens soavam iguais.
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      label: texto,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _onItemMenuTap(index),
+        child: SizedBox(
+          width: 85,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icone, color: cor, size: 27),
+              const SizedBox(height: 5),
+              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+            ],
+          ),
         ),
       ),
     );

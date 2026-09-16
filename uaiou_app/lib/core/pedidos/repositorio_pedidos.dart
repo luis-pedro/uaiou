@@ -153,7 +153,10 @@ class RepositorioPedidos {
   }
 
   /// `PUT /counteroffers/{id}/decision` — RF-A10.6.
-  Future<void> decidirContraoferta(String contraofertaId, {required bool aceitar}) async {
+  Future<void> decidirContraoferta(
+    String contraofertaId, {
+    required bool aceitar,
+  }) async {
     await _api.substituir(
       '/counteroffers/$contraofertaId/decision',
       corpo: {'outcome': aceitar ? 'accepted' : 'rejected'},

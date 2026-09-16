@@ -13,7 +13,8 @@ import 'repositorio_bloqueios.dart';
 class EstadoBloqueios extends ChangeNotifier {
   final RepositorioBloqueios _repositorio;
 
-  EstadoBloqueios({required RepositorioBloqueios repositorio}) : _repositorio = repositorio;
+  EstadoBloqueios({required RepositorioBloqueios repositorio})
+    : _repositorio = repositorio;
 
   Carregavel<List<EntregadorBloqueado>> _estado = const Carregando();
   Carregavel<List<EntregadorBloqueado>> get estado => _estado;

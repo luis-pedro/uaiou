@@ -63,7 +63,8 @@ class CodigoDeEntrega {
     return CodigoDeEntrega(
       status: json['status'] as String? ?? '',
       tentativasRestantes: (json['attemptsLeft'] as num?)?.toInt(),
-      canais: (json['channels'] as List?)?.map((e) => e.toString()).toList() ??
+      canais:
+          (json['channels'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       tamanho: (json['length'] as num?)?.toInt() ?? tamanhoPadrao,
     );
@@ -144,5 +145,6 @@ class EstadoEntrega {
   /// RF-A08.6/RF-A08.7 — só quando a escada esgotou.
   bool get contestavelDisponivel => contingencia.contestavelLiberada;
 
-  bool get finalizada => status == 'finalized' || status == 'contestable_finalized';
+  bool get finalizada =>
+      status == 'finalized' || status == 'contestable_finalized';
 }

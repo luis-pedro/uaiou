@@ -61,7 +61,8 @@ class ControladorPresenca extends ChangeNotifier {
   Future<void> lerPosicaoInicial() async {
     try {
       if (!await _leitor.servicoHabilitado()) return;
-      if (!await _leitor.permissaoConcedida() && !await _leitor.pedirPermissao()) {
+      if (!await _leitor.permissaoConcedida() &&
+          !await _leitor.pedirPermissao()) {
         return;
       }
       _posicaoAtual = await _leitor.posicaoAtual();
@@ -105,7 +106,9 @@ class ControladorPresenca extends ChangeNotifier {
         );
       }
 
-      final confirmado = await _repositorio.definirDisponibilidade(querDisponivel);
+      final confirmado = await _repositorio.definirDisponibilidade(
+        querDisponivel,
+      );
       _disponivel = confirmado;
 
       if (confirmado) {

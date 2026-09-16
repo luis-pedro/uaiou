@@ -73,7 +73,8 @@ class ControladorDetalhePedido extends ChangeNotifier {
   bool _executandoAcao = false;
   bool get executandoAcao => _executandoAcao;
 
-  bool get podeConfirmarColeta => pedido?.links.permite('pickupConfirmation') ?? false;
+  bool get podeConfirmarColeta =>
+      pedido?.links.permite('pickupConfirmation') ?? false;
   bool get podeCancelar => pedido?.links.permite('cancellation') ?? false;
 
   /// RF-A15.1/RF-A15.2 — confirma que o pacote foi entregue ao
@@ -86,17 +87,19 @@ class ControladorDetalhePedido extends ChangeNotifier {
 
   /// RF-A15.4/RF-A15.5 — cancela com motivo; a taxa, se houver, vem
   /// na resposta.
-  Future<bool> cancelar(MotivoCancelamento motivo, {String? observacao}) =>
-      _acao(() async {
-        final taxa = await _repositorio.cancelar(
-          pedidoId,
-          motivo: motivo,
-          observacao: observacao,
-        );
-        _aviso = taxa == null
-            ? 'Pedido cancelado.'
-            : 'Pedido cancelado. Taxa de ${taxa.formatarBRL()} a pagar ao entregador.';
-      });
+  Future<bool> cancelar(
+    MotivoCancelamento motivo, {
+    String? observacao,
+  }) => _acao(() async {
+    final taxa = await _repositorio.cancelar(
+      pedidoId,
+      motivo: motivo,
+      observacao: observacao,
+    );
+    _aviso = taxa == null
+        ? 'Pedido cancelado.'
+        : 'Pedido cancelado. Taxa de ${taxa.formatarBRL()} a pagar ao entregador.';
+  });
 
   Future<bool> _acao(Future<void> Function() executar) async {
     if (_executandoAcao) return false;

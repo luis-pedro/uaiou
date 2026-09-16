@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'package:uaiou/core/formato/data.dart';
+import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
+import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/avaliacoes/controlador_avaliacoes.dart';
@@ -31,7 +35,7 @@ class TelaAvaliacoes extends StatefulWidget {
 }
 
 class _TelaAvaliacoesState extends State<TelaAvaliacoes> {
-  static const Color corPrincipal = Color.fromRGBO(254, 98, 29, 1);
+  static const Color corPrincipal = CoresUaiou.principal;
 
   @override
   void initState() {
@@ -54,12 +58,13 @@ class _TelaAvaliacoesState extends State<TelaAvaliacoes> {
           title: const Text('Avaliações'),
           bottom: const TabBar(
             indicatorColor: Colors.white,
-            tabs: [Tab(text: 'Pendentes'), Tab(text: 'Recebidas')],
+            tabs: [
+              Tab(text: 'Pendentes'),
+              Tab(text: 'Recebidas'),
+            ],
           ),
         ),
-        body: const TabBarView(
-          children: [_AbaPendentes(), _AbaRecebidas()],
-        ),
+        body: const TabBarView(children: [_AbaPendentes(), _AbaRecebidas()]),
       ),
     );
   }
@@ -146,20 +151,21 @@ class _CardPendente extends StatelessWidget {
     );
   }
 
-  String _formatarData(DateTime data) =>
-      '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}';
+  String _formatarData(DateTime data) => formatarData(data);
 
-  Future<void> _abrirAvaliar(BuildContext context, AvaliacaoPendente item) async {
+  Future<void> _abrirAvaliar(
+    BuildContext context,
+    AvaliacaoPendente item,
+  ) async {
     final controlador = context.read<ControladorAvaliacoes>();
     final enviado = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _FormularioAvaliacao(item: item, controlador: controlador),
+      builder: (_) =>
+          _FormularioAvaliacao(item: item, controlador: controlador),
     );
     if (enviado == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Avaliação enviada.')),
-      );
+      mostrarAviso(context, 'Avaliação enviada.');
     }
   }
 }
@@ -346,7 +352,10 @@ class _EstatisticaResumo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(valor, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(
+          valor,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         Text(rotulo, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
@@ -398,7 +407,11 @@ class _CardRecebida extends StatelessWidget {
             const SizedBox(height: 6),
             const Text(
               'Automática (padrão positivo)',
-              style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ],

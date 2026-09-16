@@ -18,7 +18,8 @@ import 'score.dart';
 class ControladorScore extends ChangeNotifier {
   final RepositorioScore _repositorio;
 
-  ControladorScore({required RepositorioScore repositorio}) : _repositorio = repositorio;
+  ControladorScore({required RepositorioScore repositorio})
+    : _repositorio = repositorio;
 
   Carregavel<Score> _estado = const Carregando();
   Carregavel<Score> get estado => _estado;

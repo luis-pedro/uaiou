@@ -42,15 +42,21 @@ class EstatisticasEntregador {
   });
 
   factory EstatisticasEntregador.doJson(Object? json) {
-    final mapa = json is Map ? Map<String, dynamic>.from(json) : const <String, dynamic>{};
-    final periodo = mapa['period'] is Map ? Map<String, dynamic>.from(mapa['period'] as Map) : const <String, dynamic>{};
+    final mapa = json is Map
+        ? Map<String, dynamic>.from(json)
+        : const <String, dynamic>{};
+    final periodo = mapa['period'] is Map
+        ? Map<String, dynamic>.from(mapa['period'] as Map)
+        : const <String, dynamic>{};
 
     return EstatisticasEntregador(
       periodoDe: _data(periodo['from']),
       periodoAte: _data(periodo['to']),
       entregasConcluidas: (mapa['deliveriesCompleted'] as num?)?.toInt() ?? 0,
-      taxaSucessoContraoferta: (mapa['counterofferSuccessRate'] as num?)?.toDouble(),
-      tempoMedioDeEntregaMin: (mapa['averageDeliveryMinutes'] as num?)?.toDouble(),
+      taxaSucessoContraoferta: (mapa['counterofferSuccessRate'] as num?)
+          ?.toDouble(),
+      tempoMedioDeEntregaMin: (mapa['averageDeliveryMinutes'] as num?)
+          ?.toDouble(),
       taxaFinalizacaoLimpa: (mapa['cleanFinalizationRate'] as num?)?.toDouble(),
       horasDisponiveis: (mapa['availableHours'] as num?)?.toDouble(),
       utilizacao: (mapa['utilization'] as num?)?.toDouble(),

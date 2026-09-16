@@ -16,19 +16,15 @@ class RepositorioEstatisticas {
   /// [periodo] aceita `7d` | `30d` | `cycle` (`api/estatisticas.md`).
   /// `null` deixa o servidor escolher o padrão.
   Future<EstatisticasEntregador> obter({String? periodo}) async {
-    final resposta = await _api.obter(
-      '/me/stats',
-      query: {'period': ?periodo},
-    );
+    final resposta = await _api.obter('/me/stats', query: {'period': ?periodo});
     return EstatisticasEntregador.doJson(resposta);
   }
 
   /// RF-A10.10 — lado do estabelecimento (`MerchantStatsResponse`).
-  Future<EstatisticasEstabelecimento> obterEstabelecimento({String? periodo}) async {
-    final resposta = await _api.obter(
-      '/me/stats',
-      query: {'period': ?periodo},
-    );
+  Future<EstatisticasEstabelecimento> obterEstabelecimento({
+    String? periodo,
+  }) async {
+    final resposta = await _api.obter('/me/stats', query: {'period': ?periodo});
     return EstatisticasEstabelecimento.doJson(resposta);
   }
 }
