@@ -320,7 +320,7 @@ class _TelaPerfilEstabelecimentoState extends State<TelaPerfilEstabelecimento> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Janela: ${score.janela}',
+                        score.janela == 'all_time' ? 'Janela: todo o histórico' : 'Janela: ${score.janela}',
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
