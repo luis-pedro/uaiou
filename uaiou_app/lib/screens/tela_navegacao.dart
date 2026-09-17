@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
 import 'package:uaiou/core/rotas/modelo_rota.dart';
+import 'package:uaiou/screens/widgets/instrucoes_de_rota.dart';
 import 'package:uaiou/screens/widgets/mapa_rota.dart';
 
 /// ===============================================================
@@ -25,11 +26,11 @@ import 'package:uaiou/screens/widgets/mapa_rota.dart';
 /// troca ("mesmo que fique um pouco pior"):
 ///
 /// * **não fala** — sem voz, o entregador precisa olhar a tela;
-/// * **não recalcula sozinho** ao errar a curva. Recalcular a cada
-///   desvio significaria uma chamada ao provedor por desvio, sem teto,
-///   e a cota é finita (RNF-A14.1). Errou o caminho: o botão
-///   "Recalcular" refaz a rota a partir de onde ele está — decisão
-///   dele, uma chamada, visível.
+/// * **não recalcula a cada desvio** — durante a entrega, o
+///   [ControladorRota.acompanhar] recalcula a partir do GPS quando o
+///   entregador sai do traçado, no máximo uma vez a cada
+///   [intervaloMinimoEntreRecalculos] (RNF-A14.1). O botão
+///   "Recalcular" continua refazendo na hora, a partir de onde ele está.
 /// * **não conhece trânsito** — o provedor não oferece.
 class TelaNavegacao extends StatelessWidget {
   final String pedidoId;
@@ -57,7 +58,7 @@ class TelaNavegacao extends StatelessWidget {
             tooltip: 'Recalcular a partir daqui',
             onPressed: controlador.estado.carregando
                 ? null
-                : controlador.recarregar,
+                : () => controlador.recarregar(origem: posicao),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -80,7 +81,10 @@ class TelaNavegacao extends StatelessWidget {
                   left: 12,
                   right: 12,
                   top: 12,
-                  child: _cartaoDaManobra(rota.trajeto, posicao),
+                  child: CartaoDaManobra(
+                    trajeto: rota.trajeto,
+                    posicao: posicao,
+                  ),
                 ),
                 Positioned(
                   left: 12,
@@ -90,50 +94,6 @@ class TelaNavegacao extends StatelessWidget {
                 ),
               ],
             ),
-    );
-  }
-
-  /// A manobra que vem a seguir, grande e com a distância até ela —
-  /// RNF-A14.2: precisa ser lida de relance, com o capacete na cabeça.
-  Widget _cartaoDaManobra(Trajeto trajeto, PontoGeo? posicao) {
-    final passo = trajeto.proximoPassoDe(posicao);
-    if (passo == null) return const SizedBox.shrink();
-
-    final metros = trajeto.metrosAte(passo, posicao);
-
-    return Material(
-      color: corPrincipal,
-      borderRadius: BorderRadius.circular(18),
-      elevation: 6,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(
-          children: [
-            const Icon(Icons.turn_slight_right, color: Colors.white, size: 34),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (metros != null)
-                    Text(
-                      _distancia(metros),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  Text(
-                    passo.instrucao,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -154,7 +114,7 @@ class TelaNavegacao extends StatelessWidget {
               children: [
                 if (restante != null)
                   Text(
-                    'Faltam ${_distancia(restante)}',
+                    'Faltam ${formatarDistancia(restante)}',
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
@@ -184,36 +144,13 @@ class TelaNavegacao extends StatelessWidget {
             if (trajeto.passos.length > 1) ...[
               const SizedBox(height: 10),
               TextButton.icon(
-                onPressed: () => _mostrarPassos(context, trajeto),
+                onPressed: () => mostrarPassosDaRota(context, trajeto),
                 icon: const Icon(Icons.list, size: 18),
                 label: const Text('Ver todas as instruções'),
                 style: TextButton.styleFrom(foregroundColor: corPrincipal),
               ),
             ],
           ],
-        ),
-      ),
-    );
-  }
-
-  void _mostrarPassos(BuildContext context, Trajeto trajeto) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (contexto) => SafeArea(
-        child: ListView.separated(
-          shrinkWrap: true,
-          padding: const EdgeInsets.all(20),
-          itemCount: trajeto.passos.length,
-          separatorBuilder: (_, _) => const Divider(height: 1),
-          itemBuilder: (_, indice) {
-            final passo = trajeto.passos[indice];
-            return ListTile(
-              leading: const Icon(Icons.arrow_forward),
-              title: Text(passo.instrucao),
-              subtitle: Text(_distancia(passo.distanciaMetros.toDouble())),
-            );
-          },
         ),
       ),
     );
@@ -250,8 +187,4 @@ class TelaNavegacao extends StatelessWidget {
       ),
     );
   }
-
-  String _distancia(double metros) => metros >= 1000
-      ? '${(metros / 1000).toStringAsFixed(1)} km'
-      : '${metros.round()} m';
 }

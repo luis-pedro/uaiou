@@ -13,8 +13,13 @@ class RepositorioRotas {
 
   const RepositorioRotas(this._api);
 
-  Future<RotaDoPedido> obter(String pedidoId) async {
-    final resposta = await _api.obter('/orders/$pedidoId/route');
+  /// [origem] é a leitura de GPS do aparelho neste momento. Sem ela o
+  /// servidor usa a última posição reportada, que pode estar velha.
+  Future<RotaDoPedido> obter(String pedidoId, {PontoGeo? origem}) async {
+    final resposta = await _api.obter(
+      '/orders/$pedidoId/route',
+      query: origem == null ? null : {'lat': origem.lat, 'lng': origem.lng},
+    );
     if (resposta is! Map) {
       throw const ErroInesperado(
         mensagem: 'Resposta de rota fora do contrato.',

@@ -5,26 +5,42 @@ import '../rede/erros_api.dart';
 import 'modelo_rota.dart';
 import 'repositorio_rotas.dart';
 
+/// Afastamento do traçado, em metros, a partir do qual o entregador é
+/// considerado fora da rota planejada. Maior que o erro típico de GPS
+/// urbano para não recalcular por ruído.
+const double desvioParaRecalcularMetros = 80;
+
+/// Intervalo mínimo entre dois recálculos automáticos — é o teto de
+/// consumo do provedor (RNF-A14.1): no pior caso, uma chamada por
+/// intervalo enquanto o entregador estiver fora do caminho.
+const Duration intervaloMinimoEntreRecalculos = Duration(seconds: 45);
+
 /// ===============================================================
 /// ROTA DA ENTREGA — A-14
 /// ===============================================================
 ///
-/// **RNF-A14.1 — uma rota por abertura de tela.** [carregar] é
-/// idempotente por pedido: chamada de novo com o mesmo id enquanto o
-/// resultado já está em mãos, não vai à rede. É isso que impede o
-/// traçado de pegar carona no polling de 10s da entrega (A-08) e
-/// queimar cota do provedor sem informar nada novo — rota é dado
-/// estável, estado de entrega é que muda.
+/// **RNF-A14.1 — consumo com teto.** [carregar] é idempotente por
+/// pedido: chamada de novo com o mesmo id enquanto o resultado já está
+/// em mãos, não vai à rede. O traçado não pega carona no polling de 10s
+/// da entrega (A-08).
+///
+/// **A origem é o GPS do aparelho.** Toda consulta leva a posição lida
+/// agora, quando existe; a posição salva no servidor só é usada como
+/// último recurso. [acompanhar] recalcula sozinho quando o entregador
+/// sai do traçado ou quando a rota não pôde ser feita por falta de
+/// posição — sempre limitado por [intervaloMinimoEntreRecalculos].
 ///
 /// **RF-A14.6 — falha não contamina a tela.** Erro aqui vira "sem
 /// rota", e a tela de entrega continua com mapa, código e finalização.
-/// Por isso o controlador guarda o erro para consulta e nunca o
-/// propaga como exceção.
 class ControladorRota extends ChangeNotifier {
   final RepositorioRotas _repositorio;
+  final DateTime Function() _agora;
 
-  ControladorRota({required RepositorioRotas repositorio})
-    : _repositorio = repositorio;
+  ControladorRota({
+    required RepositorioRotas repositorio,
+    DateTime Function()? agora,
+  }) : _repositorio = repositorio,
+       _agora = agora ?? DateTime.now;
 
   String? _pedidoId;
   String? get pedidoId => _pedidoId;
@@ -39,32 +55,74 @@ class ControladorRota extends ChangeNotifier {
   int get consultasFeitas => _consultas;
   int _consultas = 0;
 
-  Future<void> carregar(String pedidoId) async {
+  bool _buscando = false;
+  bool get buscando => _buscando;
+
+  PontoGeo? _ultimaOrigem;
+  DateTime? _ultimaBusca;
+
+  Future<void> carregar(String pedidoId, {PontoGeo? origem}) async {
     if (_pedidoId == pedidoId && _estado.temConteudo) return;
     if (_pedidoId != pedidoId) {
       _estado = const Carregando();
       notifyListeners();
     }
     _pedidoId = pedidoId;
-    await _buscar();
+    await _buscar(origem ?? _ultimaOrigem);
   }
 
-  /// Recarga explícita (gesto do usuário) — a única forma de ir à rede
-  /// de novo para o mesmo pedido.
-  Future<void> recarregar() async {
+  /// Recarga explícita (gesto do usuário ou mudança de fase da entrega).
+  Future<void> recarregar({PontoGeo? origem}) async {
     if (_pedidoId == null) return;
-    await _buscar();
+    await _buscar(origem ?? _ultimaOrigem);
   }
 
-  Future<void> _buscar() async {
+  /// Chamado a cada nova leitura de GPS. Guarda a posição para as
+  /// próximas consultas e decide, com teto, se vale recalcular.
+  Future<void> acompanhar(PontoGeo posicao) async {
+    _ultimaOrigem = posicao;
+    if (_pedidoId == null || _buscando || !_precisaRecalcular(posicao)) return;
+
+    final ultima = _ultimaBusca;
+    if (ultima != null &&
+        _agora().difference(ultima) < intervaloMinimoEntreRecalculos) {
+      return;
+    }
+    await _buscar(posicao);
+  }
+
+  bool _precisaRecalcular(PontoGeo posicao) {
+    return switch (_estado) {
+      // Rota falhou ou saiu sem traçado por falta de posição: agora há.
+      Falhou() => true,
+      Pronto(:final valor) when !valor.temTracado =>
+        valor.trajeto.motivoIndisponivel == 'COURIER_LOCATION_UNKNOWN',
+      Pronto(:final valor) => _foraDoTracado(valor.trajeto, posicao),
+      _ => false,
+    };
+  }
+
+  bool _foraDoTracado(Trajeto trajeto, PontoGeo posicao) {
+    final indice = trajeto.indiceMaisProximoDe(posicao);
+    return posicao.metrosAte(trajeto.geometria[indice]) >
+        desvioParaRecalcularMetros;
+  }
+
+  Future<void> _buscar(PontoGeo? origem) async {
     final id = _pedidoId;
     if (id == null) return;
     _consultas++;
+    _buscando = true;
+    _ultimaBusca = _agora();
+    notifyListeners();
     try {
-      _estado = Pronto(await _repositorio.obter(id));
+      final nova = await _repositorio.obter(id, origem: origem);
+      // Recálculo que falhou não apaga um traçado bom já em mãos.
+      if (nova.temTracado || !_estado.temConteudo) _estado = Pronto(nova);
     } on ErroApi catch (erro) {
-      _estado = Falhou(erro);
+      if (!_estado.temConteudo) _estado = Falhou(erro);
     } finally {
+      _buscando = false;
       notifyListeners();
     }
   }
@@ -74,5 +132,7 @@ class ControladorRota extends ChangeNotifier {
     _pedidoId = null;
     _estado = const Carregando();
     _consultas = 0;
+    _ultimaOrigem = null;
+    _ultimaBusca = null;
   }
 }

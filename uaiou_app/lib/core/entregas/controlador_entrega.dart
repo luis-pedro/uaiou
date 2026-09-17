@@ -115,7 +115,10 @@ class ControladorEntrega extends ChangeNotifier {
   /// RF-A08.4/RF-A08.8 — finaliza com o código informado pelo
   /// destinatário. Erro 422 (código errado, geofence) é exposto como
   /// veio do servidor; o app não conta tentativas por conta própria.
-  Future<bool> finalizarComCodigo(String codigo) async {
+  Future<bool> finalizarComCodigo(
+    String codigo, {
+    PosicaoLida? posicaoConhecida,
+  }) async {
     if (_enviando) return false;
     final id = _pedidoId;
     if (id == null) return false;
@@ -125,7 +128,7 @@ class ControladorEntrega extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final posicao = await _leitor.posicaoAtual();
+      final posicao = await _posicaoParaFinalizar(posicaoConhecida);
       await _repositorio.finalizarPorCodigo(
         id,
         codigo: codigo,
@@ -220,7 +223,7 @@ class ControladorEntrega extends ChangeNotifier {
   /// RF-A08.6/RF-A08.7/RF-A08.8 — finaliza pela via contestável.
   /// Exige `uploadIdConfirmado`; a tela já garante isso não oferecendo
   /// o botão sem foto, mas a guarda fica aqui também.
-  Future<bool> finalizarContestavel() async {
+  Future<bool> finalizarContestavel({PosicaoLida? posicaoConhecida}) async {
     if (_enviando) return false;
     final id = _pedidoId;
     final uploadId = _uploadIdConfirmado;
@@ -231,7 +234,7 @@ class ControladorEntrega extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final posicao = await _leitor.posicaoAtual();
+      final posicao = await _posicaoParaFinalizar(posicaoConhecida);
       await _repositorio.finalizarContestavel(
         id,
         uploadId: uploadId,
@@ -253,6 +256,25 @@ class ControladorEntrega extends ChangeNotifier {
       _enviando = false;
       notifyListeners();
     }
+  }
+
+  /// Leitura nova do GPS; se ela falhar ou estourar o tempo, a última
+  /// posição que o app já tem (stream da presença). O servidor continua
+  /// sendo quem decide se ela está dentro do geofence.
+  Future<PosicaoLida> _posicaoParaFinalizar(PosicaoLida? conhecida) async {
+    try {
+      return await _leitor.posicaoAtual();
+    } catch (_) {
+      if (conhecida != null) return conhecida;
+      rethrow;
+    }
+  }
+
+  /// Consulta o estado agora, sem esperar o próximo ciclo do polling —
+  /// usada quando chega posição nova e o geofence pode ter mudado.
+  Future<void> atualizarAgora() async {
+    if (_pedidoId == null || _enviando) return;
+    await _carregar();
   }
 
   void limparErro() {

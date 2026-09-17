@@ -14,6 +14,7 @@ import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
 import 'package:uaiou/core/pedidos/controlador_vitrine.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
+import 'package:uaiou/core/rotas/modelo_rota.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
@@ -685,7 +686,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
   Future<void> _abrirRota(Pedido pedido) async {
     final rota = context.read<ControladorRota>();
     final posicao = context.read<ControladorPresenca>().posicaoAtual;
-    rota.carregar(pedido.id);
+    rota.carregar(
+      pedido.id,
+      origem: posicao == null ? null : PontoGeo(posicao.lat, posicao.lng),
+    );
 
     await showModalBottomSheet<void>(
       context: context,

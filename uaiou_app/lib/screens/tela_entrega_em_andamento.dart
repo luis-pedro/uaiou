@@ -13,10 +13,12 @@ import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
 import 'package:uaiou/screens/widgets/dialogo_motivo.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
+import 'package:uaiou/core/presenca/leitor_de_posicao.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
+import 'package:uaiou/core/rotas/modelo_rota.dart';
 import 'package:uaiou/core/uploads/seletor_de_imagem.dart';
-import 'package:uaiou/screens/tela_navegacao.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
+import 'package:uaiou/screens/widgets/instrucoes_de_rota.dart';
 import 'package:uaiou/screens/widgets/mapa_rota.dart';
 
 /// ===============================================================
@@ -42,7 +44,34 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   static const Color corSucesso = Color.fromRGBO(108, 201, 80, 1);
 
   final TextEditingController _codigoController = TextEditingController();
+  final FocusNode _focoCodigo = FocusNode();
+  final DraggableScrollableController _folha = DraggableScrollableController();
   bool _pediuAbertura = false;
+
+  static const double _folhaInicial = .34;
+  static const double _folhaMinima = .16;
+  static const double _folhaMaxima = .92;
+
+  // Guardados na abertura: `context.read` em `dispose` não é seguro.
+  late ControladorEntrega _entrega;
+  late ControladorRota _rota;
+  late ControladorPresenca _presenca;
+
+  /// Incrementado para o mapa voltar a seguir o entregador.
+  int _pedidosDeSeguir = 0;
+  PosicaoLida? _ultimaPosicaoTratada;
+  String? _ultimoStatus;
+  bool _jaAbriuAoChegar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Teclado aberto com a folha baixa escondia o campo do código atrás
+    // do próprio teclado: ao focar, a folha sobe inteira.
+    _focoCodigo.addListener(() {
+      if (_focoCodigo.hasFocus) _moverFolha(_folhaMaxima);
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -51,12 +80,19 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     // o que já está em memória.
     if (!_pediuAbertura) {
       _pediuAbertura = true;
+      _entrega = context.read<ControladorEntrega>();
+      _rota = context.read<ControladorRota>();
+      _presenca = context.read<ControladorPresenca>();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        context.read<ControladorEntrega>().abrir(widget.pedidoId);
-        // RNF-A14.1 — uma rota por abertura de tela, à parte do
-        // polling de estado: o traçado não muda a cada 10 segundos.
-        context.read<ControladorRota>().carregar(widget.pedidoId);
+        _entrega.abrir(widget.pedidoId);
+        // A rota sai do GPS do aparelho, não da última posição salva.
+        _rota.carregar(widget.pedidoId, origem: _pontoAtual());
+        // Durante a entrega a posição vai ao servidor mesmo sem
+        // "Disponível": é dela que o geofence (e o botão de finalizar)
+        // dependem.
+        _presenca.addListener(_aoMudarPosicao);
+        _presenca.acompanharEntrega();
       });
     }
   }
@@ -64,11 +100,68 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   @override
   void dispose() {
     // RF-A08.3 — o polling não deve continuar depois que a tela fecha.
-    context.read<ControladorEntrega>().fechar();
+    _entrega.fechar();
+    _presenca.removeListener(_aoMudarPosicao);
+    _presenca.pararAcompanhamentoDeEntrega();
     _retirada?.removeListener(_avisarRetirada);
     _retirada?.dispose();
     _codigoController.dispose();
+    _focoCodigo.dispose();
+    _folha.dispose();
     super.dispose();
+  }
+
+  PontoGeo? _pontoAtual() {
+    final posicao = _presenca.posicaoAtual;
+    return posicao == null ? null : PontoGeo(posicao.lat, posicao.lng);
+  }
+
+  /// Posição nova: a rota confere se saiu do traçado e o estado da
+  /// entrega é consultado na hora, para o botão de finalizar aparecer
+  /// assim que o entregador chega — sem esperar o próximo polling.
+  void _aoMudarPosicao() {
+    final posicao = _presenca.posicaoAtual;
+    if (posicao == null || identical(posicao, _ultimaPosicaoTratada)) return;
+    _ultimaPosicaoTratada = posicao;
+    _rota.acompanhar(PontoGeo(posicao.lat, posicao.lng));
+    // Dá tempo do `PUT /me/location` chegar antes de reler o geofence.
+    Future<void>.delayed(const Duration(seconds: 2), () {
+      if (mounted) _entrega.atualizarAgora();
+    });
+  }
+
+  void _moverFolha(double tamanho) {
+    if (!_folha.isAttached) return;
+    _folha.animateTo(
+      tamanho,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOut,
+    );
+  }
+
+  /// Reage a mudanças de estado vindas do polling, depois do quadro.
+  void _reagirAoEstado(EstadoEntrega entrega) {
+    final status = entrega.status;
+    final anterior = _ultimoStatus;
+    _ultimoStatus = status;
+
+    // Coleta confirmada: a rota agora deve ir direto ao destino, sem
+    // passar de novo pelo estabelecimento.
+    if (anterior == 'accepted' && status == 'picked_up') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _rota.recarregar(origem: _pontoAtual());
+      });
+    }
+
+    // Chegou ao destino: a folha sobe sozinha com o código à vista.
+    if (entrega.podeFinalizar && !_jaAbriuAoChegar) {
+      _jaAbriuAoChegar = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _moverFolha(.62);
+        mostrarAviso(context, 'Você chegou. Peça o código ao destinatário.');
+      });
+    }
   }
 
   /// A-15 — só existe durante a fase de retirada.
@@ -351,18 +444,42 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     // telas: `accepted` é retirada, `picked_up` é entrega.
     final emRetirada = entrega.status == 'accepted';
     final retirada = _sincronizarRetirada(emRetirada);
+    _reagirAoEstado(entrega);
+
+    // O código fica visível quando o servidor libera a finalização — e
+    // continua visível se o entregador já começou a digitar, mesmo que
+    // um ciclo de polling com GPS impreciso tire o link por 10s. Antes o
+    // campo sumia no meio da digitação. Quem valida a posição continua
+    // sendo o servidor, com a leitura enviada junto do código.
+    final mostrarCodigo =
+        entrega.podeFinalizar ||
+        (entrega.status == 'picked_up' &&
+            !entrega.contestavelDisponivel &&
+            (_codigoController.text.isNotEmpty || _focoCodigo.hasFocus));
+
+    final rota = context.watch<ControladorRota>().rota;
+    final posicao = context.watch<ControladorPresenca>().posicaoAtual;
+    final ponto = posicao == null ? null : PontoGeo(posicao.lat, posicao.lng);
 
     // RF-A14.1 — o mapa é a tela, e o resto flutua por cima numa folha
-    // arrastável: rodando, o que importa é o caminho; chegando, o
-    // entregador puxa a folha e o código toma a tela. A ordem de
-    // prioridade muda com a mão dele, não com a nossa aposta.
+    // arrastável: rodando, o que importa é o caminho (com a manobra no
+    // alto, como na navegação); chegando, a folha sobe com o código.
     return Stack(
       children: [
         Positioned.fill(child: _buildRota(context)),
+        if (rota != null && rota.temTracado)
+          Positioned(
+            top: 12,
+            left: 12,
+            // Deixa livre a coluna de botões do mapa, à direita.
+            right: 68,
+            child: CartaoDaManobra(trajeto: rota.trajeto, posicao: ponto),
+          ),
         DraggableScrollableSheet(
-          initialChildSize: .34,
-          minChildSize: .16,
-          maxChildSize: .92,
+          controller: _folha,
+          initialChildSize: _folhaInicial,
+          minChildSize: _folhaMinima,
+          maxChildSize: _folhaMaxima,
           builder: (contexto, rolagem) => Container(
             decoration: BoxDecoration(
               color: context.cores.superficie,
@@ -391,17 +508,20 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                   ),
                 ),
                 if (retirada != null) ...[
-                  _buildAcoesDeNavegacao(context),
+                  _buildResumoDaNavegacao(context, ponto),
                   const SizedBox(height: 16),
                   _buildRetirada(context, retirada),
                 ] else ...[
+                  // Chegou: finalizar vem antes de tudo, sem precisar
+                  // rolar a folha.
+                  if (mostrarCodigo) ...[
+                    _buildCartaoCodigo(context, controlador, entrega),
+                    const SizedBox(height: 16),
+                  ],
                   _buildGeofence(entrega),
                   const SizedBox(height: 16),
-                  _buildAcoesDeNavegacao(context),
-                  const SizedBox(height: 20),
+                  _buildResumoDaNavegacao(context, ponto),
                 ],
-                if (entrega.podeFinalizar)
-                  _buildCartaoCodigo(context, controlador, entrega),
                 if (entrega.contestavelDisponivel) ...[
                   const SizedBox(height: 20),
                   _buildCartaoContestavel(context, controlador),
@@ -419,29 +539,92 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     );
   }
 
-  /// Entrar na navegação é ação deliberada ("agora eu vou"), por isso
-  /// vive na folha e não sobre o mapa — RNF-A14.2: alvo grande.
-  Widget _buildAcoesDeNavegacao(BuildContext context) {
-    final rota = context.watch<ControladorRota>().rota;
+  /// O que antes exigia abrir a tela de navegação à parte: quanto falta,
+  /// recalcular a partir do GPS, a lista de instruções e o modo seguir.
+  /// Tudo na mesma tela onde se finaliza — RNF-A14.2: alvos grandes.
+  Widget _buildResumoDaNavegacao(BuildContext context, PontoGeo? posicao) {
+    final controladorRota = context.watch<ControladorRota>();
+    final rota = controladorRota.rota;
     if (rota == null || !rota.temTracado) return const SizedBox.shrink();
 
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => TelaNavegacao(pedidoId: widget.pedidoId),
+    final trajeto = rota.trajeto;
+    final restante = trajeto.metrosRestantes(posicao);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    restante != null
+                        ? 'Faltam ${formatarDistancia(restante)}'
+                        : '${trajeto.distanciaPorViaKm?.toStringAsFixed(1) ?? '–'} km pelas ruas',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    [
+                      if (trajeto.duracaoMinutos != null)
+                        '${trajeto.duracaoMinutos} min',
+                      trajeto.passaPelaRetirada
+                          ? 'passando pelo estabelecimento'
+                          : 'direto ao destino',
+                    ].join(' · '),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: context.cores.textoSuave,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Recalcular a partir daqui',
+              onPressed: controladorRota.buscando
+                  ? null
+                  : () => controladorRota.recarregar(origem: posicao),
+              icon: controladorRota.buscando
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+            ),
+            if (trajeto.passos.length > 1)
+              IconButton(
+                tooltip: 'Ver todas as instruções',
+                onPressed: () => mostrarPassosDaRota(context, trajeto),
+                icon: const Icon(Icons.list),
+              ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
+          onPressed: () {
+            FocusScope.of(context).unfocus();
+            setState(() => _pedidosDeSeguir++);
+            _moverFolha(_folhaMinima);
+          },
+          icon: const Icon(Icons.navigation),
+          label: const Text('Navegar'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: corPrincipal,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        icon: const Icon(Icons.navigation),
-        label: const Text('Iniciar navegação'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: corPrincipal,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
+      ],
     );
   }
 
@@ -517,6 +700,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       rota: rota,
       posicaoAtual: posicao == null ? null : LatLng(posicao.lat, posicao.lng),
       preencher: true,
+      seguirDesdeOInicio: true,
+      mostrarLegenda: false,
+      pedidosDeSeguir: _pedidosDeSeguir,
     );
   }
 
@@ -591,6 +777,16 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
           const SizedBox(height: 14),
           TextField(
             controller: _codigoController,
+            focusNode: _focoCodigo,
+            // Rebuild a cada dígito mantém o cartão visível enquanto há
+            // texto (ver `mostrarCodigo`).
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => _finalizarPorCodigo(
+              context,
+              controlador,
+              entrega.codigo.tamanho,
+            ),
+            textInputAction: TextInputAction.done,
             keyboardType: TextInputType.number,
             // RF-A08.4 — o tamanho é do servidor (`deliveryCode.length`); fixá-lo aqui foi o que
             // impediu o entregador de digitar o código real.
@@ -663,7 +859,12 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       );
       return;
     }
-    await controlador.finalizarComCodigo(codigo);
+    if (controlador.enviando) return;
+    FocusScope.of(context).unfocus();
+    await controlador.finalizarComCodigo(
+      codigo,
+      posicaoConhecida: _presenca.posicaoAtual,
+    );
   }
 
   /// RF-A08.5 — degrau atual da escada de contingência.
@@ -811,7 +1012,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               // RF-A08.6 — sem foto, sem botão utilizável.
               onPressed: (!temFoto || controlador.enviando)
                   ? null
-                  : () => controlador.finalizarContestavel(),
+                  : () => controlador.finalizarContestavel(
+                      posicaoConhecida: _presenca.posicaoAtual,
+                    ),
               child: controlador.enviando
                   ? const SizedBox(
                       width: 20,
@@ -835,7 +1038,14 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   /// fora de vista quando a folha estava recolhida.
   void _avisarErro(ControladorEntrega controlador) {
     final erro = controlador.erro;
-    if (erro == null || erro == _erroJaAvisado) return;
+    if (erro == null) {
+      // Erro consumido: o próximo, mesmo com o mesmo texto (código errado
+      // duas vezes), precisa aparecer. Antes ele era engolido e o
+      // entregador achava que o botão não fazia nada.
+      _erroJaAvisado = null;
+      return;
+    }
+    if (erro == _erroJaAvisado) return;
     _erroJaAvisado = erro;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

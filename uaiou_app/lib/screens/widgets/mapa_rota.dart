@@ -46,6 +46,14 @@ class MapaRota extends StatefulWidget {
   /// acompanhando a posição, em vez de exigir um toque para começar.
   final bool seguirDesdeOInicio;
 
+  /// Quem está por cima do mapa (entrega em andamento) já mostra a
+  /// manobra no alto; a legenda flutuante disputaria o mesmo espaço.
+  final bool mostrarLegenda;
+
+  /// Incrementar liga o modo seguir de fora — o botão "Navegar" da
+  /// folha de entrega usa isto para centrar no entregador.
+  final int pedidosDeSeguir;
+
   const MapaRota({
     super.key,
     required this.rota,
@@ -54,6 +62,8 @@ class MapaRota extends StatefulWidget {
     this.aoExpandir,
     this.preencher = false,
     this.seguirDesdeOInicio = false,
+    this.mostrarLegenda = true,
+    this.pedidosDeSeguir = 0,
   });
 
   static const Color corRetirada = Color.fromRGBO(41, 98, 255, 1);
@@ -75,6 +85,11 @@ class _MapaRotaState extends State<MapaRota> {
   void didUpdateWidget(MapaRota anterior) {
     super.didUpdateWidget(anterior);
     final posicao = widget.posicaoAtual;
+    if (widget.pedidosDeSeguir != anterior.pedidosDeSeguir) {
+      _seguindo = true;
+      if (posicao != null && _pronto) _mapa.move(posicao, 16.5);
+      return;
+    }
     if (!_seguindo || posicao == null || posicao == anterior.posicaoAtual) {
       return;
     }
@@ -93,7 +108,13 @@ class _MapaRotaState extends State<MapaRota> {
       return Stack(
         children: [
           Positioned.fill(child: _buildMapa(todos, tracado)),
-          Positioned(top: 12, left: 12, right: 76, child: _legendaFlutuante()),
+          if (widget.mostrarLegenda)
+            Positioned(
+              top: 12,
+              left: 12,
+              right: 76,
+              child: _legendaFlutuante(),
+            ),
           if (widget.rota.atribuicao != null)
             Positioned(left: 12, bottom: 10, child: _atribuicaoFlutuante()),
           _buildControles(),

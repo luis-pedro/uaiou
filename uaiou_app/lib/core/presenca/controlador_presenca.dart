@@ -114,7 +114,7 @@ class ControladorPresenca extends ChangeNotifier {
       if (confirmado) {
         _iniciarEnvioDePosicao();
       } else {
-        _pararEnvioDePosicao();
+        if (!_acompanhandoEntrega) _pararEnvioDePosicao();
       }
     } on ErroApi catch (e) {
       _disponivel = anterior;
@@ -153,6 +153,36 @@ class ControladorPresenca extends ChangeNotifier {
         .listen(_aoReceberPosicao);
   }
 
+  bool _acompanhandoEntrega = false;
+
+  /// Entrega em curso: a posição precisa chegar ao servidor mesmo com o
+  /// entregador indisponível para pedidos novos — é dela que dependem
+  /// o geofence (botão de finalizar) e a origem da rota. Antes, o envio
+  /// só acontecia com "Disponível" ligado nesta sessão do app, e quem
+  /// abria a entrega por notificação ficava com posição velha e sem o
+  /// botão de finalizar.
+  Future<void> acompanharEntrega() async {
+    _acompanhandoEntrega = true;
+    try {
+      if (!await _leitor.servicoHabilitado()) return;
+      if (!await _leitor.permissaoConcedida() &&
+          !await _leitor.pedirPermissao()) {
+        return;
+      }
+      if (!_acompanhandoEntrega) return;
+      _iniciarEnvioDePosicao();
+      await _aoReceberPosicao(await _leitor.posicaoAtual());
+    } catch (_) {
+      // Sem leitura imediata o stream ainda entrega a próxima.
+    }
+  }
+
+  /// Saiu da tela de entrega: volta ao comportamento normal de presença.
+  void pararAcompanhamentoDeEntrega() {
+    _acompanhandoEntrega = false;
+    if (_disponivel != true) _pararEnvioDePosicao();
+  }
+
   /// RF-A06.4 — encerra o envio quando deixa de fazer sentido.
   void _pararEnvioDePosicao() {
     _assinatura?.cancel();
@@ -183,7 +213,7 @@ class ControladorPresenca extends ChangeNotifier {
       final doServidor = await _repositorio.obterDisponibilidadeDoServidor();
       if (doServidor == false) {
         _disponivel = false;
-        _pararEnvioDePosicao();
+        if (!_acompanhandoEntrega) _pararEnvioDePosicao();
         notifyListeners();
       }
     } on ErroApi {
@@ -195,6 +225,7 @@ class ControladorPresenca extends ChangeNotifier {
   /// RF-A03.9/RF-A06.4 — logout interrompe o envio e descarta o que o
   /// usuário anterior tinha.
   void limpar() {
+    _acompanhandoEntrega = false;
     _pararEnvioDePosicao();
     _disponivel = null;
     _enviando = false;
