@@ -7,6 +7,7 @@ import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map/flutter_map.dart';
+import 'package:uaiou/screens/widgets/camada_mapa_base.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
@@ -208,10 +209,7 @@ class _TelaPrincipalEstabelecimentoState
           initialZoom: 15,
         ),
         children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.uaiou.app',
-          ),
+          const CamadaMapaBase(),
           MarkerLayer(
             markers: [
               if (ponto != null)

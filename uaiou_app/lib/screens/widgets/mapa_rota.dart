@@ -8,8 +8,9 @@ import 'package:maplibre_gl/maplibre_gl.dart' as ml;
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/rotas/modelo_rota.dart';
-import 'package:uaiou/core/rotas/repositorio_rotas.dart';
+import 'package:uaiou/core/mapa/repositorio_mapa.dart';
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/marcadores_mapa.dart';
 
 /// ===============================================================
 /// TRAÇADO DO PEDIDO — RF-A14.1/RF-A14.2
@@ -82,6 +83,10 @@ class MapaRota extends StatefulWidget {
   static const Color corRetirada = Color.fromRGBO(41, 98, 255, 1);
   static const Color corEntrega = Color.fromRGBO(254, 98, 29, 1);
 
+  /// Fixa, não do tema: o pino tem ícone branco e contorno branco, e
+  /// precisa de fundo escuro nos dois temas do mapa.
+  static const Color corLoja = Color.fromRGBO(38, 50, 56, 1);
+
   /// Santa Rita do Sapucaí — mesmo centro padrão do resto do app.
   static const LatLng centroPadrao = LatLng(-22.2526, -45.7033);
 
@@ -94,13 +99,31 @@ class MapaRota extends StatefulWidget {
   State<MapaRota> createState() => _MapaRotaState();
 }
 
-class _MapaRotaState extends State<MapaRota> {
+class _MapaRotaState extends State<MapaRota>
+    with SingleTickerProviderStateMixin {
   static const _fonteRota = 'rota';
-  static const _fontePontos = 'rota-pontos';
+  static const _fonteOrigem = 'rota-origem';
+  static const _fontePinos = 'rota-pinos';
   static const _fontePosicao = 'rota-posicao';
 
+  static const _iconePonteiro = 'uaiou-ponteiro';
+  static const _iconeLoja = 'uaiou-loja';
+  static const _iconeEntrega = 'uaiou-entrega';
+
   /// Abaixo disto o GPS oscila parado e o rumo calculado gira à toa.
-  static const double _deslocamentoMinimoParaRumoMetros = 4;
+  static const double _deslocamentoMinimoParaRumoMetros = 3;
+
+  /// O deslize entre leituras dura o intervalo entre elas — o marcador
+  /// chega no ponto novo quando a próxima leitura já está vindo, e o
+  /// movimento parece contínuo. Os limites seguram leituras muito
+  /// próximas (sem tempo de ver o deslize) ou muito espaçadas (deslize
+  /// arrastado de um ponto velho).
+  static const Duration _deslizeMinimo = Duration(milliseconds: 300);
+  static const Duration _deslizeMaximo = Duration(milliseconds: 1500);
+
+  /// Teto de quadros por segundo mandados ao mapa nativo. Cada quadro é
+  /// uma chamada de plataforma; 30 é fluido e não engasga o canal.
+  static const Duration _intervaloEntreQuadros = Duration(milliseconds: 33);
 
   ml.MapLibreMapController? _mapa;
   late bool _seguindo = widget.seguirDesdeOInicio;
@@ -112,6 +135,30 @@ class _MapaRotaState extends State<MapaRota> {
   /// Direção do movimento, em graus a partir do norte. O `PosicaoLida`
   /// não traz rumo; ele sai de duas leituras seguidas.
   double _rumo = 0;
+
+  // Estado do deslize: de onde o marcador sai, para onde vai, e onde ele
+  // está desenhado agora.
+  late final AnimationController _deslize = AnimationController(vsync: this)
+    ..addListener(_aoAvancarDeslize);
+  LatLng? _origemDeslize;
+  double _rumoOrigemDeslize = 0;
+  LatLng? _exibida;
+  double _rumoExibido = 0;
+  DateTime? _ultimaLeitura;
+  DateTime _ultimoQuadro = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _quadroEmVoo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _exibida = widget.posicaoAtual;
+  }
+
+  @override
+  void dispose() {
+    _deslize.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -126,9 +173,7 @@ class _MapaRotaState extends State<MapaRota> {
   Future<void> _carregarEstilo(bool escuro) async {
     String estilo;
     try {
-      estilo = await context.read<RepositorioRotas>().estiloDoMapa(
-        escuro: escuro,
-      );
+      estilo = await context.read<RepositorioMapa>().estilo(escuro: escuro);
     } catch (_) {
       // Recurso desligado ou backend fora: melhor um mapa simples que
       // um quadro cinza no meio da entrega.
@@ -137,8 +182,8 @@ class _MapaRotaState extends State<MapaRota> {
     if (!mounted || escuro != _estiloEscuro) return;
     setState(() {
       _estilo = estilo;
-      // Troca de estilo apaga as camadas próprias; o callback de estilo
-      // carregado as recria.
+      // Troca de estilo apaga ícones e camadas próprias; o callback de
+      // estilo carregado os recria.
       _camadasProntas = false;
     });
   }
@@ -146,31 +191,116 @@ class _MapaRotaState extends State<MapaRota> {
   @override
   void didUpdateWidget(MapaRota anterior) {
     super.didUpdateWidget(anterior);
-    final posicao = widget.posicaoAtual;
-    final anteriorPos = anterior.posicaoAtual;
-
-    if (posicao != null && anteriorPos != null && posicao != anteriorPos) {
-      final metros = const Distance().as(
-        LengthUnit.Meter,
-        anteriorPos,
-        posicao,
-      );
-      if (metros >= _deslocamentoMinimoParaRumoMetros) {
-        _rumo = const Distance().bearing(anteriorPos, posicao) % 360;
-      }
-    }
-
     if (!identical(widget.rota, anterior.rota)) unawaited(_desenharRota());
-    if (posicao != anteriorPos) unawaited(_desenharPosicao());
+
+    final posicao = widget.posicaoAtual;
+    if (posicao != null && posicao != anterior.posicaoAtual) {
+      _deslizarAte(posicao);
+    }
 
     if (widget.pedidosDeSeguir != anterior.pedidosDeSeguir) {
       _seguindo = true;
-      unawaited(_seguirPosicao(animar: true));
+      unawaited(_entrarNoSeguir());
+    }
+  }
+
+  /// Nova leitura do GPS: o marcador (e a câmera, no modo seguir) sai de
+  /// onde está desenhado e desliza até ela.
+  void _deslizarAte(LatLng destino) {
+    final exibida = _exibida;
+    final agora = DateTime.now();
+    final ultima = _ultimaLeitura;
+    _ultimaLeitura = agora;
+
+    if (exibida == null) {
+      _exibida = destino;
+      unawaited(_desenharQuadro(forcar: true));
       return;
     }
-    if (_seguindo && posicao != null && posicao != anteriorPos) {
-      unawaited(_seguirPosicao(animar: true));
+
+    final metros = const Distance().as(LengthUnit.Meter, exibida, destino);
+    if (metros >= _deslocamentoMinimoParaRumoMetros) {
+      _rumo = const Distance().bearing(exibida, destino) % 360;
     }
+
+    final intervalo = ultima == null
+        ? _deslizeMaximo
+        : agora.difference(ultima);
+    _origemDeslize = exibida;
+    _rumoOrigemDeslize = _rumoExibido;
+    _alvoDeslize = destino;
+    _deslize
+      ..duration = _limitar(intervalo)
+      ..forward(from: 0);
+  }
+
+  LatLng? _alvoDeslize;
+
+  static Duration _limitar(Duration intervalo) {
+    if (intervalo < _deslizeMinimo) return _deslizeMinimo;
+    if (intervalo > _deslizeMaximo) return _deslizeMaximo;
+    return intervalo;
+  }
+
+  void _aoAvancarDeslize() {
+    final origem = _origemDeslize;
+    final alvo = _alvoDeslize;
+    if (origem == null || alvo == null) return;
+
+    // Linear de propósito: com leituras em sequência, qualquer curva de
+    // aceleração vira um "anda-para-anda-para" a cada ponto.
+    final t = _deslize.value;
+    _exibida = LatLng(
+      origem.latitude + (alvo.latitude - origem.latitude) * t,
+      origem.longitude + (alvo.longitude - origem.longitude) * t,
+    );
+    _rumoExibido = _interpolarRumo(_rumoOrigemDeslize, _rumo, t);
+    unawaited(_desenharQuadro(forcar: t >= 1));
+  }
+
+  /// Gira pelo caminho curto: de 350° para 10° são 20°, não 340°.
+  static double _interpolarRumo(double de, double para, double t) {
+    final diferenca = ((para - de + 540) % 360) - 180;
+    return (de + diferenca * t) % 360;
+  }
+
+  /// Um quadro do deslize: move o marcador e, seguindo, a câmera junto —
+  /// os dois pela mesma interpolação, para o ponteiro não "escorregar"
+  /// para fora do centro.
+  Future<void> _desenharQuadro({bool forcar = false}) async {
+    final mapa = _mapa;
+    final exibida = _exibida;
+    if (mapa == null || exibida == null || !_camadasProntas) return;
+
+    final agora = DateTime.now();
+    if (!forcar &&
+        (_quadroEmVoo ||
+            agora.difference(_ultimoQuadro) < _intervaloEntreQuadros)) {
+      return;
+    }
+    _quadroEmVoo = true;
+    _ultimoQuadro = agora;
+    try {
+      await mapa.setGeoJsonSource(_fontePosicao, _geoJsonPosicao());
+      if (_seguindo) await mapa.moveCamera(_cameraSeguindo(exibida));
+    } finally {
+      _quadroEmVoo = false;
+    }
+  }
+
+  ml.CameraUpdate _cameraSeguindo(LatLng alvo) {
+    final navegando = widget.preencher;
+    return ml.CameraUpdate.newCameraPosition(
+      ml.CameraPosition(
+        target: _paraMl(alvo),
+        // Respeita o zoom que o entregador escolheu nos botões.
+        zoom:
+            _mapa?.cameraPosition?.zoom ??
+            (navegando ? MapaRota.zoomNavegacao : 16.5),
+        tilt: navegando ? MapaRota.inclinacaoNavegacao : 0,
+        bearing: navegando ? _rumoExibido : 0,
+      ),
+    );
   }
 
   @override
@@ -242,6 +372,8 @@ class _MapaRotaState extends State<MapaRota> {
           target: _paraMl(centro),
           zoom: tracado.isEmpty ? 13 : 15,
         ),
+        // Necessário para ler o zoom atual e mantê-lo no modo seguir.
+        trackCameraPosition: true,
         onMapCreated: (controlador) => _mapa = controlador,
         onStyleLoadedCallback: _aoCarregarEstilo,
         compassEnabled: true,
@@ -253,9 +385,26 @@ class _MapaRotaState extends State<MapaRota> {
   Future<void> _aoCarregarEstilo() async {
     final mapa = _mapa;
     if (mapa == null) return;
+    final corOrigem = _hex(context.cores.textoSuave);
+
+    await Future.wait([
+      MarcadoresMapa.ponteiro(
+        MapaRota.corRetirada,
+      ).then((png) => mapa.addImage(_iconePonteiro, png)),
+      MarcadoresMapa.pino(
+        MapaRota.corLoja,
+        Icons.storefront_rounded,
+      ).then((png) => mapa.addImage(_iconeLoja, png)),
+      MarcadoresMapa.pino(
+        MapaRota.corEntrega,
+        Icons.flag_rounded,
+      ).then((png) => mapa.addImage(_iconeEntrega, png)),
+    ]);
+    if (!mounted) return;
 
     await mapa.addGeoJsonSource(_fonteRota, _geoJsonRota());
-    await mapa.addGeoJsonSource(_fontePontos, _geoJsonPontos());
+    await mapa.addGeoJsonSource(_fonteOrigem, _geoJsonOrigem());
+    await mapa.addGeoJsonSource(_fontePinos, _geoJsonPinos());
     await mapa.addGeoJsonSource(_fontePosicao, _geoJsonPosicao());
 
     // Contorno branco por baixo do traço: sobre rua clara, uma linha
@@ -282,34 +431,56 @@ class _MapaRotaState extends State<MapaRota> {
       ),
       enableInteraction: false,
     );
+    // A origem é só referência de onde o trajeto começou: ponto discreto,
+    // deitado no mapa.
     await mapa.addCircleLayer(
-      _fontePontos,
-      'rota-pontos',
-      const ml.CircleLayerProperties(
-        circleRadius: 9,
-        circleColor: ['get', 'cor'],
+      _fonteOrigem,
+      'rota-origem',
+      ml.CircleLayerProperties(
+        circleRadius: 6,
+        circleColor: corOrigem,
         circleStrokeColor: '#ffffff',
-        circleStrokeWidth: 3,
+        circleStrokeWidth: 2.5,
         circlePitchAlignment: 'map',
       ),
       enableInteraction: false,
     );
-    await mapa.addCircleLayer(
+    // Pinos em pé mesmo com a câmera inclinada — é o que os destaca dos
+    // prédios em 3D.
+    await mapa.addSymbolLayer(
+      _fontePinos,
+      'rota-pinos',
+      const ml.SymbolLayerProperties(
+        iconImage: ['get', 'icone'],
+        iconSize: 1 / MarcadoresMapa.escala,
+        iconAnchor: 'bottom',
+        iconPitchAlignment: 'viewport',
+        iconRotationAlignment: 'viewport',
+        iconAllowOverlap: true,
+        iconIgnorePlacement: true,
+      ),
+      enableInteraction: false,
+    );
+    // O ponteiro, ao contrário, deita no chão e gira com o rumo: é
+    // assim que a seta aponta a rua certa com o mapa inclinado.
+    await mapa.addSymbolLayer(
       _fontePosicao,
       'rota-posicao',
-      ml.CircleLayerProperties(
-        circleRadius: 10,
-        circleColor: _hex(MapaRota.corRetirada),
-        circleStrokeColor: '#ffffff',
-        circleStrokeWidth: 4,
-        circlePitchAlignment: 'map',
+      const ml.SymbolLayerProperties(
+        iconImage: _iconePonteiro,
+        iconSize: 1 / MarcadoresMapa.escala,
+        iconRotate: ['get', 'rumo'],
+        iconRotationAlignment: 'map',
+        iconPitchAlignment: 'map',
+        iconAllowOverlap: true,
+        iconIgnorePlacement: true,
       ),
       enableInteraction: false,
     );
     _camadasProntas = true;
 
     if (_seguindo && widget.posicaoAtual != null) {
-      await _seguirPosicao(animar: false);
+      await _entrarNoSeguir(animar: false);
     } else {
       await _enquadrarTrajeto();
     }
@@ -319,13 +490,8 @@ class _MapaRotaState extends State<MapaRota> {
     final mapa = _mapa;
     if (mapa == null || !_camadasProntas) return;
     await mapa.setGeoJsonSource(_fonteRota, _geoJsonRota());
-    await mapa.setGeoJsonSource(_fontePontos, _geoJsonPontos());
-  }
-
-  Future<void> _desenharPosicao() async {
-    final mapa = _mapa;
-    if (mapa == null || !_camadasProntas) return;
-    await mapa.setGeoJsonSource(_fontePosicao, _geoJsonPosicao());
+    await mapa.setGeoJsonSource(_fonteOrigem, _geoJsonOrigem());
+    await mapa.setGeoJsonSource(_fontePinos, _geoJsonPinos());
   }
 
   /// Enquadra o trajeto inteiro: o entregador precisa ver onde
@@ -343,35 +509,37 @@ class _MapaRotaState extends State<MapaRota> {
           southwest: ml.LatLng(lats.reduce(min), lngs.reduce(min)),
           northeast: ml.LatLng(lats.reduce(max), lngs.reduce(max)),
         ),
-        left: 36,
-        top: 36,
-        right: 36,
-        bottom: 36,
+        left: 48,
+        top: 48,
+        right: 48,
+        bottom: 48,
       ),
     );
   }
 
-  Future<void> _seguirPosicao({required bool animar}) async {
+  /// Leva a câmera ao entregador no enquadramento de navegação. Depois
+  /// disso, quem move a câmera é o deslize, quadro a quadro.
+  Future<void> _entrarNoSeguir({bool animar = true}) async {
     final mapa = _mapa;
-    final posicao = widget.posicaoAtual;
-    if (mapa == null || posicao == null || !_camadasProntas) return;
+    final alvo = _exibida ?? widget.posicaoAtual;
+    if (mapa == null || alvo == null || !_camadasProntas) return;
 
     final navegando = widget.preencher;
-    final atualizacao = ml.CameraUpdate.newCameraPosition(
+    final camera = ml.CameraUpdate.newCameraPosition(
       ml.CameraPosition(
-        target: _paraMl(posicao),
+        target: _paraMl(alvo),
         zoom: navegando ? MapaRota.zoomNavegacao : 16.5,
         tilt: navegando ? MapaRota.inclinacaoNavegacao : 0,
-        bearing: navegando ? _rumo : 0,
+        bearing: navegando ? _rumoExibido : 0,
       ),
     );
     if (animar) {
       await mapa.animateCamera(
-        atualizacao,
-        duration: const Duration(milliseconds: 900),
+        camera,
+        duration: const Duration(milliseconds: 800),
       );
     } else {
-      await mapa.moveCamera(atualizacao);
+      await mapa.moveCamera(camera);
     }
   }
 
@@ -396,7 +564,7 @@ class _MapaRotaState extends State<MapaRota> {
           ),
           if (widget.posicaoAtual != null)
             _botao(
-              _seguindo ? Icons.gps_fixed : Icons.gps_not_fixed,
+              _seguindo ? Icons.navigation_rounded : Icons.navigation_outlined,
               _seguindo ? 'Parar de seguir' : 'Seguir minha posição',
               _alternarSeguir,
               destacado: _seguindo,
@@ -445,23 +613,22 @@ class _MapaRotaState extends State<MapaRota> {
   void _alternarSeguir() {
     setState(() => _seguindo = !_seguindo);
     if (_seguindo) {
-      unawaited(_seguirPosicao(animar: true));
-    } else {
-      // Sair do seguir devolve o mapa de cima e com o norte para cima:
-      // é o jeito de consultar o trajeto inteiro.
-      unawaited(
-        _mapa?.animateCamera(
-          ml.CameraUpdate.newCameraPosition(
-            ml.CameraPosition(
-              target:
-                  _mapa!.cameraPosition?.target ??
-                  _paraMl(MapaRota.centroPadrao),
-              zoom: _mapa!.cameraPosition?.zoom ?? 15,
-            ),
+      unawaited(_entrarNoSeguir());
+      return;
+    }
+    // Sair do seguir devolve o mapa de cima e com o norte para cima: é o
+    // jeito de consultar o trajeto inteiro.
+    final camera = _mapa?.cameraPosition;
+    unawaited(
+      _mapa?.animateCamera(
+        ml.CameraUpdate.newCameraPosition(
+          ml.CameraPosition(
+            target: camera?.target ?? _paraMl(MapaRota.centroPadrao),
+            zoom: camera?.zoom ?? 15,
           ),
         ),
-      );
-    }
+      ),
+    );
   }
 
   List<LatLng> get _tracado => widget.rota.trajeto.geometria
@@ -483,25 +650,31 @@ class _MapaRotaState extends State<MapaRota> {
     ]);
   }
 
-  /// Origem, loja (quando o trajeto passa por ela) e destino. A cor vai
-  /// na propriedade do ponto; a camada lê com `['get', 'cor']`.
-  Map<String, dynamic> _geoJsonPontos() {
+  Map<String, dynamic> _geoJsonOrigem() {
+    final tracado = _tracado;
+    return _colecao([if (tracado.isNotEmpty) _ponto(tracado.first, const {})]);
+  }
+
+  /// Loja (quando o trajeto passa por ela) e destino. O ícone vai na
+  /// propriedade do ponto; a camada lê com `['get', 'icone']`.
+  Map<String, dynamic> _geoJsonPinos() {
     final tracado = _tracado;
     if (tracado.isEmpty) return _colecao(const []);
 
     return _colecao([
-      _ponto(tracado.first, _hex(context.cores.textoSuave)),
       // O estabelecimento é o ponto onde o trajeto dobra — só existe
       // quando ele marcou a coordenada dele no mapa (RF-25.5).
       if (widget.rota.trajeto.passaPelaRetirada)
-        _ponto(_pontoDaLoja(tracado), _hex(context.cores.texto)),
-      _ponto(tracado.last, _hex(MapaRota.corEntrega)),
+        _ponto(_pontoDaLoja(tracado), const {'icone': _iconeLoja}),
+      _ponto(tracado.last, const {'icone': _iconeEntrega}),
     ]);
   }
 
   Map<String, dynamic> _geoJsonPosicao() {
-    final posicao = widget.posicaoAtual;
-    return _colecao([if (posicao != null) _ponto(posicao, null)]);
+    final exibida = _exibida;
+    return _colecao([
+      if (exibida != null) _ponto(exibida, {'rumo': _rumoExibido}),
+    ]);
   }
 
   /// O provedor emenda as duas metades da viagem numa geometria só; o
@@ -516,9 +689,12 @@ class _MapaRotaState extends State<MapaRota> {
     'features': features,
   };
 
-  static Map<String, dynamic> _ponto(LatLng ponto, String? cor) => {
+  static Map<String, dynamic> _ponto(
+    LatLng ponto,
+    Map<String, Object> propriedades,
+  ) => {
     'type': 'Feature',
-    'properties': {'cor': ?cor},
+    'properties': propriedades,
     'geometry': {'type': 'Point', 'coordinates': _coordenada(ponto)},
   };
 

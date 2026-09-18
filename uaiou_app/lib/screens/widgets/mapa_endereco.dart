@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:uaiou/screens/widgets/camada_mapa_base.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -120,10 +121,7 @@ class _MapaEnderecoState extends State<MapaEndereco> {
                 onTap: (_, ponto) => _definir(ponto),
               ),
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.uaiou.app',
-                ),
+                const CamadaMapaBase(),
                 if (_posicao != null)
                   MarkerLayer(
                     markers: [

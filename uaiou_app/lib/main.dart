@@ -37,6 +37,7 @@ import 'package:uaiou/core/perfil/repositorio_perfil.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
 import 'package:uaiou/core/presenca/repositorio_presenca.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
+import 'package:uaiou/core/mapa/repositorio_mapa.dart';
 import 'package:uaiou/core/rotas/repositorio_rotas.dart';
 import 'package:uaiou/core/uploads/repositorio_uploads.dart';
 import 'package:uaiou/core/uploads/seletor_de_imagem.dart';
@@ -333,6 +334,10 @@ class MyApp extends StatelessWidget {
         // Fora do controlador de entrega de propósito: rota é dado
         // estável e não pode pegar carona no polling de 10s dele
         // (RNF-A14.1).
+        // Tiles do mapa (vetorial e raster) servidos pelo backend com cache.
+        Provider<RepositorioMapa>(
+          create: (contexto) => RepositorioMapa(contexto.read<ClienteApi>()),
+        ),
         Provider<RepositorioRotas>(
           create: (contexto) => RepositorioRotas(contexto.read<ClienteApi>()),
         ),

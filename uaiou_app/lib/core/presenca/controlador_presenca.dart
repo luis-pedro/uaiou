@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../rede/erros_api.dart';
+import 'package:latlong2/latlong.dart';
+
 import 'leitor_de_posicao.dart';
 import 'repositorio_presenca.dart';
 
@@ -12,6 +14,12 @@ import 'repositorio_presenca.dart';
 /// a listagem de pedidos — mas grande o bastante para não gerar
 /// tráfego a cada solavanco de GPS parado num semáforo.
 const int filtroDeDistanciaMetros = 30;
+
+/// Durante uma entrega o mapa de rota acompanha o entregador: com 30 m
+/// entre leituras o marcador andaria aos saltos. Aqui o stream lê a
+/// cada poucos metros só para o **mapa** — o envio ao servidor continua
+/// respeitando [filtroDeDistanciaMetros] (ver [_aoReceberPosicao]).
+const int filtroNaEntregaMetros = 3;
 
 /// ===============================================================
 /// PRESENÇA DO ENTREGADOR — A-06
@@ -146,10 +154,23 @@ class ControladorPresenca extends ChangeNotifier {
     return null;
   }
 
+  /// Filtro do stream em curso — trocar entre disponível e entrega
+  /// reassina o stream com o filtro novo.
+  int? _filtroAtivo;
+
+  /// Última leitura mandada ao servidor; o stream fino da entrega só
+  /// vira requisição quando o entregador se afasta dela o bastante.
+  PosicaoLida? _ultimaEnviada;
+
   void _iniciarEnvioDePosicao() {
-    if (_assinatura != null) return;
+    final filtro = _acompanhandoEntrega
+        ? filtroNaEntregaMetros
+        : filtroDeDistanciaMetros;
+    if (_assinatura != null && _filtroAtivo == filtro) return;
+    _assinatura?.cancel();
+    _filtroAtivo = filtro;
     _assinatura = _leitor
-        .stream(filtroDeDistanciaMetros: filtroDeDistanciaMetros)
+        .stream(filtroDeDistanciaMetros: filtro)
         .listen(_aoReceberPosicao);
   }
 
@@ -180,24 +201,43 @@ class ControladorPresenca extends ChangeNotifier {
   /// Saiu da tela de entrega: volta ao comportamento normal de presença.
   void pararAcompanhamentoDeEntrega() {
     _acompanhandoEntrega = false;
-    if (_disponivel != true) _pararEnvioDePosicao();
+    if (_disponivel != true) {
+      _pararEnvioDePosicao();
+    } else {
+      // Segue disponível: volta ao filtro largo, que poupa bateria.
+      _iniciarEnvioDePosicao();
+    }
   }
 
   /// RF-A06.4 — encerra o envio quando deixa de fazer sentido.
   void _pararEnvioDePosicao() {
     _assinatura?.cancel();
     _assinatura = null;
+    _filtroAtivo = null;
   }
 
   Future<void> _aoReceberPosicao(PosicaoLida posicao) async {
     _posicaoAtual = posicao;
     notifyListeners();
+
+    final anterior = _ultimaEnviada;
+    if (anterior != null &&
+        const Distance().as(
+              LengthUnit.Meter,
+              LatLng(anterior.lat, anterior.lng),
+              LatLng(posicao.lat, posicao.lng),
+            ) <
+            filtroDeDistanciaMetros) {
+      return;
+    }
     try {
       await _repositorio.enviarLocalizacao(
         lat: posicao.lat,
         lng: posicao.lng,
         precisao: posicao.precisao,
       );
+      // Só depois do envio: uma falha não pode adiar o próximo.
+      _ultimaEnviada = posicao;
     } on ErroApi {
       // RNF-A06.2 — descarta a leitura e espera a próxima do stream,
       // em vez de enfileirar sem teto.
@@ -227,6 +267,7 @@ class ControladorPresenca extends ChangeNotifier {
   void limpar() {
     _acompanhandoEntrega = false;
     _pararEnvioDePosicao();
+    _ultimaEnviada = null;
     _disponivel = null;
     _enviando = false;
     _erro = null;

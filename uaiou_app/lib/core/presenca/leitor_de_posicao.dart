@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 /// ===============================================================
@@ -74,10 +75,25 @@ class LeitorDePosicaoGeolocator implements LeitorDePosicao {
     // stream aqui só emite enquanto a aba está aberta; não há como
     // fingir o contrário sem simular dado falso.
     return Geolocator.getPositionStream(
-      locationSettings: LocationSettings(
-        distanceFilter: filtroDeDistanciaMetros,
-      ),
+      locationSettings: _configuracao(filtroDeDistanciaMetros),
     ).map(_paraPosicaoLida);
+  }
+
+  /// No Android o intervalo padrão entre leituras é de vários segundos —
+  /// o filtro fino da entrega não adiantaria se o GPS só acordasse a
+  /// cada 5 s. Um segundo é o ritmo de um app de navegação.
+  LocationSettings _configuracao(int filtroDeDistanciaMetros) {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: filtroDeDistanciaMetros,
+        intervalDuration: const Duration(seconds: 1),
+      );
+    }
+    return LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: filtroDeDistanciaMetros,
+    );
   }
 
   PosicaoLida _paraPosicaoLida(Position posicao) => PosicaoLida(

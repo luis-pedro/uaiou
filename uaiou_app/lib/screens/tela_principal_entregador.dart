@@ -5,6 +5,7 @@ import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map/flutter_map.dart';
+import 'package:uaiou/screens/widgets/camada_mapa_base.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
@@ -129,10 +130,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
         mapController: _mapController,
         options: MapOptions(initialCenter: _centroPadrao, initialZoom: 15),
         children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.uaiou.app',
-          ),
+          const CamadaMapaBase(),
 
           // RF-A07.2 pede marcador por pedido elegível, mas
           // `GET /orders?status=published` não traz coordenadas do
