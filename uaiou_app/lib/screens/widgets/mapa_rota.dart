@@ -132,8 +132,8 @@ class _MapaRotaState extends State<MapaRota>
   bool? _estiloEscuro;
   String? _estilo;
 
-  /// Direção do movimento, em graus a partir do norte. O `PosicaoLida`
-  /// não traz rumo; ele sai de duas leituras seguidas.
+  /// Para onde a seta aponta, em graus a partir do norte — ver
+  /// [_rumoDesejado].
   double _rumo = 0;
 
   // Estado do deslize: de onde o marcador sai, para onde vai, e onde ele
