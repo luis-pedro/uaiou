@@ -214,14 +214,17 @@ class _MapaRotaState extends State<MapaRota>
 
     if (exibida == null) {
       _exibida = destino;
+      _rumo = _rumoDesejado(destino, movimento: null) ?? _rumo;
+      _rumoExibido = _rumo;
       unawaited(_desenharQuadro(forcar: true));
       return;
     }
 
     final metros = const Distance().as(LengthUnit.Meter, exibida, destino);
-    if (metros >= _deslocamentoMinimoParaRumoMetros) {
-      _rumo = const Distance().bearing(exibida, destino) % 360;
-    }
+    final movimento = metros >= _deslocamentoMinimoParaRumoMetros
+        ? const Distance().bearing(exibida, destino) % 360
+        : null;
+    _rumo = _rumoDesejado(destino, movimento: movimento) ?? _rumo;
 
     final intervalo = ultima == null
         ? _deslizeMaximo
@@ -235,6 +238,52 @@ class _MapaRotaState extends State<MapaRota>
   }
 
   LatLng? _alvoDeslize;
+
+  /// Quanto à frente, ao longo do traçado, a seta mira. Perto demais e
+  /// ela treme a cada leitura; longe demais e corta esquina antes da
+  /// hora.
+  static const double _miraAFrenteMetros = 30;
+
+  /// Mais longe que isto do traçado, o entregador saiu da rota: a seta
+  /// passa a mostrar para onde ele está indo, até o recálculo trazer um
+  /// traçado novo.
+  static const double _foraDaRotaMetros = 60;
+
+  /// Direção para onde a seta (e a câmera) deve apontar: o trecho da
+  /// rota logo à frente do entregador — é para lá que ele precisa ir,
+  /// mesmo parado no semáforo. Fora da rota, vale o rumo do movimento.
+  double? _rumoDesejado(LatLng posicao, {required double? movimento}) {
+    final tracado = _tracado;
+    if (tracado.length < 2) return movimento;
+
+    const distancia = Distance();
+    var maisProximo = 0;
+    var menorDistancia = double.infinity;
+    for (var i = 0; i < tracado.length; i++) {
+      final d = distancia.as(LengthUnit.Meter, posicao, tracado[i]);
+      if (d < menorDistancia) {
+        menorDistancia = d;
+        maisProximo = i;
+      }
+    }
+    if (menorDistancia > _foraDaRotaMetros && movimento != null) {
+      return movimento;
+    }
+
+    // Anda pelo traçado a partir do vértice mais próximo até juntar a
+    // distância de mira; o último vértice serve se a rota acabar antes.
+    var mira = tracado.last;
+    var percorrido = 0.0;
+    for (var i = maisProximo; i < tracado.length - 1; i++) {
+      percorrido += distancia.as(LengthUnit.Meter, tracado[i], tracado[i + 1]);
+      if (percorrido >= _miraAFrenteMetros) {
+        mira = tracado[i + 1];
+        break;
+      }
+    }
+    if (distancia.as(LengthUnit.Meter, posicao, mira) < 1) return movimento;
+    return distancia.bearing(posicao, mira) % 360;
+  }
 
   static Duration _limitar(Duration intervalo) {
     if (intervalo < _deslizeMinimo) return _deslizeMinimo;
@@ -452,7 +501,7 @@ class _MapaRotaState extends State<MapaRota>
       'rota-pinos',
       const ml.SymbolLayerProperties(
         iconImage: ['get', 'icone'],
-        iconSize: 1 / MarcadoresMapa.escala,
+        iconSize: MarcadoresMapa.tamanho / MarcadoresMapa.escala,
         iconAnchor: 'bottom',
         iconPitchAlignment: 'viewport',
         iconRotationAlignment: 'viewport',
@@ -468,7 +517,7 @@ class _MapaRotaState extends State<MapaRota>
       'rota-posicao',
       const ml.SymbolLayerProperties(
         iconImage: _iconePonteiro,
-        iconSize: 1 / MarcadoresMapa.escala,
+        iconSize: MarcadoresMapa.tamanho / MarcadoresMapa.escala,
         iconRotate: ['get', 'rumo'],
         iconRotationAlignment: 'map',
         iconPitchAlignment: 'map',

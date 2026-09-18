@@ -17,7 +17,11 @@ import 'package:flutter/material.dart';
 class MarcadoresMapa {
   const MarcadoresMapa._();
 
-  static const double escala = 3;
+  static const double escala = 4;
+
+  /// Ampliação na tela, sobre o desenho base. Os ícones são desenhados
+  /// em [escala]x, então ampliar até esse limite não borra.
+  static const double tamanho = 1.5;
 
   /// Ponteiro do entregador: seta de navegação dentro de um disco
   /// branco, com halo translúcido. A seta aponta para cima (norte); a
