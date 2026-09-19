@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' show max, min;
+import 'dart:math' show cos, max, min;
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
@@ -191,7 +191,15 @@ class _MapaRotaState extends State<MapaRota>
   @override
   void didUpdateWidget(MapaRota anterior) {
     super.didUpdateWidget(anterior);
-    if (!identical(widget.rota, anterior.rota)) unawaited(_desenharRota());
+    if (!identical(widget.rota, anterior.rota)) {
+      // Traçado novo (recálculo): o progresso do anterior não vale nele.
+      _segmentoAtual = 0;
+      _pontoNaRota = null;
+      _ultimoCorte = null;
+      final exibida = _exibida;
+      if (exibida != null) _atualizarProgresso(exibida);
+      unawaited(_desenharRota());
+    }
 
     final posicao = widget.posicaoAtual;
     if (posicao != null && posicao != anterior.posicaoAtual) {
@@ -331,10 +339,86 @@ class _MapaRotaState extends State<MapaRota>
     _ultimoQuadro = agora;
     try {
       await mapa.setGeoJsonSource(_fontePosicao, _geoJsonPosicao());
+      if (_atualizarProgresso(exibida)) {
+        await mapa.setGeoJsonSource(_fonteRota, _geoJsonRota());
+        await mapa.setGeoJsonSource(_fonteOrigem, _geoJsonOrigem());
+      }
       if (_seguindo) await mapa.moveCamera(_cameraSeguindo(exibida));
     } finally {
       _quadroEmVoo = false;
     }
+  }
+
+  // Progresso sobre o traçado: o trecho já percorrido some do mapa.
+  // Tudo calculado aqui, com a posição que o app já tem — nenhuma
+  // chamada nova à API de rota.
+
+  /// Segmento do traçado onde o entregador está. Só avança: numa rota
+  /// que vai à loja e volta pela mesma rua, a busca para trás grudaria
+  /// o entregador na perna de ida quando ele já está na de volta.
+  int _segmentoAtual = 0;
+
+  /// Projeção do entregador sobre o segmento atual — é onde o traço
+  /// restante começa.
+  LatLng? _pontoNaRota;
+
+  /// Ponto do último corte desenhado. Redesenhar a linha a cada quadro
+  /// por centímetros seria chamada de plataforma à toa.
+  LatLng? _ultimoCorte;
+
+  static const double _passoMinimoDoCorteMetros = 2;
+
+  /// Atualiza o progresso para [posicao]. Devolve  quando o traço
+  /// restante mudou o bastante para valer redesenhar.
+  bool _atualizarProgresso(LatLng posicao) {
+    final tracado = _tracado;
+    if (tracado.length < 2) return false;
+
+    var melhorSegmento = -1;
+    var melhorDistancia = double.infinity;
+    LatLng? melhorProjecao;
+    for (var i = _segmentoAtual; i < tracado.length - 1; i++) {
+      final projecao = _projetar(posicao, tracado[i], tracado[i + 1]);
+      final d = const Distance().as(LengthUnit.Meter, posicao, projecao);
+      if (d < melhorDistancia) {
+        melhorDistancia = d;
+        melhorSegmento = i;
+        melhorProjecao = projecao;
+      }
+    }
+    // Fora da rota não se corta nada: o traço mostra o caminho de
+    // volta a ela, e o recálculo cuida do resto.
+    if (melhorProjecao == null || melhorDistancia > _foraDaRotaMetros) {
+      return false;
+    }
+
+    _segmentoAtual = melhorSegmento;
+    _pontoNaRota = melhorProjecao;
+    final anterior = _ultimoCorte;
+    if (anterior != null &&
+        const Distance().as(LengthUnit.Meter, anterior, melhorProjecao) <
+            _passoMinimoDoCorteMetros) {
+      return false;
+    }
+    _ultimoCorte = melhorProjecao;
+    return true;
+  }
+
+  /// Ponto de [a]–[b] mais próximo de [p]. Plano local em metros: nas
+  /// distâncias de um segmento de rua, a curvatura da Terra não conta.
+  static LatLng _projetar(LatLng p, LatLng a, LatLng b) {
+    final escalaLng = cos(a.latitude * pi / 180);
+    final bx = (b.longitude - a.longitude) * escalaLng;
+    final by = b.latitude - a.latitude;
+    final px = (p.longitude - a.longitude) * escalaLng;
+    final py = p.latitude - a.latitude;
+    final comprimento2 = bx * bx + by * by;
+    if (comprimento2 == 0) return a;
+    final t = ((px * bx + py * by) / comprimento2).clamp(0.0, 1.0);
+    return LatLng(
+      a.latitude + (b.latitude - a.latitude) * t,
+      a.longitude + (b.longitude - a.longitude) * t,
+    );
   }
 
   ml.CameraUpdate _cameraSeguindo(LatLng alvo) {
@@ -684,24 +768,37 @@ class _MapaRotaState extends State<MapaRota>
       .map((p) => LatLng(p.lat, p.lng))
       .toList(growable: false);
 
+  /// Só o que falta percorrer: do ponto do entregador na rota em diante.
   Map<String, dynamic> _geoJsonRota() {
     final tracado = _tracado;
+    final inicio = _pontoNaRota;
+    final restante = inicio == null
+        ? tracado
+        : [inicio, ...tracado.skip(_segmentoAtual + 1)];
     return _colecao([
-      if (tracado.length >= 2)
+      if (restante.length >= 2)
         {
           'type': 'Feature',
           'properties': <String, dynamic>{},
           'geometry': {
             'type': 'LineString',
-            'coordinates': [for (final p in tracado) _coordenada(p)],
+            'coordinates': [for (final p in restante) _coordenada(p)],
           },
         },
     ]);
   }
 
+  /// O ponto de partida some junto com o trecho percorrido: depois que
+  /// o entregador saiu dele, é só ruído atrás da seta.
   Map<String, dynamic> _geoJsonOrigem() {
     final tracado = _tracado;
-    return _colecao([if (tracado.isNotEmpty) _ponto(tracado.first, const {})]);
+    final saiu =
+        _pontoNaRota != null &&
+        const Distance().as(LengthUnit.Meter, tracado.first, _pontoNaRota!) >
+            _foraDaRotaMetros;
+    return _colecao([
+      if (tracado.isNotEmpty && !saiu) _ponto(tracado.first, const {}),
+    ]);
   }
 
   /// Loja (quando o trajeto passa por ela) e destino. O ícone vai na
