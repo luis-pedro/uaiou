@@ -101,7 +101,8 @@ class MapaRota extends StatefulWidget {
 
 class _MapaRotaState extends State<MapaRota>
     with SingleTickerProviderStateMixin {
-  static const _fonteRota = 'rota';
+  static const _fontePernaLoja = 'rota-loja';
+  static const _fontePernaEntrega = 'rota-entrega';
   static const _fonteOrigem = 'rota-origem';
   static const _fontePinos = 'rota-pinos';
   static const _fontePosicao = 'rota-posicao';
@@ -128,6 +129,7 @@ class _MapaRotaState extends State<MapaRota>
   ml.MapLibreMapController? _mapa;
   late bool _seguindo = widget.seguirDesdeOInicio;
   bool _camadasProntas = false;
+  VistaDaRota _vista = VistaDaRota.etapaAtual;
 
   bool? _estiloEscuro;
   String? _estilo;
@@ -339,10 +341,13 @@ class _MapaRotaState extends State<MapaRota>
     _ultimoQuadro = agora;
     try {
       await mapa.setGeoJsonSource(_fontePosicao, _geoJsonPosicao());
+      final etapaAntes = _naPernaDaLoja;
       if (_atualizarProgresso(exibida)) {
-        await mapa.setGeoJsonSource(_fonteRota, _geoJsonRota());
+        await _desenharPernas();
         await mapa.setGeoJsonSource(_fonteOrigem, _geoJsonOrigem());
       }
+      // Passou pela loja: no modo "etapa atual" a legenda troca de perna.
+      if (etapaAntes != _naPernaDaLoja && mounted) setState(() {});
       if (_seguindo) await mapa.moveCamera(_cameraSeguindo(exibida));
     } finally {
       _quadroEmVoo = false;
@@ -368,7 +373,7 @@ class _MapaRotaState extends State<MapaRota>
 
   static const double _passoMinimoDoCorteMetros = 2;
 
-  /// Atualiza o progresso para [posicao]. Devolve  quando o traço
+  /// Atualiza o progresso para [posicao]. Devolve `true` quando o traço
   /// restante mudou o bastante para valer redesenhar.
   bool _atualizarProgresso(LatLng posicao) {
     final tracado = _tracado;
@@ -535,35 +540,43 @@ class _MapaRotaState extends State<MapaRota>
     ]);
     if (!mounted) return;
 
-    await mapa.addGeoJsonSource(_fonteRota, _geoJsonRota());
+    await mapa.addGeoJsonSource(_fontePernaEntrega, _geoJsonPerna(loja: false));
+    await mapa.addGeoJsonSource(_fontePernaLoja, _geoJsonPerna(loja: true));
     await mapa.addGeoJsonSource(_fonteOrigem, _geoJsonOrigem());
     await mapa.addGeoJsonSource(_fontePinos, _geoJsonPinos());
     await mapa.addGeoJsonSource(_fontePosicao, _geoJsonPosicao());
 
-    // Contorno branco por baixo do traço: sobre rua clara, uma linha
-    // chapada some. É o mesmo recurso que qualquer app de mapa usa.
-    await mapa.addLineLayer(
-      _fonteRota,
-      'rota-contorno',
-      const ml.LineLayerProperties(
-        lineColor: '#ffffff',
-        lineWidth: 11,
-        lineJoin: 'round',
-        lineCap: 'round',
-      ),
-      enableInteraction: false,
-    );
-    await mapa.addLineLayer(
-      _fonteRota,
-      'rota-linha',
-      ml.LineLayerProperties(
-        lineColor: _hex(MapaRota.corEntrega),
-        lineWidth: 7,
-        lineJoin: 'round',
-        lineCap: 'round',
-      ),
-      enableInteraction: false,
-    );
+    // A perna da loja entra por cima: onde as duas passam pela mesma rua
+    // (ida e volta), a que vem primeiro é a que se lê.
+    for (final (fonte, cor) in [
+      (_fontePernaEntrega, MapaRota.corEntrega),
+      (_fontePernaLoja, MapaRota.corRetirada),
+    ]) {
+      // Contorno branco por baixo do traço: sobre rua clara, uma linha
+      // chapada some. É o mesmo recurso que qualquer app de mapa usa.
+      await mapa.addLineLayer(
+        fonte,
+        '$fonte-contorno',
+        const ml.LineLayerProperties(
+          lineColor: '#ffffff',
+          lineWidth: 11,
+          lineJoin: 'round',
+          lineCap: 'round',
+        ),
+        enableInteraction: false,
+      );
+      await mapa.addLineLayer(
+        fonte,
+        '$fonte-linha',
+        ml.LineLayerProperties(
+          lineColor: _hex(cor),
+          lineWidth: 7,
+          lineJoin: 'round',
+          lineCap: 'round',
+        ),
+        enableInteraction: false,
+      );
+    }
     // A origem é só referência de onde o trajeto começou: ponto discreto,
     // deitado no mapa.
     await mapa.addCircleLayer(
@@ -622,16 +635,28 @@ class _MapaRotaState extends State<MapaRota>
   Future<void> _desenharRota() async {
     final mapa = _mapa;
     if (mapa == null || !_camadasProntas) return;
-    await mapa.setGeoJsonSource(_fonteRota, _geoJsonRota());
+    await _desenharPernas();
     await mapa.setGeoJsonSource(_fonteOrigem, _geoJsonOrigem());
     await mapa.setGeoJsonSource(_fontePinos, _geoJsonPinos());
   }
 
-  /// Enquadra o trajeto inteiro: o entregador precisa ver onde
-  /// termina, não só onde começa.
+  Future<void> _desenharPernas() async {
+    final mapa = _mapa;
+    if (mapa == null || !_camadasProntas) return;
+    await mapa.setGeoJsonSource(_fontePernaLoja, _geoJsonPerna(loja: true));
+    await mapa.setGeoJsonSource(_fontePernaEntrega, _geoJsonPerna(loja: false));
+  }
+
+  /// Enquadra o que está visível: o trajeto inteiro ou só a perna
+  /// escolhida. O entregador precisa ver onde termina, não só onde
+  /// começa.
   Future<void> _enquadrarTrajeto() async {
     final mapa = _mapa;
-    final pontos = [..._tracado, ?widget.posicaoAtual];
+    // Numa perna isolada, a posição do entregador pode estar longe dela
+    // e só estragaria o enquadramento.
+    final isolada =
+        _vista == VistaDaRota.ateLoja || _vista == VistaDaRota.ateEntrega;
+    final pontos = [..._pontosVisiveis(), if (!isolada) ?widget.posicaoAtual];
     if (mapa == null || pontos.length < 2) return;
 
     final lats = pontos.map((p) => p.latitude);
@@ -702,7 +727,88 @@ class _MapaRotaState extends State<MapaRota>
               _alternarSeguir,
               destacado: _seguindo,
             ),
+          if (_indiceDaDobra != null) _seletorDeVista(),
         ],
+      ),
+    );
+  }
+
+  /// Escolhe o que o mapa mostra: a etapa em que o entregador está (o
+  /// padrão — primeiro até a loja, depois até a entrega), o trajeto
+  /// todo, ou uma das pernas isolada para consultar.
+  Widget _seletorDeVista() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Material(
+        color: _vista == VistaDaRota.etapaAtual
+            ? Colors.white
+            : MapaRota.corRetirada,
+        shape: const CircleBorder(),
+        elevation: 3,
+        child: PopupMenuButton<VistaDaRota>(
+          tooltip: 'Escolher trecho da rota',
+          initialValue: _vista,
+          onSelected: _mudarVista,
+          icon: Icon(
+            Icons.alt_route_rounded,
+            size: 22,
+            color: _vista == VistaDaRota.etapaAtual
+                ? Colors.black87
+                : Colors.white,
+          ),
+          itemBuilder: (_) => [
+            for (final vista in VistaDaRota.values)
+              PopupMenuItem(
+                value: vista,
+                child: Row(
+                  children: [
+                    Icon(
+                      vista.icone,
+                      size: 20,
+                      color: switch (vista) {
+                        VistaDaRota.ateLoja => MapaRota.corRetirada,
+                        VistaDaRota.ateEntrega => MapaRota.corEntrega,
+                        _ => null,
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    Text(vista.rotulo),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _mudarVista(VistaDaRota vista) {
+    setState(() {
+      _vista = vista;
+      // Voltar à etapa atual é voltar a navegar; ver um trecho é
+      // consultar o mapa, e a câmera para de perseguir o entregador.
+      _seguindo =
+          vista == VistaDaRota.etapaAtual && widget.posicaoAtual != null;
+    });
+    unawaited(() async {
+      await _desenharPernas();
+      await _mapa?.setGeoJsonSource(_fontePinos, _geoJsonPinos());
+      if (_seguindo) {
+        await _entrarNoSeguir();
+      } else {
+        await _voltarAoPlano();
+        await _enquadrarTrajeto();
+      }
+    }());
+  }
+
+  /// Consultar um trecho é mais fácil de cima, com o norte para cima.
+  Future<void> _voltarAoPlano() async {
+    final camera = _mapa?.cameraPosition;
+    if (camera == null) return;
+    await _mapa?.moveCamera(
+      ml.CameraUpdate.newCameraPosition(
+        ml.CameraPosition(target: camera.target, zoom: camera.zoom),
       ),
     );
   }
@@ -768,24 +874,74 @@ class _MapaRotaState extends State<MapaRota>
       .map((p) => LatLng(p.lat, p.lng))
       .toList(growable: false);
 
-  /// Só o que falta percorrer: do ponto do entregador na rota em diante.
-  Map<String, dynamic> _geoJsonRota() {
+  /// Índice do ponto da loja no traçado; nulo sem loja no caminho — aí
+  /// a rota é uma perna só, "até a entrega".
+  int? get _indiceDaDobra => widget.rota.trajeto.indiceDaDobra;
+
+  /// O entregador ainda não passou pela loja.
+  bool get _naPernaDaLoja {
+    final dobra = _indiceDaDobra;
+    return dobra != null && _segmentoAtual < dobra;
+  }
+
+  /// Faixa de vértices [inicio, fim] de uma perna no traçado.
+  (int, int)? _faixaDaPerna({required bool loja}) {
     final tracado = _tracado;
-    final inicio = _pontoNaRota;
-    final restante = inicio == null
-        ? tracado
-        : [inicio, ...tracado.skip(_segmentoAtual + 1)];
+    if (tracado.length < 2) return null;
+    final dobra = _indiceDaDobra;
+    if (dobra == null) return loja ? null : (0, tracado.length - 1);
+    return loja ? (0, dobra) : (dobra, tracado.length - 1);
+  }
+
+  bool _pernaVisivel({required bool loja}) => switch (_vista) {
+    VistaDaRota.tudo => true,
+    VistaDaRota.ateLoja => loja,
+    VistaDaRota.ateEntrega => !loja,
+    VistaDaRota.etapaAtual => loja == _naPernaDaLoja,
+  };
+
+  /// O que falta percorrer da perna: o trecho já andado some. Perna já
+  /// concluída fica vazia; perna ainda não começada, inteira.
+  List<LatLng> _restanteDaPerna({required bool loja}) {
+    final faixa = _faixaDaPerna(loja: loja);
+    if (faixa == null) return const [];
+    final (inicio, fim) = faixa;
+    final tracado = _tracado;
+    final corte = _pontoNaRota;
+
+    if (corte == null || _segmentoAtual < inicio) {
+      return tracado.sublist(inicio, fim + 1);
+    }
+    if (_segmentoAtual >= fim) return const [];
+    return [corte, ...tracado.sublist(_segmentoAtual + 1, fim + 1)];
+  }
+
+  Map<String, dynamic> _geoJsonPerna({required bool loja}) {
+    final pontos = _pernaVisivel(loja: loja)
+        ? _restanteDaPerna(loja: loja)
+        : const <LatLng>[];
     return _colecao([
-      if (restante.length >= 2)
+      if (pontos.length >= 2)
         {
           'type': 'Feature',
           'properties': <String, dynamic>{},
           'geometry': {
             'type': 'LineString',
-            'coordinates': [for (final p in restante) _coordenada(p)],
+            'coordinates': [for (final p in pontos) _coordenada(p)],
           },
         },
     ]);
+  }
+
+  /// Pontos das pernas visíveis, inteiras — para enquadrar a câmera.
+  List<LatLng> _pontosVisiveis() {
+    final tracado = _tracado;
+    return [
+      for (final loja in [true, false])
+        if (_pernaVisivel(loja: loja))
+          if (_faixaDaPerna(loja: loja) case (final inicio, final fim))
+            ...tracado.sublist(inicio, fim + 1),
+    ];
   }
 
   /// O ponto de partida some junto com o trecho percorrido: depois que
@@ -810,9 +966,12 @@ class _MapaRotaState extends State<MapaRota>
     return _colecao([
       // O estabelecimento é o ponto onde o trajeto dobra — só existe
       // quando ele marcou a coordenada dele no mapa (RF-25.5).
-      if (widget.rota.trajeto.passaPelaRetirada)
-        _ponto(_pontoDaLoja(tracado), const {'icone': _iconeLoja}),
-      _ponto(tracado.last, const {'icone': _iconeEntrega}),
+      if (_indiceDaDobra case final dobra?)
+        _ponto(tracado[dobra], const {'icone': _iconeLoja}),
+      // Vendo só a perna da loja, o pino da entrega sobraria sozinho
+      // longe do trecho mostrado.
+      if (_vista != VistaDaRota.ateLoja)
+        _ponto(tracado.last, const {'icone': _iconeEntrega}),
     ]);
   }
 
@@ -822,13 +981,6 @@ class _MapaRotaState extends State<MapaRota>
       if (exibida != null) _ponto(exibida, {'rumo': _rumoExibido}),
     ]);
   }
-
-  /// O provedor emenda as duas metades da viagem numa geometria só; o
-  /// ponto da loja é a junção. Sem um índice vindo do servidor, o meio
-  /// do traçado é a melhor aproximação honesta — e ela erra pouco
-  /// porque as duas metades costumam ter ordem de grandeza parecida
-  /// numa praça pequena.
-  LatLng _pontoDaLoja(List<LatLng> tracado) => tracado[tracado.length ~/ 2];
 
   static Map<String, dynamic> _colecao(List<Map<String, dynamic>> features) => {
     'type': 'FeatureCollection',
@@ -899,20 +1051,31 @@ class _MapaRotaState extends State<MapaRota>
     final trajeto = widget.rota.trajeto;
     if (!trajeto.temTracado) return const SizedBox.shrink();
 
-    return _itemLegenda(
-      MapaRota.corEntrega,
-      trajeto.passaPelaRetirada
-          ? 'Pelo estabelecimento até a entrega'
-          : 'Direto até a entrega',
-      trajeto,
+    if (_indiceDaDobra == null) {
+      return _itemLegenda(
+        MapaRota.corEntrega,
+        'Direto até a entrega',
+        trajeto: trajeto,
+      );
+    }
+    // Uma linha por perna, na cor dela; os totais ficam na primeira, que
+    // é a que o entregador lê.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _itemLegenda(MapaRota.corRetirada, 'Até a loja', trajeto: trajeto),
+        const SizedBox(height: 4),
+        _itemLegenda(MapaRota.corEntrega, 'Da loja até a entrega'),
+      ],
     );
   }
 
-  Widget _itemLegenda(Color cor, String rotulo, Trajeto perna) {
+  Widget _itemLegenda(Color cor, String rotulo, {Trajeto? trajeto}) {
     final detalhes = [
-      if (perna.distanciaPorViaKm != null)
-        '${perna.distanciaPorViaKm!.toStringAsFixed(1)} km por via',
-      if (perna.duracaoMinutos != null) '${perna.duracaoMinutos} min',
+      if (trajeto?.distanciaPorViaKm case final km?)
+        '${km.toStringAsFixed(1)} km no total',
+      if (trajeto?.duracaoMinutos case final minutos?) '$minutos min',
     ].join(' · ');
 
     return Row(
@@ -934,6 +1097,21 @@ class _MapaRotaState extends State<MapaRota>
       ],
     );
   }
+}
+
+/// O que o mapa de rota mostra quando o trajeto passa pela loja.
+enum VistaDaRota {
+  /// Padrão: primeiro a perna até a loja; passada a loja, a perna até a
+  /// entrega. É o que o entregador precisa ver agora.
+  etapaAtual('Etapa atual', Icons.navigation_rounded),
+  tudo('Rota completa', Icons.route_rounded),
+  ateLoja('Só até a loja', Icons.storefront_rounded),
+  ateEntrega('Só da loja até a entrega', Icons.flag_rounded);
+
+  const VistaDaRota(this.rotulo, this.icone);
+
+  final String rotulo;
+  final IconData icone;
 }
 
 /// Reserva quando o backend não entrega o estilo vetorial: raster do

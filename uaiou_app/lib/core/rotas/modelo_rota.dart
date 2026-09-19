@@ -104,6 +104,12 @@ class Trajeto {
   final List<PontoGeo> geometria;
   final List<PassoDaRota> passos;
 
+  /// Índice, em [geometria], do ponto da loja — onde a perna "até a
+  /// loja" termina e a "até a entrega" começa. Vem do servidor, que
+  /// sabe onde o provedor separou as pernas; nulo quando não há loja no
+  /// caminho ou o servidor não informou.
+  final int? indiceDaLoja;
+
   const Trajeto({
     this.disponivel = false,
     this.motivoIndisponivel,
@@ -112,6 +118,7 @@ class Trajeto {
     this.duracaoMinutos,
     this.geometria = const [],
     this.passos = const [],
+    this.indiceDaLoja,
   });
 
   factory Trajeto.doJson(Object? json) {
@@ -134,7 +141,19 @@ class Trajeto {
               .where((p) => p.instrucao.isNotEmpty)
               .toList(growable: false) ??
           const [],
+      indiceDaLoja: (json['pickupPointIndex'] as num?)?.toInt(),
     );
+  }
+
+  /// Onde o traçado dobra na loja. Sem o índice do servidor (resposta
+  /// antiga em cache), o meio do traçado é a melhor aproximação honesta.
+  int? get indiceDaDobra {
+    if (!passaPelaRetirada || geometria.length < 3) return null;
+    final indice = indiceDaLoja;
+    if (indice != null && indice > 0 && indice < geometria.length - 1) {
+      return indice;
+    }
+    return geometria.length ~/ 2;
   }
 
   bool get temTracado => disponivel && geometria.length >= 2;
