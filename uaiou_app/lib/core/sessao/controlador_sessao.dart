@@ -143,6 +143,16 @@ class ControladorSessao extends ChangeNotifier implements ProvedorDeCredencial {
     await _registrarDispositivo();
   }
 
+  /// Modo feira (docs/feira/): a entrada do jogador não passa por
+  /// `POST /auth/sessions` — não há credencial a provar —, então a
+  /// sessão chega pronta de outra rota e só precisa ser adotada. Fica
+  /// aqui, e não no controlador da feira, porque persistir credencial e
+  /// registrar dispositivo é responsabilidade da sessão.
+  Future<void> adotarSessaoExterna(Sessao nova) async {
+    await _adotar(nova);
+    await _registrarDispositivo();
+  }
+
   /// RF-A02.8
   Future<void> pedirRecuperacaoDeSenha(String email) =>
       _auth.pedirRecuperacaoDeSenha(email);

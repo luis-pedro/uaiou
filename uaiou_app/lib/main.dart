@@ -49,6 +49,12 @@ import 'package:uaiou/core/sessao/repositorio_auth.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/core/config/ambiente.dart';
+import 'package:uaiou/core/feira/controlador_feira.dart';
+import 'package:uaiou/core/feira/repositorio_feira.dart';
+
+//TELAS DO MODO FEIRA (docs/feira/)
+import 'package:uaiou/screens/tela_feira_entrar.dart';
+import 'package:uaiou/screens/tela_feira_pedidos.dart';
 
 //TELAS PRINCIPAIS DE LOGIN
 import 'package:uaiou/screens/principal_login.dart';
@@ -131,7 +137,14 @@ void main() async {
   // quando o receptor montar. Sem Firebase (web, falha), segue sem push.
   final push = await ServicoPushFirebase.iniciar();
 
-  runApp(MyApp(push: push));
+  // Modo feira (docs/feira/): a flag mora no servidor e e lida aqui,
+  // antes da primeira tela, para o app abrir direto no fluxo certo.
+  // Sem resposta a tempo (a rede do estande e o que e), segue o produto.
+  final feiraHabilitada = await RepositorioFeira(
+    ClienteApi(),
+  ).habilitado().timeout(const Duration(seconds: 3), onTimeout: () => false);
+
+  runApp(MyApp(push: push, feiraHabilitada: feiraHabilitada));
 }
 
 /// Tela de bloqueio da RF-A13.2 — nunca a UI normal, nunca crash
@@ -195,9 +208,13 @@ const Set<String> _rotasDeOperacao = {
 };
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.push});
+  const MyApp({super.key, this.push, this.feiraHabilitada = false});
 
   final ServicoPush? push;
+
+  /// Lido do servidor em `main`. O padrão é o app do produto: um build
+  /// sem backend respondendo não vira demonstração de feira sozinho.
+  final bool feiraHabilitada;
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +252,17 @@ class MyApp extends StatelessWidget {
         ),
         Provider<RepositorioPedidos>(
           create: (contexto) => RepositorioPedidos(contexto.read<ClienteApi>()),
+        ),
+        // Modo feira (docs/feira/). A flag vem do servidor, lida em
+        // `main`: uma segunda cópia dela no app divergiria da do backend.
+        ChangeNotifierProxyProvider<ControladorSessao, ControladorFeira>(
+          create: (contexto) => ControladorFeira(
+            repositorio: RepositorioFeira(contexto.read<ClienteApi>()),
+            sessao: contexto.read<ControladorSessao>(),
+            habilitado: feiraHabilitada,
+          ),
+          update: (_, sessao, estado) =>
+              _sincronizar(estado!, sessao, estado.limpar),
         ),
         Provider<SeletorDeImagem>(create: (_) => SeletorDeImagem()),
 
@@ -543,6 +571,16 @@ Route<dynamic>? _gerarRota(RouteSettings configuracao) {
   final nome = configuracao.name;
 
   Widget construir(BuildContext contexto) {
+    // No modo feira o app tem duas telas, e nenhuma delas é do
+    // estabelecimento: as rotas do produto continuam no código, mas
+    // ninguém chega a elas nem por link, nem por `pushNamed` esquecido
+    // numa tela reaproveitada.
+    if (contexto.read<ControladorFeira>().habilitado) {
+      final sessao = contexto.read<ControladorSessao>();
+      if (!sessao.autenticado) return const TelaFeiraEntrar();
+      return const TelaFeiraPedidos();
+    }
+
     if (_rotasDeOperacao.contains(nome)) {
       final sessao = contexto.read<ControladorSessao>();
       if (!sessao.autenticado) return const LoginScreen();
@@ -616,6 +654,17 @@ class _Raiz extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sessao = context.watch<ControladorSessao>();
+    final feira = context.watch<ControladorFeira>();
+
+    if (feira.habilitado) {
+      return switch (sessao.fase) {
+        FaseSessao.carregando => const _Splash(),
+        // Sem PrincipalLogin: no modo feira não há escolha de papel nem
+        // login por senha — a entrada É o cadastro.
+        FaseSessao.deslogado => const TelaFeiraEntrar(),
+        FaseSessao.autenticado => const TelaFeiraPedidos(),
+      };
+    }
 
     return switch (sessao.fase) {
       FaseSessao.carregando => const _Splash(),

@@ -1,0 +1,74 @@
+import '../rede/cliente_api.dart';
+import '../sessao/sessao.dart';
+import 'modelos_feira.dart';
+
+/// ===============================================================
+/// REPOSITÓRIO DO MODO FEIRA — `docs/feira/01-fluxos.md`
+/// ===============================================================
+///
+/// Rotas próprias (`/feira/...`), não as do produto: o desvio da feira
+/// entra por aqui e nenhum repositório existente ganha um `if`.
+class RepositorioFeira {
+  final ClienteApi _api;
+
+  const RepositorioFeira(this._api);
+
+  /// Única rota que responde com o modo desligado — é assim que o app
+  /// descobre se deve mostrar a feira ou o produto. Falha de rede vira
+  /// `false`: na dúvida, o app normal.
+  Future<bool> habilitado() async {
+    try {
+      final resposta = await _api.obter('/feira/config');
+      return resposta is Map && resposta['enabled'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Entrada do jogador: nome e nome de usuário, sem senha. A sessão
+  /// vem na mesma resposta, porque não existe login separado quando
+  /// não há segredo a provar.
+  Future<Sessao> entrar({
+    required String nome,
+    required String username,
+  }) async {
+    final resposta = await _api.criar(
+      '/feira/jogadores',
+      corpo: {'nome': nome, 'username': username},
+    );
+    if (resposta is! Map) {
+      throw StateError('Resposta de entrada fora do contrato.');
+    }
+    final sessao = resposta['sessao'];
+    if (sessao is! Map) {
+      throw StateError('Resposta de entrada sem sessão.');
+    }
+    return Sessao.doJson(Map<String, dynamic>.from(sessao));
+  }
+
+  Future<List<PedidoFeira>> pedidos() async {
+    final resposta = await _api.obter('/feira/pedidos');
+    if (resposta is! List) return const [];
+    return resposta
+        .whereType<Map>()
+        .map((item) => PedidoFeira.doJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
+  Future<CapturaFeira> capturar(String pedidoId) async {
+    final resposta = await _api.criar('/feira/pedidos/$pedidoId/capturas');
+    if (resposta is! Map) {
+      throw StateError('Resposta de captura fora do contrato.');
+    }
+    return CapturaFeira.doJson(Map<String, dynamic>.from(resposta));
+  }
+
+  Future<List<CapturaFeira>> minhasCapturas() async {
+    final resposta = await _api.obter('/feira/capturas');
+    if (resposta is! List) return const [];
+    return resposta
+        .whereType<Map>()
+        .map((item) => CapturaFeira.doJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+}

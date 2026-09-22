@@ -8,7 +8,10 @@ name: Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    # feature/feira-tecnologica é a versão de demonstração para feira
+    # (docs/feira/) e nunca será mesclada em main, então precisa gerar APK por
+    # conta própria — é deste artefato que os aparelhos do estande instalam.
+    branches: [main, feature/feira-tecnologica]
     paths:
       - 'uaiou_app/**'
       - '.github/workflows/android-apk.yml'
@@ -50,6 +53,9 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: uaiou-apk
+          # Um artefato por branch, para o APK da feira e o do produto não se
+          # confundirem. Escrito assim, e não com `github.ref_name`, porque
+          # nome de artefato não aceita barra e a branch da feira tem uma.
+          name: uaiou-apk-${{ github.ref_name == 'main' && 'main' || 'feira' }}
           path: uaiou_app/build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
