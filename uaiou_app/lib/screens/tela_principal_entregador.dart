@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
 import 'package:uaiou/main.dart' show feiraNestaBranch;
+import 'package:uaiou/core/feira/controlador_feira.dart';
 import 'package:uaiou/core/ganhos/controlador_ganhos.dart';
 import 'package:uaiou/core/modelos/dinheiro.dart';
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
@@ -68,7 +69,12 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       // `meta.unread` (nunca somado localmente).
       context.read<ControladorNotificacoes>().carregar();
       // RF-A12.4 — nota do cabeçalho vem de `GET /me/score`.
-      if (!feiraNestaBranch) context.read<ControladorScore>().carregar();
+      if (feiraNestaBranch) {
+        // O card de prêmios sai das capturas do jogador, não do livro-razão.
+        context.read<ControladorFeira>().carregarCapturas();
+      } else {
+        context.read<ControladorScore>().carregar();
+      }
     }
   }
 
@@ -311,7 +317,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Ganhos do período",
+                  feiraNestaBranch ? "Seus prêmios" : "Ganhos do período",
                   style: TextStyle(
                     color: context.cores.textoSuave,
                     fontSize: 15,
@@ -319,9 +325,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 ),
                 InkWell(
                   onTap: () => Navigator.pushNamed(context, '/extrato_ganhos'),
-                  child: const Text(
-                    "Ver extrato",
-                    style: TextStyle(
+                  child: Text(
+                    feiraNestaBranch ? "Ver mais" : "Ver extrato",
+                    style: const TextStyle(
                       color: corPrincipal,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -331,35 +337,58 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              resumo.total.formatarBRL(),
-              style: TextStyle(
-                color: context.cores.texto,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
+            // Modo feira (docs/feira/): não há dinheiro nenhum a somar — o que
+            // a pessoa leva é prêmio, e prêmio é texto. Somar "R$ 0,00 a
+            // receber" seria mostrar uma conta que não existe. O que cabe aqui
+            // é quantos já conquistou; quais foram, o extrato diz.
+            if (feiraNestaBranch)
+              Text(
+                _resumoDePremios(context),
+                style: TextStyle(
+                  color: context.cores.texto,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            else ...[
+              Text(
+                resumo.total.formatarBRL(),
+                style: TextStyle(
+                  color: context.cores.texto,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildRotuloGanho(
-                    resumo.receivable.formatarBRL(),
-                    context.cores.atencao,
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildRotuloGanho(
+                      resumo.receivable.formatarBRL(),
+                      context.cores.atencao,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _buildRotuloGanho(
-                    resumo.settled.formatarBRL(),
-                    context.cores.positivo,
+                  Expanded(
+                    child: _buildRotuloGanho(
+                      resumo.settled.formatarBRL(),
+                      context.cores.positivo,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// Quantos prêmios o jogador já conquistou. Texto, não conta: o card fala de
+  /// Bis, e "2" sozinho no lugar de um valor pareceria saldo.
+  String _resumoDePremios(BuildContext context) {
+    final total = context.watch<ControladorFeira>().capturas.length;
+    if (total == 0) return 'Nenhum ainda';
+    return total == 1 ? '1 prêmio' : '$total prêmios';
   }
 
   Widget _buildRotuloGanho(String valor, Color cor) {
@@ -579,9 +608,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // RNF-A07.2 — valor sempre pelo tipo Dinheiro.
+              // RNF-A07.2 — valor sempre pelo tipo Dinheiro. Na feira o que vale
+              // é o prêmio em texto: o frete ali é zero e mostraria "R$ 0,00".
               Text(
-                pedido.freteProposto.formatarBRL(),
+                pedido.valorExibido,
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

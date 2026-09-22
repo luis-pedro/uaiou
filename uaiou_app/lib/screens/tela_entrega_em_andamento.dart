@@ -10,6 +10,7 @@ import 'package:uaiou/core/entregas/controlador_retirada.dart';
 import 'package:uaiou/core/entregas/modelo_entrega.dart';
 import 'package:uaiou/core/pedidos/motivos.dart';
 import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
+import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/screens/widgets/avatar_rede.dart';
 import 'package:uaiou/screens/widgets/dialogo_motivo.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
@@ -22,6 +23,8 @@ import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/instrucoes_de_rota.dart';
 import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/screens/widgets/mapa_rota.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:uaiou/screens/widgets/camada_mapa_base.dart';
 
 /// ===============================================================
 /// EXECUÇÃO DA ENTREGA — A-08
@@ -62,6 +65,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   /// Incrementado para o mapa voltar a seguir o entregador.
   int _pedidosDeSeguir = 0;
   PosicaoLida? _ultimaPosicaoTratada;
+
+  /// Modo feira: o pedido, para o mapa saber onde é o estande e o ponto. No
+  /// produto essas coordenadas vinham na rota, que aqui não é calculada.
+  Pedido? _pedidoFeira;
   String? _ultimoStatus;
   bool _jaAbriuAoChegar = false;
 
@@ -95,6 +102,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
         // dependem.
         _presenca.addListener(_aoMudarPosicao);
         _presenca.acompanharEntrega();
+        if (feiraNestaBranch) _carregarPedidoFeira();
       });
     }
   }
@@ -111,6 +119,18 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     _focoCodigo.dispose();
     _folha.dispose();
     super.dispose();
+  }
+
+  Future<void> _carregarPedidoFeira() async {
+    try {
+      final pedido = await context.read<RepositorioPedidos>().obter(
+        widget.pedidoId,
+      );
+      if (mounted) setState(() => _pedidoFeira = pedido);
+    } catch (_) {
+      // Mapa sem pinos é degradação aceitável: as etapas em texto e o botão
+      // de finalizar continuam, e é por eles que a entrega acontece.
+    }
   }
 
   PontoGeo? _pontoAtual() {
@@ -514,9 +534,18 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                     ),
                   ),
                 ),
-                if (retirada != null) ...[
-                  _buildResumoDaNavegacao(context, ponto),
+                // Modo feira: as duas etapas ficam no topo da folha o tempo
+                // todo, marcando em qual você está. É o que substitui a rota
+                // dizendo "primeiro a loja, depois o destino".
+                if (feiraNestaBranch) ...[
+                  _buildEtapasFeira(context, retirada == null),
                   const SizedBox(height: 16),
+                ],
+                if (retirada != null) ...[
+                  if (!feiraNestaBranch) ...[
+                    _buildResumoDaNavegacao(context, ponto),
+                    const SizedBox(height: 16),
+                  ],
                   _buildRetirada(context, retirada),
                 ] else ...[
                   // Chegou: finalizar vem antes de tudo, sem precisar
@@ -686,6 +715,11 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     final posicao = context.watch<ControladorPresenca>().posicaoAtual;
     final rota = context.watch<ControladorRota>().rota;
 
+    // Modo feira (docs/feira/): não existe trajeto calculado, e cair no ramo
+    // de baixo deixava "Carregando o trajeto…" na tela para sempre. Aqui o
+    // mapa mostra o que de fato importa num salão: você, o estande e o ponto.
+    if (feiraNestaBranch) return _buildMapaFeira(context);
+
     if (rota == null || !rota.temTracado) {
       return Container(
         color: context.cores.superficieSuave,
@@ -751,6 +785,177 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Modo feira (docs/feira/): o mapa do salão, sem trajeto.
+  ///
+  /// Duas pernas, e a tela diz em qual você está: primeiro o estande do UaiOu
+  /// para retirar, depois o ponto de entrega. O pino da etapa atual é o
+  /// colorido; o da outra fica apagado, para não haver dúvida de para onde ir
+  /// agora — era exatamente isso que o traçado dizia no produto.
+  Widget _buildMapaFeira(BuildContext context) {
+    final posicao = context.watch<ControladorPresenca>().posicaoAtual;
+    final pedido = _pedidoFeira;
+    final coletado = _ultimoStatus == 'picked_up';
+
+    final estande = pedido?.estabelecimentoLat != null
+        ? LatLng(pedido!.estabelecimentoLat!, pedido.estabelecimentoLong!)
+        : null;
+    final ponto = pedido?.latitude != null
+        ? LatLng(pedido!.latitude!, pedido.longitude!)
+        : null;
+    final alvo = coletado ? ponto : estande;
+
+    return FlutterMap(
+      options: MapOptions(
+        initialCenter:
+            alvo ??
+            (posicao != null
+                ? LatLng(posicao.lat, posicao.lng)
+                : const LatLng(-22.2526, -45.7033)),
+        initialZoom: 18,
+      ),
+      children: [
+        const CamadaMapaBase(),
+        MarkerLayer(
+          markers: [
+            if (posicao != null)
+              Marker(
+                point: LatLng(posicao.lat, posicao.lng),
+                width: 40,
+                height: 40,
+                child: const Icon(
+                  Icons.my_location,
+                  color: corPrincipal,
+                  size: 34,
+                ),
+              ),
+            if (estande != null)
+              Marker(
+                point: estande,
+                width: 44,
+                height: 44,
+                child: Icon(
+                  Icons.storefront,
+                  size: 38,
+                  color: coletado
+                      ? context.cores.textoSuave.withValues(alpha: .5)
+                      : context.cores.coleta,
+                ),
+              ),
+            if (ponto != null)
+              Marker(
+                point: ponto,
+                width: 44,
+                height: 44,
+                child: Icon(
+                  Icons.card_giftcard,
+                  size: 38,
+                  color: coletado
+                      ? corPrincipal
+                      : context.cores.textoSuave.withValues(alpha: .5),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// A instrução em palavras, no topo da folha: qual é a etapa agora. Sem isto
+  /// alguém que pega o pedido vai direto ao ponto e trava lá — no produto quem
+  /// dizia "passe na loja primeiro" era o traçado da rota.
+  Widget _buildEtapasFeira(BuildContext context, bool coletado) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.cores.superficieSuave,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          _buildEtapa(
+            context,
+            numero: '1',
+            titulo: 'Passe no estande do UaiOu',
+            detalhe: 'O operador confirma a retirada e libera sua entrega.',
+            ativa: !coletado,
+            concluida: coletado,
+            icone: Icons.storefront,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Icon(
+              Icons.keyboard_arrow_down,
+              color: context.cores.textoSuave,
+            ),
+          ),
+          _buildEtapa(
+            context,
+            numero: '2',
+            titulo: 'Leve até o ponto de entrega',
+            detalhe: 'Chegando lá, finalize para receber o prêmio.',
+            ativa: coletado,
+            concluida: false,
+            icone: Icons.card_giftcard,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEtapa(
+    BuildContext context, {
+    required String numero,
+    required String titulo,
+    required String detalhe,
+    required bool ativa,
+    required bool concluida,
+    required IconData icone,
+  }) {
+    final cor = concluida
+        ? context.cores.positivo
+        : ativa
+        ? corPrincipal
+        : context.cores.textoSuave;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CircleAvatar(
+          radius: 15,
+          backgroundColor: cor.withValues(alpha: ativa || concluida ? 1 : .35),
+          child: Icon(
+            concluida ? Icons.check : icone,
+            size: 17,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$numero. $titulo',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: ativa ? FontWeight.bold : FontWeight.w500,
+                  color: ativa ? context.cores.texto : context.cores.textoSuave,
+                ),
+              ),
+              Text(
+                detalhe,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: context.cores.textoSuave,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

@@ -33,6 +33,16 @@ class Pedido {
   /// Frete efetivamente acordado. Só existe depois da negociação.
   final Dinheiro? freteFinal;
 
+  /// Modo feira (docs/feira/): o prêmio em texto ("1 Bis"). Nulo em pedido do
+  /// produto. Onde existe, é ele que a tela mostra no lugar do frete — que na
+  /// feira é sempre zero e não diz nada a quem está jogando.
+  final String? feiraRecompensa;
+
+  /// Onde fica o estabelecimento — a perna 1 da entrega. No produto isso vinha
+  /// da rota; no modo feira não há rota, e é daqui que sai o pino da coleta.
+  final double? estabelecimentoLat;
+  final double? estabelecimentoLong;
+
   final String? rua;
   final String? numeroEndereco;
   final String? complemento;
@@ -98,6 +108,9 @@ class Pedido {
     this.numero,
     this.freteProposto = Dinheiro.zero,
     this.freteFinal,
+    this.feiraRecompensa,
+    this.estabelecimentoLat,
+    this.estabelecimentoLong,
     this.rua,
     this.numeroEndereco,
     this.complemento,
@@ -149,6 +162,9 @@ class Pedido {
           Dinheiro.tentarDeString(json['proposedFee']?.toString()) ??
           Dinheiro.zero,
       freteFinal: Dinheiro.tentarDeString(json['finalFee']?.toString()),
+      feiraRecompensa: json['feiraRecompensa'] as String?,
+      estabelecimentoLat: _decimal(estabelecimento['lat']),
+      estabelecimentoLong: _decimal(estabelecimento['lng']),
       rua: destino['street'] as String?,
       numeroEndereco: destino['number']?.toString(),
       complemento: destino['complement'] as String?,
@@ -190,6 +206,10 @@ class Pedido {
   /// Valor que vale para este pedido: o acordado, se já houve
   /// negociação; senão, o proposto.
   Dinheiro get valor => freteFinal ?? freteProposto;
+
+  /// O que a tela deve mostrar como "quanto vale": prêmio na feira, frete no
+  /// produto.
+  String get valorExibido => feiraRecompensa ?? valor.formatarBRL();
 
   /// O que a tela mostra como "Pedido X".
   ///

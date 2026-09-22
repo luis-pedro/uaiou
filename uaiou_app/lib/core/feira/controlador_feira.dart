@@ -31,6 +31,11 @@ class ControladorFeira extends ChangeNotifier {
   List<PedidoFeira> _pedidos = const [];
   List<PedidoFeira> get pedidos => _pedidos;
 
+  /// Prêmios que este jogador já conquistou — é o "extrato" da feira, no lugar
+  /// do livro-razão de dinheiro, que aqui nunca tem lançamento nenhum.
+  List<CapturaFeira> _capturas = const [];
+  List<CapturaFeira> get capturas => _capturas;
+
   bool _carregando = false;
   bool get carregando => _carregando;
 
@@ -62,6 +67,16 @@ class ControladorFeira extends ChangeNotifier {
     } finally {
       _carregando = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> carregarCapturas() async {
+    try {
+      _capturas = await _repositorio.minhasCapturas();
+      notifyListeners();
+    } on ErroApi {
+      // Lista de prêmios é informação de apoio: falhar aqui não pode derrubar
+      // a tela principal, que é onde o jogo acontece.
     }
   }
 
@@ -123,6 +138,7 @@ class ControladorFeira extends ChangeNotifier {
 
   void limpar() {
     _pedidos = const [];
+    _capturas = const [];
     _ultimaCaptura = null;
     _erro = null;
     _capturando = null;

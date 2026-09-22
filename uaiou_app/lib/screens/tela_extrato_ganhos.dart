@@ -5,7 +5,9 @@ import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
+import 'package:uaiou/core/feira/controlador_feira.dart';
 import 'package:uaiou/core/ganhos/controlador_ganhos.dart';
+import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/core/ganhos/modelo_ganhos.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
@@ -33,12 +35,19 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<ControladorGanhos>().carregar();
+      if (!mounted) return;
+      if (feiraNestaBranch) {
+        context.read<ControladorFeira>().carregarCapturas();
+      } else {
+        context.read<ControladorGanhos>().carregar();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (feiraNestaBranch) return _buildExtratoDePremios(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: TelaExtratoGanhos.corPrincipal,
@@ -54,6 +63,91 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
               _buildBarraConfirmar(controlador),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Modo feira (docs/feira/): o extrato é a lista de prêmios conquistados,
+  /// com o texto da recompensa no lugar do valor. O livro-razão do produto não
+  /// serve aqui — na feira não há lançamento de dinheiro nenhum, então a tela
+  /// original mostraria uma lista permanentemente vazia.
+  Widget _buildExtratoDePremios(BuildContext context) {
+    final feira = context.watch<ControladorFeira>();
+    final capturas = feira.capturas;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: TelaExtratoGanhos.corPrincipal,
+        foregroundColor: Colors.white,
+        title: const Text('Seus prêmios'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => context.read<ControladorFeira>().carregarCapturas(),
+        child: capturas.isEmpty
+            ? ListView(
+                children: [
+                  const SizedBox(height: 90),
+                  Center(
+                    child: Text(
+                      'Você ainda não conquistou nenhum prêmio.',
+                      style: TextStyle(color: context.cores.textoSuave),
+                    ),
+                  ),
+                ],
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: capturas.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemBuilder: (_, indice) {
+                  final captura = capturas[indice];
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: context.cores.superficie,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: context.cores.borda),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          captura.entregue
+                              ? Icons.check_circle
+                              : Icons.card_giftcard,
+                          color: captura.entregue
+                              ? context.cores.positivo
+                              : TelaExtratoGanhos.corPrincipal,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                captura.recompensa,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                captura.entregue
+                                    ? 'Retirado no estande'
+                                    : 'Retire no estande do UaiOu',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: context.cores.textoSuave,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
