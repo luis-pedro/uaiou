@@ -151,24 +151,27 @@ void main() {
       expect(edicao, isNull);
     });
 
-    test('endereço do estabelecimento vai inteiro quando qualquer campo muda', () {
-      final original = Perfil.doJson(_meMerchant());
+    test(
+      'endereço do estabelecimento vai inteiro quando qualquer campo muda',
+      () {
+        final original = Perfil.doJson(_meMerchant());
 
-      final edicao = diffDeEdicao(
-        original: original,
-        nomeExibicao: original.nomeExibicao,
-        telefone: '',
-        bairro: 'Centro',
-        rua: 'Rua A',
-        numero: '10',
-        cidade: 'Nova Cidade',
-        cep: '39100000',
-      );
+        final edicao = diffDeEdicao(
+          original: original,
+          nomeExibicao: original.nomeExibicao,
+          telefone: '',
+          bairro: 'Centro',
+          rua: 'Rua A',
+          numero: '10',
+          cidade: 'Nova Cidade',
+          cep: '39100000',
+        );
 
-      expect(edicao, isNotNull);
-      final perfil = edicao!.paraJson()['profile'] as Map;
-      expect(perfil['cidade'], 'Nova Cidade');
-    });
+        expect(edicao, isNotNull);
+        final perfil = edicao!.paraJson()['profile'] as Map;
+        expect(perfil['cidade'], 'Nova Cidade');
+      },
+    );
 
     test('coordenada marcada no mapa vai como par no PATCH', () {
       final original = Perfil.doJson(_meMerchant());
@@ -240,7 +243,9 @@ void main() {
       final adaptador = _RespostaFixa(_meCourier());
       final dio = Dio()..httpClientAdapter = adaptador;
       final api = ClienteApi(dio: dio, baseUrl: 'http://teste/api/v1');
-      final controlador = ControladorPerfil(repositorio: RepositorioPerfil(api));
+      final controlador = ControladorPerfil(
+        repositorio: RepositorioPerfil(api),
+      );
 
       expect(controlador.estado, isA<Carregando<Perfil>>());
 
@@ -256,7 +261,9 @@ void main() {
       }, status: 500);
       final dio = Dio()..httpClientAdapter = adaptador;
       final api = ClienteApi(dio: dio, baseUrl: 'http://teste/api/v1');
-      final controlador = ControladorPerfil(repositorio: RepositorioPerfil(api));
+      final controlador = ControladorPerfil(
+        repositorio: RepositorioPerfil(api),
+      );
 
       await controlador.carregar();
 
@@ -267,7 +274,9 @@ void main() {
       final adaptador = _RespostaFixa(_meCourier());
       final dio = Dio()..httpClientAdapter = adaptador;
       final api = ClienteApi(dio: dio, baseUrl: 'http://teste/api/v1');
-      final controlador = ControladorPerfil(repositorio: RepositorioPerfil(api));
+      final controlador = ControladorPerfil(
+        repositorio: RepositorioPerfil(api),
+      );
 
       await controlador.carregar();
       controlador.limpar();

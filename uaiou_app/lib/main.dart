@@ -54,7 +54,6 @@ import 'package:uaiou/core/feira/repositorio_feira.dart';
 
 //TELAS DO MODO FEIRA (docs/feira/)
 import 'package:uaiou/screens/tela_feira_entrar.dart';
-import 'package:uaiou/screens/tela_feira_pedidos.dart';
 
 //TELAS PRINCIPAIS DE LOGIN
 import 'package:uaiou/screens/principal_login.dart';
@@ -210,6 +209,26 @@ const Set<String> _rotasDeOperacao = {
   '/notificacoes',
   '/preferencias_notificacao',
   '/avaliacoes',
+};
+
+/// Modo feira: o que some do app. Estabelecimento não existe nesta versão, e
+/// autenticação por senha tampouco — a entrada é nome e nome de usuário. O
+/// resto das rotas do entregador continua igual ao produto, de propósito: é o
+/// fluxo de entrega que a demonstração quer mostrar.
+const Set<String> _rotasSemFeira = {
+  '/login',
+  '/cadastro',
+  '/cadastro_entregador1',
+  '/cadastro_entregador2',
+  '/cadastro_entregador3',
+  '/cadastro_estabelecimento1',
+  '/cadastro_estabelecimento2',
+  '/cadastro_estabelecimento3',
+  '/principal_estabelecimento',
+  '/pedidos_estabelecimento',
+  '/atividades_estabelecimento',
+  '/perfil_estabelecimento',
+  '/documentos',
 };
 
 class MyApp extends StatelessWidget {
@@ -577,14 +596,16 @@ Route<dynamic>? _gerarRota(RouteSettings configuracao) {
   final nome = configuracao.name;
 
   Widget construir(BuildContext contexto) {
-    // No modo feira o app tem duas telas, e nenhuma delas é do
-    // estabelecimento: as rotas do produto continuam no código, mas
-    // ninguém chega a elas nem por link, nem por `pushNamed` esquecido
-    // numa tela reaproveitada.
-    if (contexto.read<ControladorFeira>().habilitado) {
+    // Modo feira: as telas do entregador continuam valendo — é o app do
+    // produto. O que não existe é o lado do estabelecimento e a autenticação
+    // por senha: essas rotas continuam no código, mas ninguém chega a elas,
+    // nem por link nem por um `pushNamed` esquecido numa tela reaproveitada.
+    if (contexto.read<ControladorFeira>().habilitado &&
+        _rotasSemFeira.contains(nome)) {
       final sessao = contexto.read<ControladorSessao>();
-      if (!sessao.autenticado) return const TelaFeiraEntrar();
-      return const TelaFeiraPedidos();
+      return sessao.autenticado
+          ? const TelaPrincipalEntregador()
+          : const TelaFeiraEntrar();
     }
 
     if (_rotasDeOperacao.contains(nome)) {
@@ -662,14 +683,12 @@ class _Raiz extends StatelessWidget {
     final sessao = context.watch<ControladorSessao>();
     final feira = context.watch<ControladorFeira>();
 
-    if (feira.habilitado) {
-      return switch (sessao.fase) {
-        FaseSessao.carregando => const _Splash(),
-        // Sem PrincipalLogin: no modo feira não há escolha de papel nem
-        // login por senha — a entrada É o cadastro.
-        FaseSessao.deslogado => const TelaFeiraEntrar(),
-        FaseSessao.autenticado => const TelaFeiraPedidos(),
-      };
+    // Modo feira: o app É o app do entregador. Só a porta de entrada muda —
+    // nome e usuário no lugar de escolher papel e digitar senha. Depois de
+    // autenticado o fluxo é o do produto inteiro: mapa com GPS, vitrine,
+    // coleta no estabelecimento, entrega, histórico e perfil.
+    if (feira.habilitado && sessao.fase == FaseSessao.deslogado) {
+      return const TelaFeiraEntrar();
     }
 
     return switch (sessao.fase) {

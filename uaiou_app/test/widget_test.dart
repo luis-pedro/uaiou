@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uaiou/main.dart';
 import 'package:uaiou/screens/principal_login.dart';
-import 'package:uaiou/screens/tela_principal_entregador.dart';
 import 'package:uaiou/screens/tela_principal_estabelecimento.dart';
 
 void main() {
@@ -35,8 +34,10 @@ void main() {
     await tester.pumpWidget(const MyApp());
     await tester.pump();
 
+    // Sem sessão a raiz vai para a entrada da feira, nunca para a tela de
+    // escolha de papel do produto. As telas do entregador continuam valendo
+    // depois de autenticado — é o fluxo de entrega que a feira reaproveita.
     expect(find.byType(PrincipalLogin), findsNothing);
-    expect(find.byType(TelaPrincipalEntregador), findsNothing);
     expect(find.byType(TelaPrincipalEstabelecimento), findsNothing);
   });
 }

@@ -55,8 +55,11 @@ class _AdaptadorFalso implements HttpClientAdapter {
   }
 }
 
-Response<dynamic> _resp(int status, String corpo) =>
-    Response<dynamic>(requestOptions: RequestOptions(), statusCode: status, data: corpo);
+Response<dynamic> _resp(int status, String corpo) => Response<dynamic>(
+  requestOptions: RequestOptions(),
+  statusCode: status,
+  data: corpo,
+);
 
 String _sessaoJson({
   String access = 'access-1',
@@ -156,10 +159,7 @@ void main() {
       falsa = _ApiFalsa();
       api = ClienteApi(dio: falsa.montar(), baseUrl: 'http://teste/api/v1');
       cofre = CofreSessaoEmMemoria(guardada);
-      controlador = ControladorSessao(
-        auth: RepositorioAuth(api),
-        cofre: cofre,
-      );
+      controlador = ControladorSessao(auth: RepositorioAuth(api), cofre: cofre);
       api.credencial = controlador;
     }
 
@@ -188,7 +188,7 @@ void main() {
       montar();
       // O usuário escolheu "entregador"; o servidor diz MERCHANT.
       falsa.respostas['/auth/sessions'] = [
-        _resp(201, _sessaoJson(papel: 'MERCHANT'))
+        _resp(201, _sessaoJson(papel: 'MERCHANT')),
       ];
 
       await controlador.entrarComSenha(
@@ -203,8 +203,10 @@ void main() {
     test('credencial inválida não autentica e expõe a mensagem', () async {
       montar();
       falsa.respostas['/auth/sessions'] = [
-        _resp(401,
-            '{"error":{"code":"INVALID_CREDENTIALS","message":"Login ou senha incorretos."}}')
+        _resp(
+          401,
+          '{"error":{"code":"INVALID_CREDENTIALS","message":"Login ou senha incorretos."}}',
+        ),
       ];
 
       await expectLater(
@@ -228,8 +230,10 @@ void main() {
     test('papel errado devolve a regra de negócio do servidor', () async {
       montar();
       falsa.respostas['/auth/sessions'] = [
-        _resp(422,
-            '{"error":{"code":"ROLE_MISMATCH","message":"Esta conta não é do tipo informado.","rule":"RF-03.5"}}')
+        _resp(
+          422,
+          '{"error":{"code":"ROLE_MISMATCH","message":"Esta conta não é do tipo informado.","rule":"RF-03.5"}}',
+        ),
       ];
 
       await expectLater(
@@ -238,15 +242,16 @@ void main() {
           senha: 'b',
           papel: Papel.estabelecimento,
         ),
-        throwsA(isA<RegraDeNegocio>()
-            .having((e) => e.regra, 'regra', 'RF-03.5')),
+        throwsA(
+          isA<RegraDeNegocio>().having((e) => e.regra, 'regra', 'RF-03.5'),
+        ),
       );
     });
 
     test('conta pendente autentica mas não pode operar', () async {
       montar();
       falsa.respostas['/auth/sessions'] = [
-        _resp(201, _sessaoJson(status: 'pending'))
+        _resp(201, _sessaoJson(status: 'pending')),
       ];
 
       await controlador.entrarComSenha(
@@ -256,8 +261,11 @@ void main() {
       );
 
       expect(controlador.autenticado, isTrue);
-      expect(controlador.podeOperar, isFalse,
-          reason: 'RF-A02.9 — pendente não alcança telas de operação');
+      expect(
+        controlador.podeOperar,
+        isFalse,
+        reason: 'RF-A02.9 — pendente não alcança telas de operação',
+      );
     });
 
     test('restaura sessão guardada sem passar pelo login', () async {
@@ -290,7 +298,7 @@ void main() {
       });
       montar(guardada: vencida);
       falsa.respostas['/auth/sessions'] = [
-        _resp(201, _sessaoJson(access: 'novo', refresh: 'refresh-novo'))
+        _resp(201, _sessaoJson(access: 'novo', refresh: 'refresh-novo')),
       ];
 
       await controlador.restaurar();
@@ -312,7 +320,7 @@ void main() {
       });
       montar(guardada: vencida);
       falsa.respostas['/auth/sessions'] = [
-        _resp(401, '{"error":{"code":"INVALID_REFRESH_TOKEN","message":"x"}}')
+        _resp(401, '{"error":{"code":"INVALID_REFRESH_TOKEN","message":"x"}}'),
       ];
 
       await controlador.restaurar();
@@ -326,47 +334,49 @@ void main() {
     /// O servidor rotaciona o refresh e trata reuso como vazamento,
     /// revogando a família inteira. Se cada requisição concorrente
     /// renovasse por conta, o usuário seria deslogado de todo lugar.
-    test('três requisições com token expirado produzem UMA renovação',
-        () async {
-      montar();
-      falsa.respostas['/auth/sessions'] = [
-        _resp(201, _sessaoJson(access: 'novo', refresh: 'refresh-novo'))
-      ];
-      falsa.respostas['/orders'] = [
-        _resp(401, '{"error":{"code":"EXPIRED","message":"expirado"}}'),
-        _resp(401, '{"error":{"code":"EXPIRED","message":"expirado"}}'),
-        _resp(401, '{"error":{"code":"EXPIRED","message":"expirado"}}'),
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
-      ];
+    test(
+      'três requisições com token expirado produzem UMA renovação',
+      () async {
+        montar();
+        falsa.respostas['/auth/sessions'] = [
+          _resp(201, _sessaoJson(access: 'novo', refresh: 'refresh-novo')),
+        ];
+        falsa.respostas['/orders'] = [
+          _resp(401, '{"error":{"code":"EXPIRED","message":"expirado"}}'),
+          _resp(401, '{"error":{"code":"EXPIRED","message":"expirado"}}'),
+          _resp(401, '{"error":{"code":"EXPIRED","message":"expirado"}}'),
+          _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
+          _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
+          _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
+        ];
 
-      await controlador.entrarComSenha(
-        login: 'a',
-        senha: 'b',
-        papel: Papel.entregador,
-      );
+        await controlador.entrarComSenha(
+          login: 'a',
+          senha: 'b',
+          papel: Papel.entregador,
+        );
 
-      await Future.wait([
-        api.obter('/orders'),
-        api.obter('/orders'),
-        api.obter('/orders'),
-      ]);
+        await Future.wait([
+          api.obter('/orders'),
+          api.obter('/orders'),
+          api.obter('/orders'),
+        ]);
 
-      final renovacoes = falsa.chamadas
-          .where((c) => c.path == '/auth/sessions')
-          .where((c) => (c.data as Map)['grantType'] == 'refresh')
-          .length;
+        final renovacoes = falsa.chamadas
+            .where((c) => c.path == '/auth/sessions')
+            .where((c) => (c.data as Map)['grantType'] == 'refresh')
+            .length;
 
-      expect(renovacoes, 1);
-      expect(await controlador.tokenAtual(), 'novo');
-    });
+        expect(renovacoes, 1);
+        expect(await controlador.tokenAtual(), 'novo');
+      },
+    );
 
     test('o token vai no header de toda requisição', () async {
       montar();
       falsa.respostas['/auth/sessions'] = [_resp(201, _sessaoJson())];
       falsa.respostas['/orders'] = [
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}')
+        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
       ];
 
       await controlador.entrarComSenha(

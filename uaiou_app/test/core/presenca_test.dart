@@ -81,63 +81,75 @@ ClienteApi _clienteCom(_RespostaFixa adaptador) {
 }
 
 void main() {
-  group('ControladorPresenca — RF-A06.6/RF-A06.7: bloqueio antes de ativar', () {
-    test('serviço de localização desligado bloqueia e não chama o servidor', () async {
-      final adaptador = _RespostaFixa({'available': true});
-      final repositorio = RepositorioPresenca(_clienteCom(adaptador));
-      final leitor = _LeitorFake()..servico = false;
-      final controlador = ControladorPresenca(
-        repositorio: repositorio,
-        leitor: leitor,
+  group(
+    'ControladorPresenca — RF-A06.6/RF-A06.7: bloqueio antes de ativar',
+    () {
+      test(
+        'serviço de localização desligado bloqueia e não chama o servidor',
+        () async {
+          final adaptador = _RespostaFixa({'available': true});
+          final repositorio = RepositorioPresenca(_clienteCom(adaptador));
+          final leitor = _LeitorFake()..servico = false;
+          final controlador = ControladorPresenca(
+            repositorio: repositorio,
+            leitor: leitor,
+          );
+
+          await controlador.alternarDisponibilidade(true);
+
+          expect(controlador.sabeDisponibilidade, isFalse);
+          expect(controlador.erro, isNotNull);
+          expect(adaptador.requisicoes, isEmpty);
+        },
       );
 
-      await controlador.alternarDisponibilidade(true);
+      test(
+        'permissão negada bloqueia e explica o motivo, sem travar',
+        () async {
+          final adaptador = _RespostaFixa({'available': true});
+          final repositorio = RepositorioPresenca(_clienteCom(adaptador));
+          final leitor = _LeitorFake()
+            ..permissao = false
+            ..concedeSePedida = false;
+          final controlador = ControladorPresenca(
+            repositorio: repositorio,
+            leitor: leitor,
+          );
 
-      expect(controlador.sabeDisponibilidade, isFalse);
-      expect(controlador.erro, isNotNull);
-      expect(adaptador.requisicoes, isEmpty);
-    });
+          await controlador.alternarDisponibilidade(true);
 
-    test('permissão negada bloqueia e explica o motivo, sem travar', () async {
-      final adaptador = _RespostaFixa({'available': true});
-      final repositorio = RepositorioPresenca(_clienteCom(adaptador));
-      final leitor = _LeitorFake()
-        ..permissao = false
-        ..concedeSePedida = false;
-      final controlador = ControladorPresenca(
-        repositorio: repositorio,
-        leitor: leitor,
+          expect(controlador.sabeDisponibilidade, isFalse);
+          expect(controlador.erro, contains('Permissão'));
+          expect(adaptador.requisicoes, isEmpty);
+        },
       );
-
-      await controlador.alternarDisponibilidade(true);
-
-      expect(controlador.sabeDisponibilidade, isFalse);
-      expect(controlador.erro, contains('Permissão'));
-      expect(adaptador.requisicoes, isEmpty);
-    });
-  });
+    },
+  );
 
   group('ControladorPresenca — RF-A06.1: estado confirmado pelo servidor', () {
-    test('ativar com sucesso: envia localização, depois disponibilidade, e inicia o stream', () async {
-      final adaptador = _RespostaFixa({'available': true});
-      final repositorio = RepositorioPresenca(_clienteCom(adaptador));
-      final leitor = _LeitorFake();
-      final controlador = ControladorPresenca(
-        repositorio: repositorio,
-        leitor: leitor,
-      );
+    test(
+      'ativar com sucesso: envia localização, depois disponibilidade, e inicia o stream',
+      () async {
+        final adaptador = _RespostaFixa({'available': true});
+        final repositorio = RepositorioPresenca(_clienteCom(adaptador));
+        final leitor = _LeitorFake();
+        final controlador = ControladorPresenca(
+          repositorio: repositorio,
+          leitor: leitor,
+        );
 
-      await controlador.alternarDisponibilidade(true);
+        await controlador.alternarDisponibilidade(true);
 
-      expect(controlador.disponivel, isTrue);
-      expect(controlador.enviando, isFalse);
-      expect(controlador.erro, isNull);
-      expect(adaptador.requisicoes.map((r) => r.path), [
-        '/me/location',
-        '/me/availability',
-      ]);
-      expect(leitor.chamadasDeStream, 1);
-    });
+        expect(controlador.disponivel, isTrue);
+        expect(controlador.enviando, isFalse);
+        expect(controlador.erro, isNull);
+        expect(adaptador.requisicoes.map((r) => r.path), [
+          '/me/location',
+          '/me/availability',
+        ]);
+        expect(leitor.chamadasDeStream, 1);
+      },
+    );
 
     test('falha do servidor reverte para o estado anterior e avisa', () async {
       final adaptador = _RespostaFixa({
@@ -204,54 +216,66 @@ void main() {
       expect(controladorComMe.disponivel, isFalse);
     });
 
-    test('não consulta o servidor quando o app já se acha indisponível', () async {
-      final adaptador = _RespostaFixa({'available': true});
-      final controlador = ControladorPresenca(
-        repositorio: RepositorioPresenca(_clienteCom(adaptador)),
-        leitor: _LeitorFake(),
-      );
+    test(
+      'não consulta o servidor quando o app já se acha indisponível',
+      () async {
+        final adaptador = _RespostaFixa({'available': true});
+        final controlador = ControladorPresenca(
+          repositorio: RepositorioPresenca(_clienteCom(adaptador)),
+          leitor: _LeitorFake(),
+        );
 
-      await controlador.recarregarDoServidor();
+        await controlador.recarregarDoServidor();
 
-      expect(adaptador.requisicoes, isEmpty);
-    });
+        expect(adaptador.requisicoes, isEmpty);
+      },
+    );
   });
 
-  group('ControladorPresenca — RNF-A06.2: falha de envio de posição não trava', () {
-    test('erro ao enviar posição do stream é descartado, sem propagar', () async {
-      final adaptadorLigar = _RespostaFixa({'available': true});
-      final leitor = _LeitorFake();
-      final controlador = ControladorPresenca(
-        repositorio: RepositorioPresenca(_clienteCom(adaptadorLigar)),
-        leitor: leitor,
+  group(
+    'ControladorPresenca — RNF-A06.2: falha de envio de posição não trava',
+    () {
+      test(
+        'erro ao enviar posição do stream é descartado, sem propagar',
+        () async {
+          final adaptadorLigar = _RespostaFixa({'available': true});
+          final leitor = _LeitorFake();
+          final controlador = ControladorPresenca(
+            repositorio: RepositorioPresenca(_clienteCom(adaptadorLigar)),
+            leitor: leitor,
+          );
+          await controlador.alternarDisponibilidade(true);
+
+          // A partir daqui, todo PUT /me/location falha — mas o
+          // controlador não deve lançar nem travar.
+          leitor.emitir(const PosicaoLida(lat: -19.91, lng: -43.91));
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          expect(controlador.posicaoAtual?.lat, -19.91);
+        },
       );
-      await controlador.alternarDisponibilidade(true);
+    },
+  );
 
-      // A partir daqui, todo PUT /me/location falha — mas o
-      // controlador não deve lançar nem travar.
-      leitor.emitir(const PosicaoLida(lat: -19.91, lng: -43.91));
-      await Future<void>.delayed(const Duration(milliseconds: 10));
+  group(
+    'ControladorPresenca — RF-A06.4/RF-A03.9: limpar() encerra o envio',
+    () {
+      test('limpar() cancela o stream e volta ao estado inicial', () async {
+        final adaptador = _RespostaFixa({'available': true});
+        final leitor = _LeitorFake();
+        final controlador = ControladorPresenca(
+          repositorio: RepositorioPresenca(_clienteCom(adaptador)),
+          leitor: leitor,
+        );
+        await controlador.alternarDisponibilidade(true);
+        expect(controlador.disponivel, isTrue);
 
-      expect(controlador.posicaoAtual?.lat, -19.91);
-    });
-  });
+        controlador.limpar();
 
-  group('ControladorPresenca — RF-A06.4/RF-A03.9: limpar() encerra o envio', () {
-    test('limpar() cancela o stream e volta ao estado inicial', () async {
-      final adaptador = _RespostaFixa({'available': true});
-      final leitor = _LeitorFake();
-      final controlador = ControladorPresenca(
-        repositorio: RepositorioPresenca(_clienteCom(adaptador)),
-        leitor: leitor,
-      );
-      await controlador.alternarDisponibilidade(true);
-      expect(controlador.disponivel, isTrue);
-
-      controlador.limpar();
-
-      expect(controlador.sabeDisponibilidade, isFalse);
-      expect(controlador.posicaoAtual, isNull);
-      expect(controlador.erro, isNull);
-    });
-  });
+        expect(controlador.sabeDisponibilidade, isFalse);
+        expect(controlador.posicaoAtual, isNull);
+        expect(controlador.erro, isNull);
+      });
+    },
+  );
 }

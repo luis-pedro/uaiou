@@ -45,10 +45,10 @@ class _Adaptador implements HttpClientAdapter {
 }
 
 Response<dynamic> _resp(int status, String corpo) => Response<dynamic>(
-      requestOptions: RequestOptions(),
-      statusCode: status,
-      data: corpo,
-    );
+  requestOptions: RequestOptions(),
+  statusCode: status,
+  data: corpo,
+);
 
 String _pedido(String id, {String status = 'published'}) =>
     '{"id":"$id","number":"$id","status":"$status","proposedFee":"6.00",'
@@ -78,8 +78,10 @@ void main() {
     test('lista com itens vira Pronto', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200,
-            '{"data":[${_pedido("a")},${_pedido("b")}],"meta":{"page":1,"perPage":20,"total":2}}')
+        _resp(
+          200,
+          '{"data":[${_pedido("a")},${_pedido("b")}],"meta":{"page":1,"perPage":20,"total":2}}',
+        ),
       ];
 
       await lista.carregar();
@@ -91,7 +93,7 @@ void main() {
     test('lista sem itens vira Vazio, não Pronto com lista vazia', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}')
+        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
       ];
 
       await lista.carregar();
@@ -102,8 +104,10 @@ void main() {
     test('falha vira Falhou com o erro tipado', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(403,
-            '{"error":{"code":"COURIER_ONLY","message":"Rota restrita a entregadores."}}')
+        _resp(
+          403,
+          '{"error":{"code":"COURIER_ONLY","message":"Rota restrita a entregadores."}}',
+        ),
       ];
 
       await lista.carregar();
@@ -119,8 +123,10 @@ void main() {
     test('vazio por posição obsoleta explica o motivo (RF-11.8)', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200,
-            '{"data":[],"meta":{"page":1,"perPage":20,"total":0},"warning":"LOCATION_STALE"}')
+        _resp(
+          200,
+          '{"data":[],"meta":{"page":1,"perPage":20,"total":0},"warning":"LOCATION_STALE"}',
+        ),
       ];
 
       await lista.carregar();
@@ -139,7 +145,7 @@ void main() {
     test('o recorte vai como query para o servidor', () async {
       montar(recorte: StatusPedido.aceito);
       servidor.respostas['/orders'] = [
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}')
+        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
       ];
 
       await lista.carregar();
@@ -150,7 +156,7 @@ void main() {
     test('sem recorte, nenhum status é enviado', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}')
+        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
       ];
 
       await lista.carregar();
@@ -164,11 +170,15 @@ void main() {
     test('carregarMais segue o _links.next do servidor — RF-A03.7', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200,
-            '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":1,"total":2},'
-            '"_links":{"next":{"href":"/api/v1/orders?page=2"}}}'),
-        _resp(200,
-            '{"data":[${_pedido("b")}],"meta":{"page":2,"perPage":1,"total":2},"_links":{}}'),
+        _resp(
+          200,
+          '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":1,"total":2},'
+          '"_links":{"next":{"href":"/api/v1/orders?page=2"}}}',
+        ),
+        _resp(
+          200,
+          '{"data":[${_pedido("b")}],"meta":{"page":2,"perPage":1,"total":2},"_links":{}}',
+        ),
       ];
 
       await lista.carregar();
@@ -183,9 +193,11 @@ void main() {
     test('falha ao paginar preserva o que já está na tela', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200,
-            '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":1,"total":2},'
-            '"_links":{"next":{"href":"/api/v1/orders?page=2"}}}'),
+        _resp(
+          200,
+          '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":1,"total":2},'
+          '"_links":{"next":{"href":"/api/v1/orders?page=2"}}}',
+        ),
         _resp(500, '{}'),
       ];
 
@@ -201,8 +213,10 @@ void main() {
     test('recarregar mantém o conteúdo durante a busca', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200,
-            '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":20,"total":1}}')
+        _resp(
+          200,
+          '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":20,"total":1}}',
+        ),
       ];
       await lista.carregar();
 
@@ -218,9 +232,11 @@ void main() {
     test('descarta itens e paginação', () async {
       montar();
       servidor.respostas['/orders'] = [
-        _resp(200,
-            '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":1,"total":2},'
-            '"_links":{"next":{"href":"/api/v1/orders?page=2"}}}')
+        _resp(
+          200,
+          '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":1,"total":2},'
+          '"_links":{"next":{"href":"/api/v1/orders?page=2"}}}',
+        ),
       ];
       await lista.carregar();
       expect(lista.itens, isNotEmpty);

@@ -85,53 +85,65 @@ const _paginaComDuas = '''
 ''';
 
 void main() {
-  group('Notificacao.doJson / RespostaNotificacoes.doJson — RF-A11.6/RF-A11.7', () {
-    test('lê cada campo, inclusive prioridade e payload', () {
-      final resposta = RespostaNotificacoes.doJson(
-        Map<String, dynamic>.from({
-          'data': [
-            {
-              'id': 'n1',
-              'type': 'delivery.code_contingency',
-              'priority': 'urgent',
-              'title': 'Urgente',
-              'body': 'texto',
-              'payload': {'orderId': 'p1'},
-              'readAt': null,
-              'createdAt': '2026-08-10T10:00:00Z',
-            },
-          ],
-          'meta': {'page': 1, 'perPage': 20, 'total': 1, 'unread': 1},
-        }),
-      );
+  group(
+    'Notificacao.doJson / RespostaNotificacoes.doJson — RF-A11.6/RF-A11.7',
+    () {
+      test('lê cada campo, inclusive prioridade e payload', () {
+        final resposta = RespostaNotificacoes.doJson(
+          Map<String, dynamic>.from({
+            'data': [
+              {
+                'id': 'n1',
+                'type': 'delivery.code_contingency',
+                'priority': 'urgent',
+                'title': 'Urgente',
+                'body': 'texto',
+                'payload': {'orderId': 'p1'},
+                'readAt': null,
+                'createdAt': '2026-08-10T10:00:00Z',
+              },
+            ],
+            'meta': {'page': 1, 'perPage': 20, 'total': 1, 'unread': 1},
+          }),
+        );
 
-      expect(resposta.unread, 1);
-      expect(resposta.total, 1);
-      expect(resposta.data, hasLength(1));
-      final item = resposta.data.first;
-      expect(item.priority, PrioridadeNotificacao.urgente);
-      expect(item.lida, isFalse);
-      expect(item.payload['orderId'], 'p1');
-    });
-
-    test('item malformado é descartado sem derrubar a lista', () {
-      final resposta = RespostaNotificacoes.doJson({
-        'data': [
-          {'id': 'ok', 'type': 't', 'priority': 'normal', 'title': '', 'body': ''},
-          'nao é um mapa',
-        ],
-        'meta': {'page': 1, 'perPage': 20, 'total': 1, 'unread': 0},
+        expect(resposta.unread, 1);
+        expect(resposta.total, 1);
+        expect(resposta.data, hasLength(1));
+        final item = resposta.data.first;
+        expect(item.priority, PrioridadeNotificacao.urgente);
+        expect(item.lida, isFalse);
+        expect(item.payload['orderId'], 'p1');
       });
 
-      expect(resposta.data, hasLength(1));
-      expect(resposta.data.first.id, 'ok');
-    });
+      test('item malformado é descartado sem derrubar a lista', () {
+        final resposta = RespostaNotificacoes.doJson({
+          'data': [
+            {
+              'id': 'ok',
+              'type': 't',
+              'priority': 'normal',
+              'title': '',
+              'body': '',
+            },
+            'nao é um mapa',
+          ],
+          'meta': {'page': 1, 'perPage': 20, 'total': 1, 'unread': 0},
+        });
 
-    test('resposta ausente ou malformada vira resposta vazia, sem exceção', () {
-      expect(RespostaNotificacoes.doJson(null).data, isEmpty);
-      expect(RespostaNotificacoes.doJson('texto').data, isEmpty);
-    });
-  });
+        expect(resposta.data, hasLength(1));
+        expect(resposta.data.first.id, 'ok');
+      });
+
+      test(
+        'resposta ausente ou malformada vira resposta vazia, sem exceção',
+        () {
+          expect(RespostaNotificacoes.doJson(null).data, isEmpty);
+          expect(RespostaNotificacoes.doJson('texto').data, isEmpty);
+        },
+      );
+    },
+  );
 
   group('PreferenciasNotificacao.doJson — RF-A11.8', () {
     test('lê channels e mandatory', () {
@@ -149,27 +161,33 @@ void main() {
   });
 
   group('ControladorNotificacoes.carregar — RF-A11.6/RF-A11.7', () {
-    test('contador de não lidas vem de meta.unread, não de soma local', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/notifications'] = [_resp(200, _paginaComDuas)];
+    test(
+      'contador de não lidas vem de meta.unread, não de soma local',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/notifications'] = [_resp(200, _paginaComDuas)];
 
-      final controlador = ControladorNotificacoes(
-        repositorio: RepositorioNotificacoes(_api(servidor)),
-      );
-      await controlador.carregar();
+        final controlador = ControladorNotificacoes(
+          repositorio: RepositorioNotificacoes(_api(servidor)),
+        );
+        await controlador.carregar();
 
-      expect(controlador.notificacoes, hasLength(2));
-      // Só 1 dos 2 itens tem readAt nulo, e é exatamente o unread do
-      // servidor — mas o controlador nunca soma isso: usa meta.unread
-      // diretamente (ver `_buscar`).
-      expect(controlador.naoLidas, 1);
-      expect(controlador.estado, isA<Pronto<List<Notificacao>>>());
-    });
+        expect(controlador.notificacoes, hasLength(2));
+        // Só 1 dos 2 itens tem readAt nulo, e é exatamente o unread do
+        // servidor — mas o controlador nunca soma isso: usa meta.unread
+        // diretamente (ver `_buscar`).
+        expect(controlador.naoLidas, 1);
+        expect(controlador.estado, isA<Pronto<List<Notificacao>>>());
+      },
+    );
 
     test('lista vazia vira estado Vazio, não Pronto([])', () async {
       final servidor = _Servidor();
       servidor.respostas['/me/notifications'] = [
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":50,"total":0,"unread":0}}'),
+        _resp(
+          200,
+          '{"data":[],"meta":{"page":1,"perPage":50,"total":0,"unread":0}}',
+        ),
       ];
 
       final controlador = ControladorNotificacoes(
@@ -183,7 +201,10 @@ void main() {
     test('falha do servidor vira Falhou com a mensagem do contrato', () async {
       final servidor = _Servidor();
       servidor.respostas['/me/notifications'] = [
-        _resp(500, '{"error":{"code":"UNEXPECTED","message":"Algo deu errado."}}'),
+        _resp(
+          500,
+          '{"error":{"code":"UNEXPECTED","message":"Algo deu errado."}}',
+        ),
       ];
 
       final controlador = ControladorNotificacoes(
@@ -223,33 +244,36 @@ void main() {
       );
     });
 
-    test('marcar a mesma notificação lida duas vezes em sequência não duplica a chamada '
-        '(RNF-A11.3 — idempotência da tela)', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/notifications'] = [_resp(200, _paginaComDuas)];
-      servidor.respostas['/me/notifications/n1/read'] = [
-        _resp(
-          200,
-          '{"id":"n1","type":"counteroffer.received","priority":"normal",'
-          '"title":"x","body":"x","payload":{},'
-          '"readAt":"2026-08-10T11:00:00Z","createdAt":"2026-08-10T10:00:00Z"}',
-        ),
-      ];
+    test(
+      'marcar a mesma notificação lida duas vezes em sequência não duplica a chamada '
+      '(RNF-A11.3 — idempotência da tela)',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/notifications'] = [_resp(200, _paginaComDuas)];
+        servidor.respostas['/me/notifications/n1/read'] = [
+          _resp(
+            200,
+            '{"id":"n1","type":"counteroffer.received","priority":"normal",'
+            '"title":"x","body":"x","payload":{},'
+            '"readAt":"2026-08-10T11:00:00Z","createdAt":"2026-08-10T10:00:00Z"}',
+          ),
+        ];
 
-      final controlador = ControladorNotificacoes(
-        repositorio: RepositorioNotificacoes(_api(servidor)),
-      );
-      await controlador.carregar();
+        final controlador = ControladorNotificacoes(
+          repositorio: RepositorioNotificacoes(_api(servidor)),
+        );
+        await controlador.carregar();
 
-      await controlador.marcarLida('n1');
-      // Segunda chamada: já está lida localmente, não deveria repetir.
-      await controlador.marcarLida('n1');
+        await controlador.marcarLida('n1');
+        // Segunda chamada: já está lida localmente, não deveria repetir.
+        await controlador.marcarLida('n1');
 
-      final chamadasDeLeitura = servidor.chamadas
-          .where((c) => c.path.contains('n1/read'))
-          .length;
-      expect(chamadasDeLeitura, 1);
-    });
+        final chamadasDeLeitura = servidor.chamadas
+            .where((c) => c.path.contains('n1/read'))
+            .length;
+        expect(chamadasDeLeitura, 1);
+      },
+    );
   });
 
   group('ControladorNotificacoes.marcarTodasLidas — critério de aceite 6', () {
@@ -316,10 +340,7 @@ void main() {
 
       expect(controlador.preferencias.channels['push'], isFalse);
       final enviado =
-          servidor.chamadas
-                  .firstWhere((c) => c.method == 'PUT')
-                  .data
-              as Map;
+          servidor.chamadas.firstWhere((c) => c.method == 'PUT').data as Map;
       final canais = enviado['channels'] as Map;
       expect(canais, {'push': false});
       expect(canais.containsKey('email'), isFalse);
@@ -405,101 +426,113 @@ void main() {
     });
   });
 
-  group('ControladorSessao — registro e baixa do dispositivo (RF-A11.1/RF-A11.2)', () {
-    String sessaoJson() =>
-        '{"accessToken":"a","refreshToken":"r","expiresIn":900,'
-        '"user":{"id":"u","role":"COURIER","status":"active"}}';
+  group(
+    'ControladorSessao — registro e baixa do dispositivo (RF-A11.1/RF-A11.2)',
+    () {
+      String sessaoJson() =>
+          '{"accessToken":"a","refreshToken":"r","expiresIn":900,'
+          '"user":{"id":"u","role":"COURIER","status":"active"}}';
 
-    test('login registra o dispositivo com platform "web"', () async {
-      final servidor = _Servidor();
-      final api = _api(servidor);
-      servidor.respostas['/auth/sessions'] = [_resp(201, sessaoJson())];
-      servidor.respostas['/me/devices'] = [
-        _resp(201, '{"id":"d1","platform":"web","appVersion":null,"lastUsedAt":null}'),
-      ];
+      test('login registra o dispositivo com platform "web"', () async {
+        final servidor = _Servidor();
+        final api = _api(servidor);
+        servidor.respostas['/auth/sessions'] = [_resp(201, sessaoJson())];
+        servidor.respostas['/me/devices'] = [
+          _resp(
+            201,
+            '{"id":"d1","platform":"web","appVersion":null,"lastUsedAt":null}',
+          ),
+        ];
 
-      final identificador = IdentificadorDispositivoEmMemoria();
-      final controlador = ControladorSessao(
-        auth: RepositorioAuth(api),
-        cofre: CofreSessaoEmMemoria(),
-        dispositivos: RepositorioDispositivo(api),
-        identificadorDispositivo: identificador,
+        final identificador = IdentificadorDispositivoEmMemoria();
+        final controlador = ControladorSessao(
+          auth: RepositorioAuth(api),
+          cofre: CofreSessaoEmMemoria(),
+          dispositivos: RepositorioDispositivo(api),
+          identificadorDispositivo: identificador,
+        );
+        api.credencial = controlador;
+
+        await controlador.entrarComSenha(
+          login: 'a',
+          senha: 'b',
+          papel: Papel.entregador,
+        );
+
+        final registro = servidor.chamadas.firstWhere(
+          (c) => c.path == '/me/devices',
+        );
+        expect(registro.method, 'POST');
+        expect((registro.data as Map)['platform'], 'web');
+        expect(await identificador.lerRegistroAtual(), 'd1');
+      });
+
+      test('logout remove o dispositivo antes de descartar a sessão', () async {
+        final servidor = _Servidor();
+        final api = _api(servidor);
+        servidor.respostas['/auth/sessions'] = [_resp(201, sessaoJson())];
+        servidor.respostas['/auth/sessions/current'] = [_resp(204, '')];
+        servidor.respostas['/me/devices'] = [
+          _resp(
+            201,
+            '{"id":"d1","platform":"web","appVersion":null,"lastUsedAt":null}',
+          ),
+        ];
+        servidor.respostas['/me/devices/d1'] = [_resp(204, '')];
+
+        final identificador = IdentificadorDispositivoEmMemoria();
+        final controlador = ControladorSessao(
+          auth: RepositorioAuth(api),
+          cofre: CofreSessaoEmMemoria(),
+          dispositivos: RepositorioDispositivo(api),
+          identificadorDispositivo: identificador,
+        );
+        api.credencial = controlador;
+
+        await controlador.entrarComSenha(
+          login: 'a',
+          senha: 'b',
+          papel: Papel.entregador,
+        );
+        await controlador.sair();
+
+        final baixa = servidor.chamadas.firstWhere(
+          (c) => c.path == '/me/devices/d1',
+        );
+        expect(baixa.method, 'DELETE');
+        expect(await identificador.lerRegistroAtual(), isNull);
+        expect(controlador.fase, FaseSessao.deslogado);
+      });
+
+      test(
+        'sem repositório de dispositivo, login e logout funcionam normalmente',
+        () async {
+          final servidor = _Servidor();
+          final api = _api(servidor);
+          servidor.respostas['/auth/sessions'] = [_resp(201, sessaoJson())];
+          servidor.respostas['/auth/sessions/current'] = [_resp(204, '')];
+
+          final controlador = ControladorSessao(
+            auth: RepositorioAuth(api),
+            cofre: CofreSessaoEmMemoria(),
+          );
+          api.credencial = controlador;
+
+          await controlador.entrarComSenha(
+            login: 'a',
+            senha: 'b',
+            papel: Papel.entregador,
+          );
+          expect(controlador.autenticado, isTrue);
+
+          await controlador.sair();
+          expect(controlador.fase, FaseSessao.deslogado);
+          expect(
+            servidor.chamadas.where((c) => c.path.contains('devices')).length,
+            0,
+          );
+        },
       );
-      api.credencial = controlador;
-
-      await controlador.entrarComSenha(
-        login: 'a',
-        senha: 'b',
-        papel: Papel.entregador,
-      );
-
-      final registro = servidor.chamadas.firstWhere(
-        (c) => c.path == '/me/devices',
-      );
-      expect(registro.method, 'POST');
-      expect((registro.data as Map)['platform'], 'web');
-      expect(await identificador.lerRegistroAtual(), 'd1');
-    });
-
-    test('logout remove o dispositivo antes de descartar a sessão', () async {
-      final servidor = _Servidor();
-      final api = _api(servidor);
-      servidor.respostas['/auth/sessions'] = [_resp(201, sessaoJson())];
-      servidor.respostas['/auth/sessions/current'] = [_resp(204, '')];
-      servidor.respostas['/me/devices'] = [
-        _resp(201, '{"id":"d1","platform":"web","appVersion":null,"lastUsedAt":null}'),
-      ];
-      servidor.respostas['/me/devices/d1'] = [_resp(204, '')];
-
-      final identificador = IdentificadorDispositivoEmMemoria();
-      final controlador = ControladorSessao(
-        auth: RepositorioAuth(api),
-        cofre: CofreSessaoEmMemoria(),
-        dispositivos: RepositorioDispositivo(api),
-        identificadorDispositivo: identificador,
-      );
-      api.credencial = controlador;
-
-      await controlador.entrarComSenha(
-        login: 'a',
-        senha: 'b',
-        papel: Papel.entregador,
-      );
-      await controlador.sair();
-
-      final baixa = servidor.chamadas.firstWhere(
-        (c) => c.path == '/me/devices/d1',
-      );
-      expect(baixa.method, 'DELETE');
-      expect(await identificador.lerRegistroAtual(), isNull);
-      expect(controlador.fase, FaseSessao.deslogado);
-    });
-
-    test('sem repositório de dispositivo, login e logout funcionam normalmente', () async {
-      final servidor = _Servidor();
-      final api = _api(servidor);
-      servidor.respostas['/auth/sessions'] = [_resp(201, sessaoJson())];
-      servidor.respostas['/auth/sessions/current'] = [_resp(204, '')];
-
-      final controlador = ControladorSessao(
-        auth: RepositorioAuth(api),
-        cofre: CofreSessaoEmMemoria(),
-      );
-      api.credencial = controlador;
-
-      await controlador.entrarComSenha(
-        login: 'a',
-        senha: 'b',
-        papel: Papel.entregador,
-      );
-      expect(controlador.autenticado, isTrue);
-
-      await controlador.sair();
-      expect(controlador.fase, FaseSessao.deslogado);
-      expect(
-        servidor.chamadas.where((c) => c.path.contains('devices')).length,
-        0,
-      );
-    });
-  });
+    },
+  );
 }

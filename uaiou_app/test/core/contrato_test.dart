@@ -15,8 +15,10 @@ void main() {
     });
 
     test('estado desconhecido não lança', () {
-      expect(StatusPedido.doContrato('quantum_superposition'),
-          StatusPedido.desconhecido);
+      expect(
+        StatusPedido.doContrato('quantum_superposition'),
+        StatusPedido.desconhecido,
+      );
       expect(StatusPedido.doContrato(null), StatusPedido.desconhecido);
       expect(StatusPedido.doContrato(42), StatusPedido.desconhecido);
     });
@@ -32,15 +34,14 @@ void main() {
       String codigo = 'INSUFFICIENT_CREDITS',
       String mensagem = 'Créditos insuficientes para publicar o pedido.',
       String? regra = 'RN-05.1',
-    }) =>
-        {
-          'error': {
-            'code': codigo,
-            'message': mensagem,
-            'rule': regra,
-            'details': {'required': 1, 'available': 0},
-          }
-        };
+    }) => {
+      'error': {
+        'code': codigo,
+        'message': mensagem,
+        'rule': regra,
+        'details': {'required': 1, 'available': 0},
+      },
+    };
 
     test('422 vira RegraDeNegocio com message e rule', () {
       final erro = erroDoContrato(422, envelope());
@@ -126,21 +127,21 @@ void main() {
     // adivinhado `merchantName`/`deliveryAddress`/`displayNumber`, que
     // não existem — os corretos são `merchant`/`destination`/`number`.
     Map<String, dynamic> json() => {
-          'id': '3f2504e0-4f89-11d3-9a0c-0305e82c3301',
-          'status': 'published',
-          'proposedFee': '6.00',
-          'createdAt': '2026-08-09T12:00:00Z',
-          'distanceKm': 2.4,
-          'merchant': {'id': 'm-1', 'name': 'Bar do Zé'},
-          'destination': {
-            'district': 'Centro',
-            'street': 'Rua das Flores',
-            'number': '120',
-          },
-          '_links': {
-            'assignment': {'href': '/api/v1/orders/3f25/assignment'},
-          },
-        };
+      'id': '3f2504e0-4f89-11d3-9a0c-0305e82c3301',
+      'status': 'published',
+      'proposedFee': '6.00',
+      'createdAt': '2026-08-09T12:00:00Z',
+      'distanceKm': 2.4,
+      'merchant': {'id': 'm-1', 'name': 'Bar do Zé'},
+      'destination': {
+        'district': 'Centro',
+        'street': 'Rua das Flores',
+        'number': '120',
+      },
+      '_links': {
+        'assignment': {'href': '/api/v1/orders/3f25/assignment'},
+      },
+    };
 
     test('usa o UUID do servidor como id', () {
       final pedido = Pedido.doJson(json());
@@ -193,8 +194,7 @@ void main() {
     });
 
     test('freteFinal, quando existe, é o valor que vale', () {
-      final pedido =
-          Pedido.doJson({...json(), 'finalFee': '8.50'});
+      final pedido = Pedido.doJson({...json(), 'finalFee': '8.50'});
       expect(pedido.valor.paraJson(), '8.50');
     });
 

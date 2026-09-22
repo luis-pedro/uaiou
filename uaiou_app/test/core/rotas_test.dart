@@ -162,7 +162,10 @@ void main() {
 
       expect(controlador.estado.temConteudo, isTrue);
       expect(controlador.rota!.trajeto.temTracado, isFalse);
-      expect(controlador.rota!.trajeto.explicacao, contains('não está disponível'));
+      expect(
+        controlador.rota!.trajeto.explicacao,
+        contains('não está disponível'),
+      );
     });
 
     test('falha de rede não lança e não derruba o controlador', () async {
@@ -208,7 +211,10 @@ void main() {
     /// Sem posição do aparelho a tela ainda mostra por onde começar, em
     /// vez de ficar vazia.
     test('sem posição, mostra o primeiro passo', () {
-      expect(trajeto.proximoPassoDe(null)!.instrucao, 'Siga em frente na Rua A');
+      expect(
+        trajeto.proximoPassoDe(null)!.instrucao,
+        'Siga em frente na Rua A',
+      );
     });
 
     /// A distância até a manobra é medida **pelo traçado**, somando os

@@ -40,8 +40,11 @@ class _Servidor implements HttpClientAdapter {
   }
 }
 
-Response<dynamic> _resp(int status, String corpo) =>
-    Response<dynamic>(requestOptions: RequestOptions(), statusCode: status, data: corpo);
+Response<dynamic> _resp(int status, String corpo) => Response<dynamic>(
+  requestOptions: RequestOptions(),
+  statusCode: status,
+  data: corpo,
+);
 
 String _pedidoJson(
   String id, {
@@ -64,16 +67,14 @@ void main() {
   group('Pedido._links — RF-A07.6', () {
     test('só oferece o botão quando o link correspondente existe', () {
       final comAcoes = Pedido.doJson(
-        Map<String, dynamic>.from(
-          {
-            'id': 'a',
-            'status': 'published',
-            'createdAt': '2026-08-09T12:00:00Z',
-            '_links': {
-              'assignment': {'href': '/api/v1/orders/a/assignment'},
-            },
+        Map<String, dynamic>.from({
+          'id': 'a',
+          'status': 'published',
+          'createdAt': '2026-08-09T12:00:00Z',
+          '_links': {
+            'assignment': {'href': '/api/v1/orders/a/assignment'},
           },
-        ),
+        }),
       );
       expect(comAcoes.links.permite('assignment'), isTrue);
       expect(comAcoes.links.permite('counteroffers'), isFalse);
@@ -107,112 +108,140 @@ void main() {
   });
 
   group('ControladorVitrine.aceitar — RF-A07.3', () {
-    test('sucesso: envia corpo vazio com Idempotency-Key e remove da lista', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders'] = [
-        _resp(200, '{"data":[${_pedidoJson("a")}],"meta":{"page":1,"perPage":20,"total":1}}'),
-      ];
-      servidor.respostas['/orders/a/assignment'] = [
-        _resp(
-          201,
-          '{"orderId":"a","courierId":"c1","finalFee":"6.00",'
-          '"assignedAt":"2026-08-09T12:05:00Z","_links":{}}',
-        ),
-      ];
+    test(
+      'sucesso: envia corpo vazio com Idempotency-Key e remove da lista',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders'] = [
+          _resp(
+            200,
+            '{"data":[${_pedidoJson("a")}],"meta":{"page":1,"perPage":20,"total":1}}',
+          ),
+        ];
+        servidor.respostas['/orders/a/assignment'] = [
+          _resp(
+            201,
+            '{"orderId":"a","courierId":"c1","finalFee":"6.00",'
+            '"assignedAt":"2026-08-09T12:05:00Z","_links":{}}',
+          ),
+        ];
 
-      final vitrine = _montar(servidor);
-      await vitrine.carregar();
-      expect(vitrine.pedidos.itens.length, 1);
+        final vitrine = _montar(servidor);
+        await vitrine.carregar();
+        expect(vitrine.pedidos.itens.length, 1);
 
-      final ok = await vitrine.aceitar('a');
+        final ok = await vitrine.aceitar('a');
 
-      expect(ok, isTrue);
-      expect(vitrine.pedidos.itens, isEmpty);
+        expect(ok, isTrue);
+        expect(vitrine.pedidos.itens, isEmpty);
 
-      final requisicao = servidor.chamadas.firstWhere(
-        (r) => r.path.contains('assignment'),
-      );
-      expect(requisicao.method, 'POST');
-      expect(requisicao.data, isNull);
-      expect(requisicao.headers['Idempotency-Key'], isNotNull);
-      expect((requisicao.headers['Idempotency-Key'] as String).isNotEmpty, isTrue);
-    });
+        final requisicao = servidor.chamadas.firstWhere(
+          (r) => r.path.contains('assignment'),
+        );
+        expect(requisicao.method, 'POST');
+        expect(requisicao.data, isNull);
+        expect(requisicao.headers['Idempotency-Key'], isNotNull);
+        expect(
+          (requisicao.headers['Idempotency-Key'] as String).isNotEmpty,
+          isTrue,
+        );
+      },
+    );
 
-    test('duas chamadas simultâneas: só uma dispara requisição — RNF-A07.1', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders/a/assignment'] = [
-        _resp(
-          201,
-          '{"orderId":"a","courierId":"c1","finalFee":"6.00",'
-          '"assignedAt":"2026-08-09T12:05:00Z","_links":{}}',
-        ),
-      ];
-      final vitrine = _montar(servidor);
+    test(
+      'duas chamadas simultâneas: só uma dispara requisição — RNF-A07.1',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders/a/assignment'] = [
+          _resp(
+            201,
+            '{"orderId":"a","courierId":"c1","finalFee":"6.00",'
+            '"assignedAt":"2026-08-09T12:05:00Z","_links":{}}',
+          ),
+        ];
+        final vitrine = _montar(servidor);
 
-      final r1 = vitrine.aceitar('a');
-      final r2 = vitrine.aceitar('b');
-      final resultados = await Future.wait([r1, r2]);
+        final r1 = vitrine.aceitar('a');
+        final r2 = vitrine.aceitar('b');
+        final resultados = await Future.wait([r1, r2]);
 
-      expect(resultados.where((r) => r).length, 1, reason: 'só uma deve ter concluído');
-      expect(
-        servidor.chamadas.where((r) => r.path.contains('assignment')).length,
-        1,
-        reason: 'a segunda foi barrada antes da rede',
-      );
-    });
+        expect(
+          resultados.where((r) => r).length,
+          1,
+          reason: 'só uma deve ter concluído',
+        );
+        expect(
+          servidor.chamadas.where((r) => r.path.contains('assignment')).length,
+          1,
+          reason: 'a segunda foi barrada antes da rede',
+        );
+      },
+    );
 
-    test('409 é tratado como caminho normal, não erro genérico — RF-A07.4', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders'] = [
-        _resp(200, '{"data":[${_pedidoJson("a")}],"meta":{"page":1,"perPage":20,"total":1}}'),
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
-      ];
-      servidor.respostas['/orders/a/assignment'] = [
-        _resp(
-          409,
-          '{"error":{"code":"ORDER_ALREADY_ASSIGNED",'
-          '"message":"Esse pedido acabou de ser aceito por outra pessoa."}}',
-        ),
-      ];
+    test(
+      '409 é tratado como caminho normal, não erro genérico — RF-A07.4',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders'] = [
+          _resp(
+            200,
+            '{"data":[${_pedidoJson("a")}],"meta":{"page":1,"perPage":20,"total":1}}',
+          ),
+          _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
+        ];
+        servidor.respostas['/orders/a/assignment'] = [
+          _resp(
+            409,
+            '{"error":{"code":"ORDER_ALREADY_ASSIGNED",'
+            '"message":"Esse pedido acabou de ser aceito por outra pessoa."}}',
+          ),
+        ];
 
-      final vitrine = _montar(servidor);
-      await vitrine.carregar();
+        final vitrine = _montar(servidor);
+        await vitrine.carregar();
 
-      final ok = await vitrine.aceitar('a');
+        final ok = await vitrine.aceitar('a');
 
-      expect(ok, isFalse);
-      expect(vitrine.aviso, 'Esse pedido acabou de ser aceito por outra pessoa.');
-      // a remoção local acontece antes mesmo do recarregamento
-      // terminar — o pedido não deve reaparecer na tela.
-      expect(vitrine.pedidos.itens.where((p) => p.id == 'a'), isEmpty);
-    });
+        expect(ok, isFalse);
+        expect(
+          vitrine.aviso,
+          'Esse pedido acabou de ser aceito por outra pessoa.',
+        );
+        // a remoção local acontece antes mesmo do recarregamento
+        // terminar — o pedido não deve reaparecer na tela.
+        expect(vitrine.pedidos.itens.where((p) => p.id == 'a'), isEmpty);
+      },
+    );
 
-    test('depois do aceite (sucesso ou 409), a guarda libera para o próximo', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders/a/assignment'] = [
-        _resp(
-          409,
-          '{"error":{"code":"ORDER_ALREADY_ASSIGNED","message":"Já foi aceito."}}',
-        ),
-      ];
-      servidor.respostas['/orders'] = [
-        _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
-      ];
-      servidor.respostas['/orders/b/assignment'] = [
-        _resp(
-          201,
-          '{"orderId":"b","courierId":"c1","finalFee":"6.00",'
-          '"assignedAt":"2026-08-09T12:05:00Z","_links":{}}',
-        ),
-      ];
+    test(
+      'depois do aceite (sucesso ou 409), a guarda libera para o próximo',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders/a/assignment'] = [
+          _resp(
+            409,
+            '{"error":{"code":"ORDER_ALREADY_ASSIGNED","message":"Já foi aceito."}}',
+          ),
+        ];
+        servidor.respostas['/orders'] = [
+          _resp(200, '{"data":[],"meta":{"page":1,"perPage":20,"total":0}}'),
+        ];
+        servidor.respostas['/orders/b/assignment'] = [
+          _resp(
+            201,
+            '{"orderId":"b","courierId":"c1","finalFee":"6.00",'
+            '"assignedAt":"2026-08-09T12:05:00Z","_links":{}}',
+          ),
+        ];
 
-      final vitrine = _montar(servidor);
-      await vitrine.aceitar('a');
-      expect(vitrine.haAceiteEmVoo, isFalse);
+        final vitrine = _montar(servidor);
+        await vitrine.aceitar('a');
+        expect(vitrine.haAceiteEmVoo, isFalse);
 
-      final ok = await vitrine.aceitar('b');
-      expect(ok, isTrue);
-    });
+        final ok = await vitrine.aceitar('b');
+        expect(ok, isTrue);
+      },
+    );
   });
 
   group('ControladorVitrine.contrapropor — RF-A07.5', () {

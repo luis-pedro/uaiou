@@ -10,10 +10,7 @@ void main() {
     // recusada de imediato, sem esperar tempo limite.
     final cliente = ClienteApi(baseUrl: 'http://127.0.0.1:9');
 
-    await expectLater(
-      cliente.obter('/orders'),
-      throwsA(isA<FalhaDeRede>()),
-    );
+    await expectLater(cliente.obter('/orders'), throwsA(isA<FalhaDeRede>()));
   });
 
   test('a falha carrega mensagem exibível ao usuário', () async {

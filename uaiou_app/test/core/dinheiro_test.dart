@@ -92,8 +92,7 @@ void main() {
     });
 
     test('formata milhões', () {
-      expect(Dinheiro.deString('1234567.89').formatarBRL(),
-          r'R$ 1.234.567,89');
+      expect(Dinheiro.deString('1234567.89').formatarBRL(), r'R$ 1.234.567,89');
     });
 
     test('formata negativo', () {
@@ -117,14 +116,19 @@ void main() {
         Dinheiro.deString('6.00'),
       ]..sort();
 
-      expect(valores.map((v) => v.paraJson()).toList(),
-          ['0.10', '6.00', '10.00']);
+      expect(valores.map((v) => v.paraJson()).toList(), [
+        '0.10',
+        '6.00',
+        '10.00',
+      ]);
     });
 
     test('igualdade por valor', () {
       expect(Dinheiro.deString('6.00'), Dinheiro.deString('6.0'));
-      expect(Dinheiro.deString('6.00').hashCode,
-          Dinheiro.deString('6.0').hashCode);
+      expect(
+        Dinheiro.deString('6.00').hashCode,
+        Dinheiro.deString('6.0').hashCode,
+      );
     });
   });
 }

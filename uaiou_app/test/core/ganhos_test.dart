@@ -103,7 +103,11 @@ void main() {
     test('lê summary e cada lançamento, incluindo status e datas', () {
       final resposta = RespostaGanhos.doJson(
         Map<String, dynamic>.from({
-          'summary': {'total': '16.00', 'receivable': '6.00', 'settled': '10.00'},
+          'summary': {
+            'total': '16.00',
+            'receivable': '6.00',
+            'settled': '10.00',
+          },
           'data': [
             {
               'id': 'l1',
@@ -161,22 +165,28 @@ void main() {
   });
 
   group('ControladorGanhos.carregar — RF-A09.1', () {
-    test('nunca soma lançamentos: o total exibido é o summary do servidor', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/earnings'] = [_resp(200, _respostaPagina1)];
+    test(
+      'nunca soma lançamentos: o total exibido é o summary do servidor',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/earnings'] = [_resp(200, _respostaPagina1)];
 
-      final controlador = _montar(servidor);
-      await controlador.carregar();
+        final controlador = _montar(servidor);
+        await controlador.carregar();
 
-      // RNF-A09.2: soma dos itens listados bate com o total do resumo
-      // (verificação de consistência), mas o valor exibido vem de
-      // `resumo`, não de uma soma feita aqui.
-      final somaListada = controlador.lancamentos.map((l) => l.amount).toList().soma;
-      expect(somaListada, controlador.resumo.total);
-      expect(controlador.resumo.receivable.formatarBRL(), 'R\$ 6,00');
-      expect(controlador.resumo.settled.formatarBRL(), 'R\$ 10,00');
-      expect(controlador.temMais, isTrue);
-    });
+        // RNF-A09.2: soma dos itens listados bate com o total do resumo
+        // (verificação de consistência), mas o valor exibido vem de
+        // `resumo`, não de uma soma feita aqui.
+        final somaListada = controlador.lancamentos
+            .map((l) => l.amount)
+            .toList()
+            .soma;
+        expect(somaListada, controlador.resumo.total);
+        expect(controlador.resumo.receivable.formatarBRL(), 'R\$ 6,00');
+        expect(controlador.resumo.settled.formatarBRL(), 'R\$ 10,00');
+        expect(controlador.temMais, isTrue);
+      },
+    );
   });
 
   group('ControladorGanhos.carregarMais — RF-A09.6', () {
@@ -252,30 +262,36 @@ void main() {
       );
     });
 
-    test('duas confirmações simultâneas: só uma dispara requisição — reentrância', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/earnings'] = [
-        _resp(200, _respostaPagina1),
-        _resp(200, _respostaPagina1),
-      ];
-      servidor.respostas['/me/earnings/settlements'] = [
-        _resp(200, '{"settled": ["l1"], "settledAt": "2026-08-10T12:00:00Z"}'),
-      ];
+    test(
+      'duas confirmações simultâneas: só uma dispara requisição — reentrância',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/earnings'] = [
+          _resp(200, _respostaPagina1),
+          _resp(200, _respostaPagina1),
+        ];
+        servidor.respostas['/me/earnings/settlements'] = [
+          _resp(
+            200,
+            '{"settled": ["l1"], "settledAt": "2026-08-10T12:00:00Z"}',
+          ),
+        ];
 
-      final controlador = _montar(servidor);
-      await controlador.carregar();
-      controlador.alternarSelecao('l1');
+        final controlador = _montar(servidor);
+        await controlador.carregar();
+        controlador.alternarSelecao('l1');
 
-      final r1 = controlador.confirmarSelecionados();
-      final r2 = controlador.confirmarSelecionados();
-      final resultados = await Future.wait([r1, r2]);
+        final r1 = controlador.confirmarSelecionados();
+        final r2 = controlador.confirmarSelecionados();
+        final resultados = await Future.wait([r1, r2]);
 
-      expect(resultados.where((r) => r).length, 1);
-      expect(
-        servidor.chamadas.where((r) => r.path.contains('settlements')).length,
-        1,
-      );
-    });
+        expect(resultados.where((r) => r).length, 1);
+        expect(
+          servidor.chamadas.where((r) => r.path.contains('settlements')).length,
+          1,
+        );
+      },
+    );
 
     test('erro do servidor não limpa a seleção e expõe a mensagem', () async {
       final servidor = _Servidor();

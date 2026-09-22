@@ -79,7 +79,10 @@ void main() {
     test('comentário vazio não é enviado', () async {
       final servidor = _Servidor();
       servidor.respostas['/orders/p1/reviews'] = [
-        _resp(201, '{"id":"r1","orderId":"p1","targetId":"u9","rating":4,"createdAt":null}'),
+        _resp(
+          201,
+          '{"id":"r1","orderId":"p1","targetId":"u9","rating":4,"createdAt":null}',
+        ),
       ];
 
       final repositorio = RepositorioAvaliacoes(_api(servidor));
@@ -91,26 +94,29 @@ void main() {
   });
 
   group('RepositorioAvaliacoes.pendentes — RF-A12.1', () {
-    test('parseia lista simples sem envelope (contrato real, sem `data`/`_links`)', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/reviews'] = [
-        _resp(
-          200,
-          '[{"orderId":"p1","orderNumber":"1001","counterpartyId":"u1",'
-          '"counterpartyName":"Zé","deadline":"2026-08-15T00:00:00Z"}]',
-        ),
-      ];
+    test(
+      'parseia lista simples sem envelope (contrato real, sem `data`/`_links`)',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/reviews'] = [
+          _resp(
+            200,
+            '[{"orderId":"p1","orderNumber":"1001","counterpartyId":"u1",'
+            '"counterpartyName":"Zé","deadline":"2026-08-15T00:00:00Z"}]',
+          ),
+        ];
 
-      final itens = await RepositorioAvaliacoes(_api(servidor)).pendentes();
+        final itens = await RepositorioAvaliacoes(_api(servidor)).pendentes();
 
-      expect(itens, hasLength(1));
-      expect(itens.first.orderNumber, '1001');
-      expect(itens.first.counterpartyName, 'Zé');
-      expect(itens.first.deadline, isNotNull);
+        expect(itens, hasLength(1));
+        expect(itens.first.orderNumber, '1001');
+        expect(itens.first.counterpartyName, 'Zé');
+        expect(itens.first.deadline, isNotNull);
 
-      final requisicao = servidor.chamadas.single;
-      expect(requisicao.queryParameters['direction'], 'pending');
-    });
+        final requisicao = servidor.chamadas.single;
+        expect(requisicao.queryParameters['direction'], 'pending');
+      },
+    );
   });
 
   group('RepositorioAvaliacoes.recebidas — RF-A12.7', () {
@@ -142,79 +148,97 @@ void main() {
   });
 
   group('ControladorAvaliacoes — RF-A12.1/RF-A12.2', () {
-    test('carregar popula pendentes e recebidas; avaliar recarrega pendentes', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/reviews'] = [
-        _resp(
-          200,
-          '[{"orderId":"p1","orderNumber":"1001","counterpartyId":"u1",'
-          '"counterpartyName":"Zé","deadline":"2026-08-15T00:00:00Z"}]',
-        ),
-        _resp(
-          200,
-          '{"summary":{"average":0,"activeRate":0,"count":0},"data":[]}',
-        ),
-        // Após avaliar, a lista de pendentes é recarregada e o pedido
-        // avaliado já não deve mais aparecer.
-        _resp(200, '[]'),
-      ];
-      servidor.respostas['/orders/p1/reviews'] = [
-        _resp(201, '{"id":"r1","orderId":"p1","targetId":"u1","rating":5,"createdAt":null}'),
-      ];
+    test(
+      'carregar popula pendentes e recebidas; avaliar recarrega pendentes',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/reviews'] = [
+          _resp(
+            200,
+            '[{"orderId":"p1","orderNumber":"1001","counterpartyId":"u1",'
+            '"counterpartyName":"Zé","deadline":"2026-08-15T00:00:00Z"}]',
+          ),
+          _resp(
+            200,
+            '{"summary":{"average":0,"activeRate":0,"count":0},"data":[]}',
+          ),
+          // Após avaliar, a lista de pendentes é recarregada e o pedido
+          // avaliado já não deve mais aparecer.
+          _resp(200, '[]'),
+        ];
+        servidor.respostas['/orders/p1/reviews'] = [
+          _resp(
+            201,
+            '{"id":"r1","orderId":"p1","targetId":"u1","rating":5,"createdAt":null}',
+          ),
+        ];
 
-      final controlador = ControladorAvaliacoes(
-        repositorio: RepositorioAvaliacoes(_api(servidor)),
-      );
-      await controlador.carregar();
+        final controlador = ControladorAvaliacoes(
+          repositorio: RepositorioAvaliacoes(_api(servidor)),
+        );
+        await controlador.carregar();
 
-      expect(controlador.pendentes, isA<Pronto<List<AvaliacaoPendente>>>());
-      expect(controlador.recebidas, isA<Pronto<RespostaAvaliacoesRecebidas>>());
+        expect(controlador.pendentes, isA<Pronto<List<AvaliacaoPendente>>>());
+        expect(
+          controlador.recebidas,
+          isA<Pronto<RespostaAvaliacoesRecebidas>>(),
+        );
 
-      final ok = await controlador.avaliar('p1', rating: 5);
+        final ok = await controlador.avaliar('p1', rating: 5);
 
-      expect(ok, isTrue);
-      expect(controlador.pendentes, isA<Vazio<List<AvaliacaoPendente>>>());
-    });
+        expect(ok, isTrue);
+        expect(controlador.pendentes, isA<Vazio<List<AvaliacaoPendente>>>());
+      },
+    );
 
-    test('erro do servidor ao avaliar não derruba o app: mensagem exposta', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/me/reviews'] = [
-        _resp(200, '[]'),
-        _resp(200, '{"summary":{"average":0,"activeRate":0,"count":0},"data":[]}'),
-      ];
-      servidor.respostas['/orders/p1/reviews'] = [
-        _resp(
-          422,
-          '{"error":{"code":"ALREADY_REVIEWED","message":"Você já avaliou este pedido.",'
-          '"rule":"RN-19.2"}}',
-        ),
-      ];
+    test(
+      'erro do servidor ao avaliar não derruba o app: mensagem exposta',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/me/reviews'] = [
+          _resp(200, '[]'),
+          _resp(
+            200,
+            '{"summary":{"average":0,"activeRate":0,"count":0},"data":[]}',
+          ),
+        ];
+        servidor.respostas['/orders/p1/reviews'] = [
+          _resp(
+            422,
+            '{"error":{"code":"ALREADY_REVIEWED","message":"Você já avaliou este pedido.",'
+            '"rule":"RN-19.2"}}',
+          ),
+        ];
 
-      final controlador = ControladorAvaliacoes(
-        repositorio: RepositorioAvaliacoes(_api(servidor)),
-      );
-      await controlador.carregar();
+        final controlador = ControladorAvaliacoes(
+          repositorio: RepositorioAvaliacoes(_api(servidor)),
+        );
+        await controlador.carregar();
 
-      final ok = await controlador.avaliar('p1', rating: 5);
+        final ok = await controlador.avaliar('p1', rating: 5);
 
-      expect(ok, isFalse);
-      expect(controlador.erroEnvio, contains('já avaliou'));
-    });
+        expect(ok, isFalse);
+        expect(controlador.erroEnvio, contains('já avaliou'));
+      },
+    );
   });
 
   group('ControladorScore — RF-A12.4/RF-A12.5/critério 8', () {
-    test('sem nota ainda (404), score fica nulo — nunca "0,0" fingido', () async {
-      final servidor = _Servidor();
-      // Sem entrada para '/me/score': o fake devolve 404 por padrão.
+    test(
+      'sem nota ainda (404), score fica nulo — nunca "0,0" fingido',
+      () async {
+        final servidor = _Servidor();
+        // Sem entrada para '/me/score': o fake devolve 404 por padrão.
 
-      final controlador = ControladorScore(
-        repositorio: RepositorioScore(_api(servidor)),
-      );
-      await controlador.carregar();
+        final controlador = ControladorScore(
+          repositorio: RepositorioScore(_api(servidor)),
+        );
+        await controlador.carregar();
 
-      expect(controlador.estado, isA<Falhou<dynamic>>());
-      expect(controlador.score, isNull);
-    });
+        expect(controlador.estado, isA<Falhou<dynamic>>());
+        expect(controlador.score, isNull);
+      },
+    );
 
     test('com nota, expõe valor e componentes sem recalcular nada', () async {
       final servidor = _Servidor();
@@ -234,7 +258,10 @@ void main() {
 
       expect(controlador.score?.valor, '4.8');
       expect(controlador.score?.componentes, hasLength(1));
-      expect(controlador.score?.componentes.first.metrica, 'activeReviewsAverage');
+      expect(
+        controlador.score?.componentes.first.metrica,
+        'activeReviewsAverage',
+      );
     });
   });
 }

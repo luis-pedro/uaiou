@@ -69,7 +69,10 @@ void main() {
     test('lê contagens e taxas do contrato', () {
       final stats = EstatisticasEntregador.doJson(
         Map<String, dynamic>.from({
-          'period': {'from': '2026-07-11T00:00:00Z', 'to': '2026-08-10T00:00:00Z'},
+          'period': {
+            'from': '2026-07-11T00:00:00Z',
+            'to': '2026-08-10T00:00:00Z',
+          },
           'deliveriesCompleted': 48,
           'counterofferSuccessRate': 0.42,
           'averageDeliveryMinutes': 23.5,
@@ -99,7 +102,8 @@ void main() {
       await controlador.carregar();
 
       expect(controlador.estado, isA<Pronto<EstatisticasEntregador>>());
-      final stats = (controlador.estado as Pronto<EstatisticasEntregador>).valor;
+      final stats =
+          (controlador.estado as Pronto<EstatisticasEntregador>).valor;
       expect(stats.entregasConcluidas, 48);
       expect(stats.taxaFinalizacaoLimpa, 0.92);
     });
@@ -111,14 +115,19 @@ void main() {
       final controlador = _montar(servidor);
       await controlador.carregar(periodo: '30d');
 
-      final requisicao = servidor.chamadas.firstWhere((r) => r.path.contains('/me/stats'));
+      final requisicao = servidor.chamadas.firstWhere(
+        (r) => r.path.contains('/me/stats'),
+      );
       expect(requisicao.queryParameters['period'], '30d');
     });
 
     test('erro do servidor vira estado Falhou', () async {
       final servidor = _Servidor();
       servidor.respostas['/me/stats'] = [
-        _resp(500, '{"error":{"code":"UNEXPECTED","message":"Algo deu errado."}}'),
+        _resp(
+          500,
+          '{"error":{"code":"UNEXPECTED","message":"Algo deu errado."}}',
+        ),
       ];
 
       final controlador = _montar(servidor);

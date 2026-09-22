@@ -69,7 +69,10 @@ ControladorEntrega _montar(_Servidor servidor, {LeitorDePosicao? leitor}) {
   final api = ClienteApi(dio: dio, baseUrl: 'http://teste/api/v1');
   return ControladorEntrega(
     repositorio: RepositorioEntregas(api),
-    uploads: RepositorioUploads(api, armazenamento: Dio()..httpClientAdapter = servidor),
+    uploads: RepositorioUploads(
+      api,
+      armazenamento: Dio()..httpClientAdapter = servidor,
+    ),
     seletor: SeletorDeImagem(),
     leitor: leitor ?? _LeitorFake(),
   );
@@ -145,31 +148,37 @@ void main() {
       expect(estado.podeFinalizar, isTrue);
     });
 
-    test('contestableReleased habilita a via contestável — RF-A08.6/RF-A08.7', () {
-      final estado = EstadoEntrega.doJson(
-        Map<String, dynamic>.from({
-          'orderId': 'p1',
-          'status': 'in_progress',
-          'contingency': {'step': 2, 'contestableReleased': true},
-          '_links': {},
-        }),
-      );
+    test(
+      'contestableReleased habilita a via contestável — RF-A08.6/RF-A08.7',
+      () {
+        final estado = EstadoEntrega.doJson(
+          Map<String, dynamic>.from({
+            'orderId': 'p1',
+            'status': 'in_progress',
+            'contingency': {'step': 2, 'contestableReleased': true},
+            '_links': {},
+          }),
+        );
 
-      expect(estado.contestavelDisponivel, isTrue);
-    });
+        expect(estado.contestavelDisponivel, isTrue);
+      },
+    );
 
-    test('deliveryCode.attemptsLeft é lido do servidor, não contado pelo app', () {
-      final estado = EstadoEntrega.doJson(
-        Map<String, dynamic>.from({
-          'orderId': 'p1',
-          'status': 'in_progress',
-          'deliveryCode': {'status': 'issued', 'attemptsLeft': 2},
-          '_links': {},
-        }),
-      );
+    test(
+      'deliveryCode.attemptsLeft é lido do servidor, não contado pelo app',
+      () {
+        final estado = EstadoEntrega.doJson(
+          Map<String, dynamic>.from({
+            'orderId': 'p1',
+            'status': 'in_progress',
+            'deliveryCode': {'status': 'issued', 'attemptsLeft': 2},
+            '_links': {},
+          }),
+        );
 
-      expect(estado.codigo.tentativasRestantes, 2);
-    });
+        expect(estado.codigo.tentativasRestantes, 2);
+      },
+    );
 
     /// O app tinha 4 dígitos fixos enquanto o servidor emitia 6, e recusava o
     /// código certo antes de enviá-lo. O tamanho passa a vir de `length`.
@@ -222,10 +231,7 @@ void main() {
       final servidor = _Servidor();
       servidor.respostas['/orders/p1/delivery'] = [
         _resp(200, _comGeofence),
-        _resp(
-          200,
-          '{"orderId":"p1","status":"finalized","_links":{}}',
-        ),
+        _resp(200, '{"orderId":"p1","status":"finalized","_links":{}}'),
       ];
       servidor.respostas['/orders/p1/delivery/completion'] = [
         _resp(
@@ -255,60 +261,69 @@ void main() {
         'lng': -43.9,
       });
       expect(requisicao.headers['Idempotency-Key'], isNotNull);
-      expect((requisicao.headers['Idempotency-Key'] as String).isNotEmpty, isTrue);
-    });
-
-    test('código errado (422) exibe a mensagem da API e recarrega o estado', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders/p1/delivery'] = [
-        _resp(200, _comGeofence),
-        _resp(200, _comGeofence),
-      ];
-      servidor.respostas['/orders/p1/delivery/completion'] = [
-        _resp(
-          422,
-          '{"error":{"code":"INVALID_DELIVERY_CODE","message":"Código incorreto.",'
-          '"rule":"RN-08.4"}}',
-        ),
-      ];
-
-      final controlador = _montar(servidor);
-      await controlador.abrir('p1');
-
-      final ok = await controlador.finalizarComCodigo('000000');
-
-      expect(ok, isFalse);
-      expect(controlador.erro, contains('Código incorreto'));
-      expect(controlador.finalizada, isFalse);
-    });
-
-    test('duas chamadas simultâneas: só uma dispara requisição — reentrância', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders/p1/delivery'] = [
-        _resp(200, _comGeofence),
-        _resp(200, _comGeofence),
-      ];
-      servidor.respostas['/orders/p1/delivery/completion'] = [
-        _resp(
-          201,
-          '{"orderId":"p1","orderStatus":"finalized","completionType":"code",'
-          '"completedAt":"2026-08-09T18:00:00Z","_links":{}}',
-        ),
-      ];
-
-      final controlador = _montar(servidor);
-      await controlador.abrir('p1');
-
-      final r1 = controlador.finalizarComCodigo('4821');
-      final r2 = controlador.finalizarComCodigo('4821');
-      final resultados = await Future.wait([r1, r2]);
-
-      expect(resultados.where((r) => r).length, 1);
       expect(
-        servidor.chamadas.where((r) => r.path.contains('completion')).length,
-        1,
+        (requisicao.headers['Idempotency-Key'] as String).isNotEmpty,
+        isTrue,
       );
     });
+
+    test(
+      'código errado (422) exibe a mensagem da API e recarrega o estado',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders/p1/delivery'] = [
+          _resp(200, _comGeofence),
+          _resp(200, _comGeofence),
+        ];
+        servidor.respostas['/orders/p1/delivery/completion'] = [
+          _resp(
+            422,
+            '{"error":{"code":"INVALID_DELIVERY_CODE","message":"Código incorreto.",'
+            '"rule":"RN-08.4"}}',
+          ),
+        ];
+
+        final controlador = _montar(servidor);
+        await controlador.abrir('p1');
+
+        final ok = await controlador.finalizarComCodigo('000000');
+
+        expect(ok, isFalse);
+        expect(controlador.erro, contains('Código incorreto'));
+        expect(controlador.finalizada, isFalse);
+      },
+    );
+
+    test(
+      'duas chamadas simultâneas: só uma dispara requisição — reentrância',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders/p1/delivery'] = [
+          _resp(200, _comGeofence),
+          _resp(200, _comGeofence),
+        ];
+        servidor.respostas['/orders/p1/delivery/completion'] = [
+          _resp(
+            201,
+            '{"orderId":"p1","orderStatus":"finalized","completionType":"code",'
+            '"completedAt":"2026-08-09T18:00:00Z","_links":{}}',
+          ),
+        ];
+
+        final controlador = _montar(servidor);
+        await controlador.abrir('p1');
+
+        final r1 = controlador.finalizarComCodigo('4821');
+        final r2 = controlador.finalizarComCodigo('4821');
+        final resultados = await Future.wait([r1, r2]);
+
+        expect(resultados.where((r) => r).length, 1);
+        expect(
+          servidor.chamadas.where((r) => r.path.contains('completion')).length,
+          1,
+        );
+      },
+    );
   });
 
   group('ControladorEntrega.acionarContingencia — RF-A08.5', () {
@@ -340,7 +355,9 @@ void main() {
   group('ControladorEntrega.finalizarContestavel — RF-A08.6/RF-A08.7', () {
     test('sem uploadId confirmado, não finaliza', () async {
       final servidor = _Servidor();
-      servidor.respostas['/orders/p1/delivery'] = [_resp(200, _contestavelLiberada)];
+      servidor.respostas['/orders/p1/delivery'] = [
+        _resp(200, _contestavelLiberada),
+      ];
 
       final controlador = _montar(servidor);
       await controlador.abrir('p1');
@@ -354,28 +371,36 @@ void main() {
       );
     });
 
-    test('uploadId sobrevive a uma nova chamada de abrir() no mesmo pedido — RF-A08.10', () async {
-      final servidor = _Servidor();
-      servidor.respostas['/orders/p1/delivery'] = [
-        _resp(200, _contestavelLiberada),
-        _resp(200, _contestavelLiberada),
-      ];
+    test(
+      'uploadId sobrevive a uma nova chamada de abrir() no mesmo pedido — RF-A08.10',
+      () async {
+        final servidor = _Servidor();
+        servidor.respostas['/orders/p1/delivery'] = [
+          _resp(200, _contestavelLiberada),
+          _resp(200, _contestavelLiberada),
+        ];
 
-      final controlador = _montar(servidor);
-      await controlador.abrir('p1');
+        final controlador = _montar(servidor);
+        await controlador.abrir('p1');
 
-      // Simula uma foto já confirmada (sem exercitar o seletor de
-      // imagem real, que depende de plugin de plataforma).
-      // Reabrir o MESMO pedido (ex.: sair e voltar da tela) não deve
-      // descartar a foto.
-      await controlador.abrir('p1');
+        // Simula uma foto já confirmada (sem exercitar o seletor de
+        // imagem real, que depende de plugin de plataforma).
+        // Reabrir o MESMO pedido (ex.: sair e voltar da tela) não deve
+        // descartar a foto.
+        await controlador.abrir('p1');
 
-      expect(controlador.uploadIdConfirmado, isNull); // nunca setado neste teste
-    });
+        expect(
+          controlador.uploadIdConfirmado,
+          isNull,
+        ); // nunca setado neste teste
+      },
+    );
 
     test('trocar de pedido descarta a foto da entrega anterior', () async {
       final servidor = _Servidor();
-      servidor.respostas['/orders/p1/delivery'] = [_resp(200, _contestavelLiberada)];
+      servidor.respostas['/orders/p1/delivery'] = [
+        _resp(200, _contestavelLiberada),
+      ];
       servidor.respostas['/orders/p2/delivery'] = [_resp(200, _semGeofence)];
 
       final controlador = _montar(servidor);

@@ -35,7 +35,10 @@ void main() {
         temaClaro(_semTransicoes).colorScheme.primary,
         temaEscuro(_semTransicoes).colorScheme.primary,
       );
-      expect(temaClaro(_semTransicoes).colorScheme.primary, CoresUaiou.principal);
+      expect(
+        temaClaro(_semTransicoes).colorScheme.primary,
+        CoresUaiou.principal,
+      );
     });
 
     testWidgets('context.cores acompanha o tema em uso', (tester) async {

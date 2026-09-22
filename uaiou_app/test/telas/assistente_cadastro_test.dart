@@ -14,9 +14,7 @@ Widget _app(RascunhoCadastro rascunho) {
     value: rascunho,
     child: MaterialApp(
       home: const CadastroEntregador1(),
-      routes: {
-        '/cadastro_entregador2': (_) => const CadastroEntregador2(),
-      },
+      routes: {'/cadastro_entregador2': (_) => const CadastroEntregador2()},
     ),
   );
 }
@@ -72,8 +70,9 @@ void main() {
     expect(find.byType(CadastroEntregador2), findsOneWidget);
   });
 
-  testWidgets('o que é digitado sobe para o rascunho — RF-A04.1',
-      (tester) async {
+  testWidgets('o que é digitado sobe para o rascunho — RF-A04.1', (
+    tester,
+  ) async {
     final rascunho = RascunhoCadastro();
     await tester.pumpWidget(_app(rascunho));
 
@@ -85,8 +84,9 @@ void main() {
     expect(rascunho.nome, 'Maria');
   });
 
-  testWidgets('voltar ao passo 1 preserva o preenchido — RF-A04.1',
-      (tester) async {
+  testWidgets('voltar ao passo 1 preserva o preenchido — RF-A04.1', (
+    tester,
+  ) async {
     final rascunho = RascunhoCadastro()
       ..nome = 'João Silva'
       ..email = 'joao@teste.com'

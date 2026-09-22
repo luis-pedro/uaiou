@@ -138,12 +138,13 @@ void main() {
     /// O protótipo coleta estes campos, mas `RegisterRequest` não tem
     /// onde guardá-los. Enviá-los seria descartado em silêncio.
     test('campos sem destino no contrato não são enviados', () {
-      final json = (_completo()
-            ..telefone = '35999999999'
-            ..dataNascimento = '01/01/2000'
-            ..rua = 'Rua A'
-            ..cidade = 'Santa Rita')
-          .paraJson();
+      final json =
+          (_completo()
+                ..telefone = '35999999999'
+                ..dataNascimento = '01/01/2000'
+                ..rua = 'Rua A'
+                ..cidade = 'Santa Rita')
+              .paraJson();
 
       final texto = json.toString();
       expect(texto.contains('35999999999'), isFalse);
@@ -156,13 +157,12 @@ void main() {
     Map<String, dynamic> resposta({
       List<Map<String, dynamic>> documentos = const [],
       List<String> faltando = const [],
-    }) =>
-        {'documents': documentos, 'missingTypes': faltando};
+    }) => {'documents': documentos, 'missingTypes': faltando};
 
     test('missingTypes diz o que a tela precisa pedir', () {
-      final situacao = SituacaoDocumental.doJson(resposta(
-        faltando: ['IDENTITY_DOCUMENT', 'DRIVER_LICENSE'],
-      ));
+      final situacao = SituacaoDocumental.doJson(
+        resposta(faltando: ['IDENTITY_DOCUMENT', 'DRIVER_LICENSE']),
+      );
 
       expect(situacao.faltando, [
         PropositoUpload.documentoIdentidade,
@@ -172,14 +172,18 @@ void main() {
     });
 
     test('rejeitado expõe o motivo e volta para a fila de envio', () {
-      final situacao = SituacaoDocumental.doJson(resposta(documentos: [
-        {
-          'id': 'd-1',
-          'type': 'IDENTITY_DOCUMENT',
-          'status': 'rejected',
-          'rejectionReason': 'Foto ilegível.',
-        }
-      ]));
+      final situacao = SituacaoDocumental.doJson(
+        resposta(
+          documentos: [
+            {
+              'id': 'd-1',
+              'type': 'IDENTITY_DOCUMENT',
+              'status': 'rejected',
+              'rejectionReason': 'Foto ilegível.',
+            },
+          ],
+        ),
+      );
 
       expect(situacao.rejeitados.single.motivoDaRejeicao, 'Foto ilegível.');
       expect(situacao.aEnviar, contains(PropositoUpload.documentoIdentidade));
@@ -187,10 +191,14 @@ void main() {
     });
 
     test('superado não aparece como pendência', () {
-      final situacao = SituacaoDocumental.doJson(resposta(documentos: [
-        {'id': 'd-1', 'type': 'IDENTITY_DOCUMENT', 'status': 'superseded'},
-        {'id': 'd-2', 'type': 'IDENTITY_DOCUMENT', 'status': 'pending'},
-      ]));
+      final situacao = SituacaoDocumental.doJson(
+        resposta(
+          documentos: [
+            {'id': 'd-1', 'type': 'IDENTITY_DOCUMENT', 'status': 'superseded'},
+            {'id': 'd-2', 'type': 'IDENTITY_DOCUMENT', 'status': 'pending'},
+          ],
+        ),
+      );
 
       expect(situacao.vigentes.length, 1);
       expect(situacao.vigentes.single.status, StatusDocumento.pendente);
@@ -198,9 +206,9 @@ void main() {
     });
 
     test('tipo desconhecido não derruba a leitura', () {
-      final situacao = SituacaoDocumental.doJson(resposta(
-        faltando: ['ALGO_NOVO'],
-      ));
+      final situacao = SituacaoDocumental.doJson(
+        resposta(faltando: ['ALGO_NOVO']),
+      );
       expect(situacao.faltando, isEmpty);
     });
   });

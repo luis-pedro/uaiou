@@ -15,10 +15,12 @@ import 'package:uaiou/screens/widgets/dialogo_motivo.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
 import 'package:uaiou/core/presenca/leitor_de_posicao.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
+import 'package:uaiou/core/feira/controlador_feira.dart';
 import 'package:uaiou/core/rotas/modelo_rota.dart';
 import 'package:uaiou/core/uploads/seletor_de_imagem.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/instrucoes_de_rota.dart';
+import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/screens/widgets/mapa_rota.dart';
 
 /// ===============================================================
@@ -159,7 +161,12 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _moverFolha(.62);
-        mostrarAviso(context, 'Você chegou. Peça o código ao destinatário.');
+        mostrarAviso(
+          context,
+          feiraNestaBranch
+              ? 'Você chegou ao ponto. Finalize para receber o prêmio.'
+              : 'Você chegou. Peça o código ao destinatário.',
+        );
       });
     }
   }
@@ -514,7 +521,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 ] else ...[
                   // Chegou: finalizar vem antes de tudo, sem precisar
                   // rolar a folha.
-                  if (mostrarCodigo) ...[
+                  if (feiraNestaBranch) ...[
+                    _buildCartaoFeira(context, entrega),
+                    const SizedBox(height: 16),
+                  ] else if (mostrarCodigo) ...[
                     _buildCartaoCodigo(context, controlador, entrega),
                     const SizedBox(height: 16),
                   ],
@@ -742,6 +752,101 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
         ],
       ),
     );
+  }
+
+  /// Modo feira (docs/feira/01-fluxos.md): finaliza sem código.
+  ///
+  /// No produto quem prova a entrega é o destinatário, ditando o OTP. Num
+  /// salão não há ninguém esperando no ponto, então a prova é ter chegado —
+  /// o servidor confere o geofence e é ele que recusa se estiver longe. O
+  /// botão fica habilitado mesmo fora do raio de propósito: GPS dentro de
+  /// pavilhão erra, e "tente de novo daqui a pouco" é uma resposta melhor
+  /// que um botão morto sem explicação.
+  Widget _buildCartaoFeira(BuildContext context, EstadoEntrega entrega) {
+    final feira = context.watch<ControladorFeira>();
+    final dentro = entrega.geofence.dentro;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: context.cores.superficie,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: context.cores.borda),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            dentro
+                ? 'Você chegou ao ponto. Finalize para receber o prêmio.'
+                : 'Chegue ao ponto marcado para finalizar.',
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          if (feira.erro != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              feira.erro!,
+              style: TextStyle(color: context.cores.perigo, fontSize: 13),
+            ),
+          ],
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: feira.carregando ? null : _finalizarNaFeira,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: corPrincipal,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.card_giftcard),
+              label: Text(
+                feira.carregando ? 'Finalizando…' : 'Finalizar entrega',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _finalizarNaFeira() async {
+    final feira = context.read<ControladorFeira>();
+    final captura = await feira.finalizarEntrega(widget.pedidoId);
+    if (!mounted || captura == null) return;
+
+    feira.comprovanteExibido();
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (contexto) => AlertDialog(
+        icon: const Icon(Icons.celebration, size: 40),
+        title: const Text('Entrega concluída!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              captura.recompensa,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Mostre esta tela no estande do UaiOu para retirar.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/principal_entregador');
   }
 
   /// RF-A08.4 — finaliza por código. Só aparece quando o servidor

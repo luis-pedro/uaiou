@@ -97,6 +97,25 @@ class ControladorFeira extends ChangeNotifier {
     }
   }
 
+  /// Finalização no ponto de entrega. Devolve a recompensa para a tela
+  /// mostrar — é o fecho do jogo, e o que o visitante leva ao balcão.
+  Future<CapturaFeira?> finalizarEntrega(String pedidoId) async {
+    _erro = null;
+    _carregando = true;
+    notifyListeners();
+    try {
+      final captura = await _repositorio.finalizar(pedidoId);
+      _ultimaCaptura = captura;
+      return captura;
+    } on ErroApi catch (e) {
+      _erro = e.mensagemParaUsuario;
+      return null;
+    } finally {
+      _carregando = false;
+      notifyListeners();
+    }
+  }
+
   void comprovanteExibido() {
     _ultimaCaptura = null;
     notifyListeners();
