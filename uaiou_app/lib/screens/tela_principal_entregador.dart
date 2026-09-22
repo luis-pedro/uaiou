@@ -94,7 +94,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       body: Stack(
         children: [
           _buildMapa(),
-          _buildAvaliacao(),
+          // Modo feira (docs/feira/): nota pressupõe histórico de entregas, e
+          // um visitante que acabou de entrar sempre veria "—".
+          if (!feiraNestaBranch) _buildAvaliacao(),
           _buildAvisos(),
           _buildStatusDisponibilidade(),
           _buildCardGanhos(),
@@ -162,11 +164,13 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
   }
 
   // AVALIAÇÃO (canto superior esquerdo)
+  //
+  // Some no modo feira, mas quem decide isso é a lista de filhos do Stack em
+  // `build`, não este método devolvendo um widget vazio: um filho NÃO
+  // posicionado de tamanho zero encolhe o Stack inteiro para 0x0, e aí todos
+  // os irmãos `Positioned` se posicionam contra nada — a tela fica preta, com
+  // só o fundo do Scaffold. Foi exatamente o que aconteceu aqui.
   Widget _buildAvaliacao() {
-    // Modo feira (docs/feira/): nota pressupõe histórico de entregas. Um
-    // visitante que acabou de entrar sempre veria "—", que não informa nada.
-    if (feiraNestaBranch) return const SizedBox.shrink();
-
     return Positioned(
       top: 40,
       left: 20,
