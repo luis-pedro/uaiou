@@ -9,6 +9,7 @@ import 'package:uaiou/screens/widgets/camada_mapa_base.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
+import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/core/ganhos/controlador_ganhos.dart';
 import 'package:uaiou/core/modelos/dinheiro.dart';
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
@@ -67,7 +68,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       // `meta.unread` (nunca somado localmente).
       context.read<ControladorNotificacoes>().carregar();
       // RF-A12.4 — nota do cabeçalho vem de `GET /me/score`.
-      context.read<ControladorScore>().carregar();
+      if (!feiraNestaBranch) context.read<ControladorScore>().carregar();
     }
   }
 
@@ -162,6 +163,10 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
   // AVALIAÇÃO (canto superior esquerdo)
   Widget _buildAvaliacao() {
+    // Modo feira (docs/feira/): nota pressupõe histórico de entregas. Um
+    // visitante que acabou de entrar sempre veria "—", que não informa nada.
+    if (feiraNestaBranch) return const SizedBox.shrink();
+
     return Positioned(
       top: 40,
       left: 20,
@@ -716,15 +721,19 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
               const SizedBox(height: 16),
-              PainelRota(
-                controlador: rota,
-                pedidoId: pedido.id,
-                distanciaEmLinhaRetaKm: pedido.distanciaKm,
-                posicaoAtual: posicao == null
-                    ? null
-                    : LatLng(posicao.lat, posicao.lng),
-                alturaDoMapa: MediaQuery.sizeOf(context).height * .42,
-              ),
+              // Modo feira: sem painel de rota — o traçado não é calculado
+              // (ver ControladorRota), e um mapa de trajeto para dez metros
+              // dentro do salão não diz nada a quem já enxerga o ponto.
+              if (!feiraNestaBranch)
+                PainelRota(
+                  controlador: rota,
+                  pedidoId: pedido.id,
+                  distanciaEmLinhaRetaKm: pedido.distanciaKm,
+                  posicaoAtual: posicao == null
+                      ? null
+                      : LatLng(posicao.lat, posicao.lng),
+                  alturaDoMapa: MediaQuery.sizeOf(context).height * .42,
+                ),
             ],
           ),
         ),

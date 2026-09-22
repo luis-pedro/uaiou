@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:uaiou/main.dart' show feiraNestaBranch;
+
 import '../estado/carregavel.dart';
 import '../rede/erros_api.dart';
 import 'modelo_rota.dart';
@@ -36,9 +38,15 @@ class ControladorRota extends ChangeNotifier {
   final RepositorioRotas _repositorio;
   final DateTime Function() _agora;
 
+  /// Modo feira (docs/feira/): desligado, o controlador vira inerte e nenhuma
+  /// consulta de roteamento sai do app. Injetável para os testes do produto
+  /// continuarem exercitando o cálculo de verdade nesta branch.
+  final bool calculaRota;
+
   ControladorRota({
     required RepositorioRotas repositorio,
     DateTime Function()? agora,
+    this.calculaRota = !feiraNestaBranch,
   }) : _repositorio = repositorio,
        _agora = agora ?? DateTime.now;
 
@@ -109,6 +117,26 @@ class ControladorRota extends ChangeNotifier {
   }
 
   Future<void> _buscar(PontoGeo? origem) async {
+    // Modo feira (docs/feira/): ninguém pede rota. O evento inteiro cabe num
+    // salão, onde o traçado seria um rabisco de dez metros e as instruções de
+    // navegação ("siga 15 m e vire à direita") beiram o cômico — e cada
+    // consulta ainda custa uma chamada ao provedor de roteamento. O mapa
+    // continua mostrando a posição ao vivo e o ponto; é disso que a
+    // demonstração precisa.
+    //
+    // Barrado aqui, no único ponto por onde toda consulta passa, em vez de em
+    // cada chamador: `carregar`, `recarregar` e `acompanhar` desembocam todos
+    // neste método.
+    // Termina em "sem rota", nunca em "carregando": quem desenha o painel
+    // mostraria um spinner eterno se o estado ficasse pendurado.
+    if (!calculaRota) {
+      if (_estado is! Vazio<RotaDoPedido>) {
+        _estado = const Vazio();
+        notifyListeners();
+      }
+      return;
+    }
+
     final id = _pedidoId;
     if (id == null) return;
     _consultas++;

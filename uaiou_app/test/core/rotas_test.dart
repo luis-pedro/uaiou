@@ -51,6 +51,10 @@ ControladorRota _montar(_Servidor servidor) {
     repositorio: RepositorioRotas(
       ClienteApi(dio: dio, baseUrl: 'http://teste/api/v1'),
     ),
+    // O cálculo de rota está desligado nesta branch (modo feira, docs/feira/).
+    // Estes testes cobrem o comportamento do produto, então ligam explícito —
+    // é melhor mantê-los exercitando o código de verdade que apagá-los.
+    calculaRota: true,
   );
 }
 

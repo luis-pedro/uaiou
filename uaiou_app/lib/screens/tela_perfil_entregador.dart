@@ -4,6 +4,7 @@ import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/gamificacao/controlador_score.dart';
+import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/core/perfil/controlador_perfil.dart';
 import 'package:uaiou/core/perfil/perfil.dart';
 import 'package:uaiou/core/perfil/repositorio_perfil.dart';
@@ -40,7 +41,7 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
       // RF-A12.4 — mesma loja de `GET /me/score` que o cabeçalho da
       // principal usa; sem nota ainda (entregador novo) não é erro de
       // tela, ver `ControladorScore.carregar`.
-      context.read<ControladorScore>().carregar();
+      if (!feiraNestaBranch) context.read<ControladorScore>().carregar();
     });
   }
 
@@ -117,9 +118,16 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
 
               const SizedBox(height: 20),
 
-              _buildScore(),
-
-              const SizedBox(height: 20),
+              // Modo feira (docs/feira/): o perfil fica com informações
+              // pessoais e tema, nada mais. Score, forma de pagamento,
+              // documentos, atividade, avaliações e preferências de
+              // notificação pressupõem um entregador de verdade, com
+              // histórico e cadastro aprovado — num visitante de estande são
+              // telas vazias que só atrapalham a demonstração.
+              if (!feiraNestaBranch) ...[
+                _buildScore(),
+                const SizedBox(height: 20),
+              ],
 
               _buildOpcao(
                 icone: Icons.person_outline,
@@ -129,47 +137,49 @@ class _TelaPerfilEntregadorState extends State<TelaPerfilEntregador> {
 
               const SizedBox(height: 15),
 
-              _buildOpcao(
-                icone: Icons.payments_outlined,
-                texto: _textoFormaPagamento,
-                onTap: _escolherFormaPagamento,
-              ),
+              if (!feiraNestaBranch) ...[
+                _buildOpcao(
+                  icone: Icons.payments_outlined,
+                  texto: _textoFormaPagamento,
+                  onTap: _escolherFormaPagamento,
+                ),
 
-              const SizedBox(height: 15),
+                const SizedBox(height: 15),
 
-              _buildOpcao(
-                icone: Icons.badge_outlined,
-                texto: "Documentos",
-                onTap: () => Navigator.pushNamed(context, '/documentos'),
-              ),
+                _buildOpcao(
+                  icone: Icons.badge_outlined,
+                  texto: "Documentos",
+                  onTap: () => Navigator.pushNamed(context, '/documentos'),
+                ),
 
-              const SizedBox(height: 15),
+                const SizedBox(height: 15),
 
-              _buildOpcao(
-                icone: Icons.receipt_long,
-                texto: "Atividade",
-                onTap: () =>
-                    Navigator.pushNamed(context, '/atividades_entregador'),
-              ),
+                _buildOpcao(
+                  icone: Icons.receipt_long,
+                  texto: "Atividade",
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/atividades_entregador'),
+                ),
 
-              const SizedBox(height: 15),
+                const SizedBox(height: 15),
 
-              _buildOpcao(
-                icone: Icons.star_outline,
-                texto: "Avaliações",
-                onTap: () => Navigator.pushNamed(context, '/avaliacoes'),
-              ),
+                _buildOpcao(
+                  icone: Icons.star_outline,
+                  texto: "Avaliações",
+                  onTap: () => Navigator.pushNamed(context, '/avaliacoes'),
+                ),
 
-              const SizedBox(height: 15),
+                const SizedBox(height: 15),
 
-              _buildOpcao(
-                icone: Icons.notifications_outlined,
-                texto: "Preferências de notificação",
-                onTap: () =>
-                    Navigator.pushNamed(context, '/preferencias_notificacao'),
-              ),
+                _buildOpcao(
+                  icone: Icons.notifications_outlined,
+                  texto: "Preferências de notificação",
+                  onTap: () =>
+                      Navigator.pushNamed(context, '/preferencias_notificacao'),
+                ),
 
-              const SizedBox(height: 15),
+                const SizedBox(height: 15),
+              ],
 
               _buildOpcao(
                 icone: context.watch<ControladorTema>().modo == ThemeMode.dark
