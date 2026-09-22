@@ -23,8 +23,6 @@ import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:uaiou/screens/widgets/instrucoes_de_rota.dart';
 import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/screens/widgets/mapa_rota.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:uaiou/screens/widgets/camada_mapa_base.dart';
 
 /// ===============================================================
 /// EXECUÇÃO DA ENTREGA — A-08
@@ -796,70 +794,55 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   /// agora — era exatamente isso que o traçado dizia no produto.
   Widget _buildMapaFeira(BuildContext context) {
     final posicao = context.watch<ControladorPresenca>().posicaoAtual;
+    final rota = _rotaDoSalao();
+
+    if (rota == null) {
+      // Só enquanto o pedido não chegou do servidor. Não é o estado "sem
+      // trajeto" do produto, que ficava preso em "Carregando o trajeto…".
+      return Container(color: context.cores.superficieSuave);
+    }
+
+    return MapaRota(
+      rota: rota,
+      posicaoAtual: posicao == null ? null : LatLng(posicao.lat, posicao.lng),
+      preencher: true,
+      seguirDesdeOInicio: true,
+      mostrarLegenda: false,
+      pedidosDeSeguir: _pedidosDeSeguir,
+    );
+  }
+
+  /// Modo feira (docs/feira/): o trajeto montado aqui, sem provedor de rota.
+  ///
+  /// O mapa 3D de navegação continua sendo o do produto — é ele que segue o
+  /// entregador, gira com o rumo e mostra a posição ao vivo, e é o que dá a
+  /// cara de app de entrega. O que sai é só a CONSULTA ao provedor: num salão,
+  /// o caminho por ruas não existe, então a geometria é a reta das duas
+  /// pernas (estande → ponto), que a poucos metros é o próprio caminho.
+  ///
+  /// A posição ao vivo NÃO entra na geometria de propósito: ela muda a cada
+  /// leitura de GPS, e o mapa redesenha o traçado sempre que a rota troca de
+  /// identidade — o caminho ficaria piscando. Quem anda no mapa é o ponteiro,
+  /// alimentado por `posicaoAtual`; o traçado é o par de pontos fixos.
+  RotaDoPedido? _rotaDoSalao() {
     final pedido = _pedidoFeira;
-    final coletado = _ultimoStatus == 'picked_up';
+    if (pedido == null) return null;
 
-    final estande = pedido?.estabelecimentoLat != null
-        ? LatLng(pedido!.estabelecimentoLat!, pedido.estabelecimentoLong!)
+    final estande = pedido.estabelecimentoLat != null
+        ? PontoGeo(pedido.estabelecimentoLat!, pedido.estabelecimentoLong!)
         : null;
-    final ponto = pedido?.latitude != null
-        ? LatLng(pedido!.latitude!, pedido.longitude!)
+    final ponto = pedido.latitude != null
+        ? PontoGeo(pedido.latitude!, pedido.longitude!)
         : null;
-    final alvo = coletado ? ponto : estande;
+    if (ponto == null || estande == null) return null;
 
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter:
-            alvo ??
-            (posicao != null
-                ? LatLng(posicao.lat, posicao.lng)
-                : const LatLng(-22.2526, -45.7033)),
-        initialZoom: 18,
+    return RotaDoPedido(
+      orderId: widget.pedidoId,
+      trajeto: Trajeto(
+        disponivel: true,
+        passaPelaRetirada: true,
+        geometria: [estande, ponto],
       ),
-      children: [
-        const CamadaMapaBase(),
-        MarkerLayer(
-          markers: [
-            if (posicao != null)
-              Marker(
-                point: LatLng(posicao.lat, posicao.lng),
-                width: 40,
-                height: 40,
-                child: const Icon(
-                  Icons.my_location,
-                  color: corPrincipal,
-                  size: 34,
-                ),
-              ),
-            if (estande != null)
-              Marker(
-                point: estande,
-                width: 44,
-                height: 44,
-                child: Icon(
-                  Icons.storefront,
-                  size: 38,
-                  color: coletado
-                      ? context.cores.textoSuave.withValues(alpha: .5)
-                      : context.cores.coleta,
-                ),
-              ),
-            if (ponto != null)
-              Marker(
-                point: ponto,
-                width: 44,
-                height: 44,
-                child: Icon(
-                  Icons.card_giftcard,
-                  size: 38,
-                  color: coletado
-                      ? corPrincipal
-                      : context.cores.textoSuave.withValues(alpha: .5),
-                ),
-              ),
-          ],
-        ),
-      ],
     );
   }
 
