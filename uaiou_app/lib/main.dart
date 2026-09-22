@@ -92,6 +92,18 @@ import 'package:uaiou/screens/tela_estabelecimento_pedidos.dart';
 import 'package:uaiou/screens/tela_atividade_estabelecimento.dart';
 import 'package:uaiou/screens/tela_perfil_estabelecimento.dart';
 
+/// Modo feira (docs/feira/) — LIGADO EM TEMPO DE COMPILAÇÃO nesta branch.
+///
+/// `feature/feira-tecnologica` existe só para a FETIN e nunca é mesclada em
+/// `main`: um build dela É o app da feira, e não pode cair nas telas do
+/// produto por nada — nem por backend fora do ar, nem por `--dart-define`
+/// apontado para o ambiente errado, que foi exatamente o que aconteceu no
+/// primeiro APK gerado aqui.
+///
+/// O painel web continua lendo `GET /feira/config`, porque lá o mesmo deploy
+/// atende produto e feira. Aqui não: o artefato é outro.
+const bool feiraNestaBranch = true;
+
 /// RF-A13.8 — coleta mínima e local de falha não tratada.
 ///
 /// Sem serviço de terceiro (Sentry, Crashlytics, etc.): integrar um
@@ -137,14 +149,7 @@ void main() async {
   // quando o receptor montar. Sem Firebase (web, falha), segue sem push.
   final push = await ServicoPushFirebase.iniciar();
 
-  // Modo feira (docs/feira/): a flag mora no servidor e e lida aqui,
-  // antes da primeira tela, para o app abrir direto no fluxo certo.
-  // Sem resposta a tempo (a rede do estande e o que e), segue o produto.
-  final feiraHabilitada = await RepositorioFeira(
-    ClienteApi(),
-  ).habilitado().timeout(const Duration(seconds: 3), onTimeout: () => false);
-
-  runApp(MyApp(push: push, feiraHabilitada: feiraHabilitada));
+  runApp(MyApp(push: push));
 }
 
 /// Tela de bloqueio da RF-A13.2 — nunca a UI normal, nunca crash
@@ -208,12 +213,13 @@ const Set<String> _rotasDeOperacao = {
 };
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, this.push, this.feiraHabilitada = false});
+  const MyApp({super.key, this.push, this.feiraHabilitada = feiraNestaBranch});
 
   final ServicoPush? push;
 
-  /// Lido do servidor em `main`. O padrão é o app do produto: um build
-  /// sem backend respondendo não vira demonstração de feira sozinho.
+  /// Ver [feiraNestaBranch]. Continua sendo parâmetro para os testes
+  /// conseguirem montar o app do produto e exercitar as telas que
+  /// continuam no código.
   final bool feiraHabilitada;
 
   @override

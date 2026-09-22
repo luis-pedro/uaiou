@@ -13,18 +13,6 @@ class RepositorioFeira {
 
   const RepositorioFeira(this._api);
 
-  /// Única rota que responde com o modo desligado — é assim que o app
-  /// descobre se deve mostrar a feira ou o produto. Falha de rede vira
-  /// `false`: na dúvida, o app normal.
-  Future<bool> habilitado() async {
-    try {
-      final resposta = await _api.obter('/feira/config');
-      return resposta is Map && resposta['enabled'] == true;
-    } catch (_) {
-      return false;
-    }
-  }
-
   /// Entrada do jogador: nome e nome de usuário, sem senha. A sessão
   /// vem na mesma resposta, porque não existe login separado quando
   /// não há segredo a provar.

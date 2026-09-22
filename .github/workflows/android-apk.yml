@@ -17,9 +17,16 @@ on:
       - '.github/workflows/android-apk.yml'
 
 env:
-  # Backend em produção (Railway). HTTPS não é detalhe: Ambiente.usaTextoPuro recusa build de
+  # Backend por branch (Railway). HTTPS não é detalhe: Ambiente.usaTextoPuro recusa build de
   # distribuição contra texto puro fora da rede local.
-  API_BASE_URL: https://uaiou-backend-production.up.railway.app/api/v1
+  #
+  # A branch da feira tem backend PRÓPRIO (ambiente "feira" no Railway, banco e volumes separados).
+  # Apontar o APK da feira para produção foi o bug do primeiro artefato gerado aqui: o app subia
+  # contra um backend sem o modo feira e abria as telas do produto.
+  API_BASE_URL: >-
+    ${{ github.ref_name == 'feature/feira-tecnologica'
+        && 'https://uaiou-backend-feira.up.railway.app/api/v1'
+        || 'https://uaiou-backend-production.up.railway.app/api/v1' }}
 
 jobs:
   build:
