@@ -67,6 +67,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   /// Modo feira: o pedido, para o mapa saber onde é o estande e o ponto. No
   /// produto essas coordenadas vinham na rota, que aqui não é calculada.
   Pedido? _pedidoFeira;
+
+  /// Modo feira: onde fica o estande, em palavras (escrito no painel).
+  String? _descricaoEstande;
   String? _ultimoStatus;
   bool _jaAbriuAoChegar = false;
 
@@ -129,6 +132,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       // Mapa sem pinos é degradação aceitável: as etapas em texto e o botão
       // de finalizar continuam, e é por eles que a entrega acontece.
     }
+    if (!mounted) return;
+    final estande = await context.read<ControladorFeira>().estande();
+    if (mounted) setState(() => _descricaoEstande = estande?.descricao);
   }
 
   PontoGeo? _pontoAtual() {
@@ -341,11 +347,16 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     final escolha = await escolherMotivo<MotivoDesistencia>(
       context,
       titulo: 'Desistir da entrega',
-      opcoes: MotivoDesistencia.values,
+      opcoes: feiraNestaBranch
+          ? MotivoDesistencia.paraFeira
+          : MotivoDesistencia.values,
       rotulo: (m) => m.rotulo,
       exigeObservacao: (m) => m.exigeObservacao,
       textoConfirmar: 'Desistir',
-      aviso: chegou
+      aviso: feiraNestaBranch
+          ? 'O prêmio volta para a mesa e o pedido pode ser pego de novo, '
+                'inclusive por você. Desistir não tira pontos.'
+          : chegou
           ? 'A desistência conta no seu score em dobro, porque você já está '
                 'no estabelecimento, e no limite de 3 por dia. Se o '
                 'estabelecimento está demorando mais de 15 minutos, escolha '
@@ -809,6 +820,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       seguirDesdeOInicio: true,
       mostrarLegenda: false,
       pedidosDeSeguir: _pedidosDeSeguir,
+      mostrarTracado: false,
     );
   }
 
@@ -862,6 +874,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             context,
             numero: '1',
             titulo: 'Passe no estande do UaiOu',
+            local: _descricaoEstande,
             detalhe: 'O operador confirma a retirada e libera sua entrega.',
             ativa: !coletado,
             concluida: coletado,
@@ -878,6 +891,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             context,
             numero: '2',
             titulo: 'Leve até o ponto de entrega',
+            local: _pedidoFeira?.bairro,
             detalhe: 'Chegando lá, finalize para receber o prêmio.',
             ativa: coletado,
             concluida: false,
@@ -892,6 +906,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     BuildContext context, {
     required String numero,
     required String titulo,
+    String? local,
     required String detalhe,
     required bool ativa,
     required bool concluida,
@@ -928,6 +943,29 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                   color: ativa ? context.cores.texto : context.cores.textoSuave,
                 ),
               ),
+              if (local != null && local.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2, bottom: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.place, size: 15, color: cor),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          local,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: ativa
+                                ? context.cores.texto
+                                : context.cores.textoSuave,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Text(
                 detalhe,
                 style: TextStyle(

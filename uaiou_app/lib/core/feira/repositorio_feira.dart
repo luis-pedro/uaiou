@@ -54,11 +54,17 @@ class RepositorioFeira {
   /// Finalização no ponto: sem código, porque não há destinatário no salão
   /// para ditar um. Chegar é a prova — o servidor confere o geofence.
   Future<CapturaFeira> finalizar(String pedidoId) async {
-    final resposta = await _api.criar('/feira/pedidos//finalizacao');
+    final resposta = await _api.criar('/feira/pedidos/$pedidoId/finalizacao');
     if (resposta is! Map) {
       throw StateError('Resposta de finalização fora do contrato.');
     }
     return CapturaFeira.doJson(Map<String, dynamic>.from(resposta));
+  }
+
+  Future<EstandeFeira> estande() async {
+    final resposta = await _api.obter('/feira/estande');
+    if (resposta is! Map) return const EstandeFeira();
+    return EstandeFeira.doJson(Map<String, dynamic>.from(resposta));
   }
 
   Future<List<CapturaFeira>> minhasCapturas() async {

@@ -70,6 +70,16 @@ class ControladorFeira extends ChangeNotifier {
     }
   }
 
+  /// Sem estado guardado: só a tela de entrega usa, e busca ao abrir. Falha
+  /// vira "sem descrição" — as etapas continuam dizendo o que fazer.
+  Future<EstandeFeira?> estande() async {
+    try {
+      return await _repositorio.estande();
+    } on ErroApi {
+      return null;
+    }
+  }
+
   Future<void> carregarCapturas() async {
     try {
       _capturas = await _repositorio.minhasCapturas();

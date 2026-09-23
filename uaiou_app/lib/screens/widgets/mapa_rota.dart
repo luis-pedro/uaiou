@@ -68,6 +68,11 @@ class MapaRota extends StatefulWidget {
   /// folha de entrega usa isto para centrar no entregador.
   final int pedidosDeSeguir;
 
+  /// Desligado, as pernas não são desenhadas: ficam só os pinos e a posição.
+  /// Modo feira (docs/feira/): dentro de um prédio não há rua a seguir, e uma
+  /// reta laranja atravessando paredes mais confunde do que orienta.
+  final bool mostrarTracado;
+
   const MapaRota({
     super.key,
     required this.rota,
@@ -78,6 +83,7 @@ class MapaRota extends StatefulWidget {
     this.seguirDesdeOInicio = false,
     this.mostrarLegenda = true,
     this.pedidosDeSeguir = 0,
+    this.mostrarTracado = true,
   });
 
   static const Color corRetirada = Color.fromRGBO(41, 98, 255, 1);
@@ -917,7 +923,7 @@ class _MapaRotaState extends State<MapaRota>
   }
 
   Map<String, dynamic> _geoJsonPerna({required bool loja}) {
-    final pontos = _pernaVisivel(loja: loja)
+    final pontos = widget.mostrarTracado && _pernaVisivel(loja: loja)
         ? _restanteDaPerna(loja: loja)
         : const <LatLng>[];
     return _colecao([
@@ -947,6 +953,7 @@ class _MapaRotaState extends State<MapaRota>
   /// O ponto de partida some junto com o trecho percorrido: depois que
   /// o entregador saiu dele, é só ruído atrás da seta.
   Map<String, dynamic> _geoJsonOrigem() {
+    if (!widget.mostrarTracado) return _colecao(const []);
     final tracado = _tracado;
     final saiu =
         _pontoNaRota != null &&

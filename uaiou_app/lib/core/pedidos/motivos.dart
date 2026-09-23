@@ -30,12 +30,27 @@ enum MotivoDesistencia {
   pedidoErrado('wrong_order', 'Pedido errado'),
   demoraNaRetirada('pickup_delay', 'Estabelecimento demorando'),
   pessoal('personal', 'Motivo pessoal'),
+  // Modo feira (docs/feira/): num salão não há veículo, acidente nem loja
+  // atrasando. São os motivos de quem pegou um prêmio e desistiu de levá-lo.
+  semTempo('no_time', 'Não tenho tempo agora'),
+  naoAcheiOPonto('cant_find_spot', 'Não achei o ponto de entrega'),
+  filaNoEstande('stand_queue', 'Fila grande no estande'),
+  pegueiErrado('wrong_pick', 'Peguei o pedido errado'),
   outro('other', 'Outro');
 
   const MotivoDesistencia(this.codigo, this.rotulo);
 
   final String codigo;
   final String rotulo;
+
+  /// O que a tela oferece no modo feira, na ordem do mais comum.
+  static const List<MotivoDesistencia> paraFeira = [
+    semTempo,
+    naoAcheiOPonto,
+    filaNoEstande,
+    pegueiErrado,
+    outro,
+  ];
 
   bool get exigeObservacao => this == outro;
 }

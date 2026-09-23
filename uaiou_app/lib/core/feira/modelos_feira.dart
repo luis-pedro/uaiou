@@ -91,3 +91,19 @@ class CapturaFeira {
     entregueEm: _data(json['entregueEm']),
   );
 }
+
+/// Onde fica o estande do UaiOu. `descricao` é o texto que o operador escreve
+/// no painel ("Bloco B, ao lado da escada"): num salão o pino sozinho não
+/// acha a mesa.
+class EstandeFeira {
+  final String? descricao;
+
+  const EstandeFeira({this.descricao});
+
+  factory EstandeFeira.doJson(Map<String, dynamic> json) {
+    final descricao = (json['descricao'] as String?)?.trim();
+    return EstandeFeira(
+      descricao: descricao == null || descricao.isEmpty ? null : descricao,
+    );
+  }
+}
