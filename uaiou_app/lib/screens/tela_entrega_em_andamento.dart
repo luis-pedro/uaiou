@@ -983,11 +983,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   /// Modo feira (docs/feira/01-fluxos.md): finaliza sem código.
   ///
   /// No produto quem prova a entrega é o destinatário, ditando o OTP. Num
-  /// salão não há ninguém esperando no ponto, então a prova é ter chegado —
-  /// o servidor confere o geofence e é ele que recusa se estiver longe. O
-  /// botão fica habilitado mesmo fora do raio de propósito: GPS dentro de
-  /// pavilhão erra, e "tente de novo daqui a pouco" é uma resposta melhor
-  /// que um botão morto sem explicação.
+  /// salão não há ninguém esperando no ponto, então a prova é o código fixo
+  /// que o operador deixou escrito lá — o servidor confere. O botão fica
+  /// habilitado mesmo fora do raio: GPS dentro de pavilhão erra, e o código
+  /// já prova que a pessoa chegou.
   Widget _buildCartaoFeira(BuildContext context, EstadoEntrega entrega) {
     final feira = context.watch<ControladorFeira>();
     final dentro = entrega.geofence.dentro;
@@ -1004,9 +1003,25 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
         children: [
           Text(
             dentro
-                ? 'Você chegou ao ponto. Finalize para receber o prêmio.'
-                : 'Chegue ao ponto marcado para finalizar.',
+                ? 'Você chegou ao ponto. Digite o código escrito lá.'
+                : 'No ponto marcado há um código. Digite-o para finalizar.',
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          // O código fixo do pedido, deixado pelo operador no ponto: é a
+          // prova de que o jogador chegou, no lugar do OTP do destinatário.
+          TextField(
+            controller: _codigoController,
+            focusNode: _focoCodigo,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 24, letterSpacing: 8),
+            decoration: const InputDecoration(
+              hintText: 'Código',
+              counterText: '',
+            ),
+            onSubmitted: (_) => _finalizarNaFeira(),
           ),
           if (feira.erro != null) ...[
             const SizedBox(height: 10),
@@ -1038,7 +1053,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
 
   Future<void> _finalizarNaFeira() async {
     final feira = context.read<ControladorFeira>();
-    final captura = await feira.finalizarEntrega(widget.pedidoId);
+    final captura = await feira.finalizarEntrega(
+      widget.pedidoId,
+      codigo: _codigoController.text.trim(),
+    );
     if (!mounted || captura == null) return;
 
     feira.comprovanteExibido();
