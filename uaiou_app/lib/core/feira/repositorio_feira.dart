@@ -67,6 +67,16 @@ class RepositorioFeira {
     return EstandeFeira.doJson(Map<String, dynamic>.from(resposta));
   }
 
+  /// Bônus por meta, com o progresso deste jogador.
+  Future<List<BonusFeira>> bonus() async {
+    final resposta = await _api.obter('/feira/bonus');
+    if (resposta is! List) return const [];
+    return resposta
+        .whereType<Map>()
+        .map((item) => BonusFeira.doJson(Map<String, dynamic>.from(item)))
+        .toList();
+  }
+
   Future<List<CapturaFeira>> minhasCapturas() async {
     final resposta = await _api.obter('/feira/capturas');
     if (resposta is! List) return const [];

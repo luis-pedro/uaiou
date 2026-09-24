@@ -6,6 +6,7 @@ import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/feira/controlador_feira.dart';
+import 'package:uaiou/core/feira/modelos_feira.dart';
 import 'package:uaiou/core/ganhos/controlador_ganhos.dart';
 import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/core/ganhos/modelo_ganhos.dart';
@@ -37,7 +38,9 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (feiraNestaBranch) {
-        context.read<ControladorFeira>().carregarCapturas();
+        context.read<ControladorFeira>()
+          ..carregarCapturas()
+          ..carregarBonus();
       } else {
         context.read<ControladorGanhos>().carregar();
       }
@@ -74,6 +77,9 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   Widget _buildExtratoDePremios(BuildContext context) {
     final feira = context.watch<ControladorFeira>();
     final capturas = feira.capturas;
+    final bonus = feira.bonus;
+    // Com bônus cadastrados, a seção deles é o primeiro item da lista.
+    final cabecalho = bonus.isEmpty ? 0 : 1;
 
     return Scaffold(
       appBar: AppBar(
@@ -82,11 +88,19 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
         title: const Text('Seus prêmios'),
       ),
       body: RefreshIndicator(
-        onRefresh: () => context.read<ControladorFeira>().carregarCapturas(),
+        onRefresh: () {
+          final controlador = context.read<ControladorFeira>();
+          return Future.wait([
+            controlador.carregarCapturas(),
+            controlador.carregarBonus(),
+          ]);
+        },
         child: capturas.isEmpty
             ? ListView(
+                padding: const EdgeInsets.all(16),
                 children: [
-                  const SizedBox(height: 90),
+                  if (bonus.isNotEmpty) _buildSecaoBonus(context, bonus),
+                  SizedBox(height: bonus.isEmpty ? 74 : 16),
                   Center(
                     child: Text(
                       'Você ainda não conquistou nenhum prêmio.',
@@ -97,10 +111,14 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
               )
             : ListView.separated(
                 padding: const EdgeInsets.all(16),
-                itemCount: capturas.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
+                itemCount: capturas.length + cabecalho,
+                separatorBuilder: (_, indice) =>
+                    SizedBox(height: indice < cabecalho ? 0 : 10),
                 itemBuilder: (_, indice) {
-                  final captura = capturas[indice];
+                  if (indice < cabecalho) {
+                    return _buildSecaoBonus(context, bonus);
+                  }
+                  final captura = capturas[indice - cabecalho];
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -148,6 +166,110 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
                   );
                 },
               ),
+      ),
+    );
+  }
+
+  /// Bônus por meta, acima dos prêmios: o que falta para o próximo é o que
+  /// faz o visitante voltar e pegar mais um pedido.
+  Widget _buildSecaoBonus(BuildContext context, List<BonusFeira> bonus) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Bônus',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        for (final item in bonus) ...[
+          _buildCardBonus(context, item),
+          const SizedBox(height: 10),
+        ],
+        const SizedBox(height: 8),
+        const Text(
+          'Prêmios',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+      ],
+    );
+  }
+
+  Widget _buildCardBonus(BuildContext context, BonusFeira bonus) {
+    final cor = bonus.conquistado
+        ? context.cores.positivo
+        : TelaExtratoGanhos.corPrincipal;
+    final String situacao;
+    if (bonus.entregue) {
+      situacao = 'Retirado no estande';
+    } else if (bonus.conquistado) {
+      situacao = 'Conquistado! Retire no estande do UaiOu';
+    } else {
+      situacao =
+          'Faltam ${bonus.faltam} ${bonus.faltam == 1 ? 'entrega' : 'entregas'}';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.cores.superficie,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: bonus.conquistado ? cor : context.cores.borda,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                bonus.conquistado ? Icons.emoji_events : Icons.flag_outlined,
+                color: cor,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      bonus.titulo,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${bonus.meta} ${bonus.meta == 1 ? 'entrega' : 'entregas'} = ${bonus.recompensa}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: context.cores.textoSuave,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: bonus.conquistado ? 1 : bonus.progresso,
+              minHeight: 8,
+              color: cor,
+              backgroundColor: context.cores.borda,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            bonus.conquistado
+                ? situacao
+                : '${bonus.entregas.clamp(0, bonus.meta)}/${bonus.meta} · $situacao',
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
+          ),
+        ],
       ),
     );
   }

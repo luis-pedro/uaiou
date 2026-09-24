@@ -107,3 +107,51 @@ class EstandeFeira {
     );
   }
 }
+
+/// Bônus por meta: "complete [meta] entregas e ganhe [recompensa]". O
+/// operador cadastra no painel; quem atinge recebe notificação e retira o
+/// prêmio no estande, como os demais.
+class BonusFeira {
+  final String id;
+  final String titulo;
+  final int meta;
+  final String recompensa;
+
+  /// Entregas concluídas deste jogador — o mesmo número em todos os bônus.
+  final int entregas;
+
+  final bool encerrado;
+  final bool conquistado;
+  final DateTime? entregueEm;
+
+  const BonusFeira({
+    required this.id,
+    required this.titulo,
+    required this.meta,
+    required this.recompensa,
+    required this.entregas,
+    required this.encerrado,
+    required this.conquistado,
+    required this.entregueEm,
+  });
+
+  bool get entregue => entregueEm != null;
+
+  /// Entre 0 e 1, para a barra de progresso.
+  double get progresso => meta <= 0 ? 1 : (entregas / meta).clamp(0, 1);
+
+  int get faltam => (meta - entregas).clamp(0, meta);
+
+  factory BonusFeira.doJson(Map<String, dynamic> json) => BonusFeira(
+    id: json['id'] as String? ?? '',
+    titulo: json['titulo'] as String? ?? '',
+    meta: (json['meta'] as num?)?.toInt() ?? 0,
+    recompensa: json['recompensa'] as String? ?? '',
+    entregas: (json['entregas'] as num?)?.toInt() ?? 0,
+    encerrado: json['encerrado'] as bool? ?? false,
+    conquistado: json['conquistado'] as bool? ?? false,
+    entregueEm: json['entregueEm'] is String
+        ? DateTime.tryParse(json['entregueEm'] as String)
+        : null,
+  );
+}

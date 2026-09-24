@@ -36,6 +36,10 @@ class ControladorFeira extends ChangeNotifier {
   List<CapturaFeira> _capturas = const [];
   List<CapturaFeira> get capturas => _capturas;
 
+  /// Bônus por meta ("5 entregas = 1 camiseta") com o progresso do jogador.
+  List<BonusFeira> _bonus = const [];
+  List<BonusFeira> get bonus => _bonus;
+
   bool _carregando = false;
   bool get carregando => _carregando;
 
@@ -87,6 +91,15 @@ class ControladorFeira extends ChangeNotifier {
     } on ErroApi {
       // Lista de prêmios é informação de apoio: falhar aqui não pode derrubar
       // a tela principal, que é onde o jogo acontece.
+    }
+  }
+
+  Future<void> carregarBonus() async {
+    try {
+      _bonus = await _repositorio.bonus();
+      notifyListeners();
+    } on ErroApi {
+      // Como os prêmios: informação de apoio, não derruba a tela.
     }
   }
 
@@ -149,6 +162,7 @@ class ControladorFeira extends ChangeNotifier {
   void limpar() {
     _pedidos = const [];
     _capturas = const [];
+    _bonus = const [];
     _ultimaCaptura = null;
     _erro = null;
     _capturando = null;

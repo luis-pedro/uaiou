@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/sessao/identidade.dart';
+import 'package:uaiou/main.dart' show feiraNestaBranch;
 import 'package:uaiou/screens/tela_a_pagar.dart';
 import 'package:uaiou/screens/tela_detalhe_pedido.dart';
 import 'package:uaiou/screens/tela_entrega_em_andamento.dart';
@@ -92,7 +93,11 @@ bool abrirDestinoNotificacao(
       empurrar(const TelaAPagar());
       return true;
 
-    // ---- Gamificação: score e metas vivem no perfil.
+    // ---- Gamificação: score e metas vivem no perfil. Na feira, o bônus é
+    // um prêmio a retirar e mora junto dos outros, em "Seus prêmios".
+    case 'bonus.granted' when entregador && feiraNestaBranch:
+      navegador.pushNamed('/extrato_ganhos');
+      return true;
     case 'goal.completed' || 'bonus.granted' when entregador:
       navegador.pushNamed('/perfil_entregador');
       return true;
