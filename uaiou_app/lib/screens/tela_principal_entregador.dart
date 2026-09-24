@@ -16,11 +16,13 @@ import 'package:uaiou/core/modelos/dinheiro.dart';
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
 import 'package:uaiou/core/pedidos/controlador_vitrine.dart';
 import 'package:uaiou/core/presenca/controlador_presenca.dart';
+import 'package:uaiou/core/presenca/leitor_de_posicao.dart';
 import 'package:uaiou/core/rotas/controlador_rota.dart';
 import 'package:uaiou/core/rotas/modelo_rota.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
+import 'package:uaiou/screens/widgets/mapa_rota.dart';
 import 'package:uaiou/screens/widgets/painel_rota.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
@@ -577,7 +579,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
   Widget _buildCardPedidoVitrine(Pedido pedido, ControladorVitrine vitrine) {
     final podeAceitar = pedido.links.permite('assignment');
-    final podeContrapropor = pedido.links.permite('counteroffers');
+    // Modo feira: o prêmio é fixo, não há frete para negociar.
+    final podeContrapropor =
+        !feiraNestaBranch && pedido.links.permite('counteroffers');
     final propostaPendente = vitrine.temPropostaPendente(pedido.id);
     final aceitandoEste = vitrine.aceitando(pedido.id);
     final contrapondoEste = vitrine.contrapondo(pedido.id);
@@ -755,10 +759,11 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
               ),
               const SizedBox(height: 16),
-              // Modo feira: sem painel de rota — o traçado não é calculado
-              // (ver ControladorRota), e um mapa de trajeto para dez metros
-              // dentro do salão não diz nada a quem já enxerga o ponto.
-              if (!feiraNestaBranch)
+              // Modo feira: sem provedor de rota (ver ControladorRota). O
+              // mapa mostra o estande e o ponto de entrega juntos, enquadrados.
+              if (feiraNestaBranch)
+                _mapaDoSalao(pedido, posicao)
+              else
                 PainelRota(
                   controlador: rota,
                   pedidoId: pedido.id,
@@ -772,6 +777,41 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Modo feira: os dois pinos (estande e ponto) no mesmo enquadramento,
+  /// sem traçado — o caminho por ruas não existe dentro do salão.
+  Widget _mapaDoSalao(Pedido pedido, PosicaoLida? posicao) {
+    final estandeLat = pedido.estabelecimentoLat;
+    final estandeLong = pedido.estabelecimentoLong;
+    final pontoLat = pedido.latitude;
+    final pontoLong = pedido.longitude;
+    if (estandeLat == null ||
+        estandeLong == null ||
+        pontoLat == null ||
+        pontoLong == null) {
+      return Text(
+        'Este pedido ainda não tem os dois pontos marcados no mapa.',
+        style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
+      );
+    }
+    return MapaRota(
+      rota: RotaDoPedido(
+        orderId: pedido.id,
+        trajeto: Trajeto(
+          disponivel: true,
+          passaPelaRetirada: true,
+          geometria: [
+            PontoGeo(estandeLat, estandeLong),
+            PontoGeo(pontoLat, pontoLong),
+          ],
+        ),
+      ),
+      posicaoAtual: posicao == null ? null : LatLng(posicao.lat, posicao.lng),
+      altura: MediaQuery.sizeOf(context).height * .42,
+      mostrarLegenda: false,
+      mostrarTracado: false,
     );
   }
 
