@@ -984,9 +984,9 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   ///
   /// No produto quem prova a entrega é o destinatário, ditando o OTP. Num
   /// salão não há ninguém esperando no ponto, então a prova é o código fixo
-  /// que o operador deixou escrito lá — o servidor confere. O botão fica
-  /// habilitado mesmo fora do raio: GPS dentro de pavilhão erra, e o código
-  /// já prova que a pessoa chegou.
+  /// que o operador deixou escrito lá, junto com o raio — o servidor confere
+  /// os dois. O botão fica habilitado mesmo fora do raio: GPS dentro de
+  /// pavilhão erra, e "chegue mais perto" é melhor que um botão morto.
   Widget _buildCartaoFeira(BuildContext context, EstadoEntrega entrega) {
     final feira = context.watch<ControladorFeira>();
     final dentro = entrega.geofence.dentro;
