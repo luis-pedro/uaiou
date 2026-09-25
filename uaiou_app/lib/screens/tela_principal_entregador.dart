@@ -825,9 +825,14 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       vitrine.limparAviso();
     }
 
-    // RF-A07.8 — aceite não termina sem próximo passo visível.
+    // RF-A07.8 — aceite não termina sem próximo passo visível: vai direto
+    // para a rota do pedido aceito, não para a lista de entregas.
     if (aceitou) {
-      Navigator.pushReplacementNamed(context, '/entregas_entregador');
+      Navigator.pushReplacementNamed(
+        context,
+        '/entrega_em_andamento',
+        arguments: pedido.id,
+      );
     }
   }
 
