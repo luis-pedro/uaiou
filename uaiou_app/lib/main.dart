@@ -461,7 +461,9 @@ class MyApp extends StatelessWidget {
             builder: (_, exige, _) => exige
                 ? const _TelaAtualizacaoObrigatoria()
                 : BarrasDoSistema(
-                    child: ReceptorPush(push: push, child: filho!),
+                    child: _VoltaAoInicioNoLogout(
+                      child: ReceptorPush(push: push, child: filho!),
+                    ),
                   ),
           ),
         ),
@@ -634,6 +636,50 @@ class _Raiz extends StatelessWidget {
       Papel.admin || Papel.desconhecido => const TelaStatusConta(),
     };
   }
+}
+
+/// Leva de volta à raiz sempre que a sessão cai (logout, refresh inválido).
+///
+/// As abas trocam de tela com `pushReplacementNamed`, então a `_Raiz` sai
+/// da pilha na primeira troca — e sem ela ninguém reage ao logout: o usuário
+/// ficava preso na tela em que estava em vez de voltar ao cadastro.
+class _VoltaAoInicioNoLogout extends StatefulWidget {
+  const _VoltaAoInicioNoLogout({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_VoltaAoInicioNoLogout> createState() => _VoltaAoInicioNoLogoutState();
+}
+
+class _VoltaAoInicioNoLogoutState extends State<_VoltaAoInicioNoLogout> {
+  late final ControladorSessao _sessao;
+  late FaseSessao _fase;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessao = context.read<ControladorSessao>();
+    _fase = _sessao.fase;
+    _sessao.addListener(_aoMudarSessao);
+  }
+
+  void _aoMudarSessao() {
+    final anterior = _fase;
+    _fase = _sessao.fase;
+    if (anterior == FaseSessao.autenticado && _fase == FaseSessao.deslogado) {
+      navegadorRaiz.currentState?.pushNamedAndRemoveUntil('/', (_) => false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _sessao.removeListener(_aoMudarSessao);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// Mostrado enquanto o cofre é lido na abertura (RF-A02.6).
