@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/notificacoes/controlador_notificacoes.dart';
 import 'package:uaiou/core/notificacoes/servico_push.dart';
+import 'package:uaiou/core/pedidos/sinal_pedidos.dart';
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
 import 'package:uaiou/screens/destino_notificacao.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
@@ -32,12 +33,39 @@ class ReceptorPush extends StatefulWidget {
   State<ReceptorPush> createState() => _ReceptorPushState();
 }
 
-class _ReceptorPushState extends State<ReceptorPush> {
+class _ReceptorPushState extends State<ReceptorPush>
+    with WidgetsBindingObserver {
   final List<StreamSubscription<EventoPush>> _assinaturas = [];
+
+  /// Rede de segurança para push perdido: com o app em primeiro plano,
+  /// as telas de pedido se reconsultam periodicamente.
+  Timer? _timerPedidos;
+
+  void _ligarTimerPedidos() {
+    _timerPedidos?.cancel();
+    _timerPedidos = Timer.periodic(
+      intervaloAtualizacaoPedidos,
+      (_) => SinalPedidos.instancia.avisar(),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Voltou do segundo plano: o que está na tela pode estar velho.
+      SinalPedidos.instancia.avisar();
+      _ligarTimerPedidos();
+    } else if (state == AppLifecycleState.paused) {
+      _timerPedidos?.cancel();
+      _timerPedidos = null;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _ligarTimerPedidos();
     final push = widget.push;
     if (push == null) return;
 
@@ -55,6 +83,8 @@ class _ReceptorPushState extends State<ReceptorPush> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _timerPedidos?.cancel();
     for (final assinatura in _assinaturas) {
       assinatura.cancel();
     }
@@ -62,6 +92,8 @@ class _ReceptorPushState extends State<ReceptorPush> {
   }
 
   void _aoChegar(EventoPush evento) {
+    // O push quase sempre é sobre um pedido que mudou.
+    SinalPedidos.instancia.avisar();
     _recarregarInbox();
     final overlay = navegadorRaiz.currentState?.overlay;
     final titulo = evento.titulo ?? 'Nova notificação';

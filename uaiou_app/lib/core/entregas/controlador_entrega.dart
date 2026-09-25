@@ -10,6 +10,7 @@ import '../uploads/repositorio_uploads.dart';
 import '../uploads/seletor_de_imagem.dart';
 import 'modelo_entrega.dart';
 import 'repositorio_entregas.dart';
+import '../pedidos/sinal_pedidos.dart';
 
 /// Intervalo do polling de `GET .../delivery` — RF-A08.3 pede 8-15s.
 const Duration intervaloDePolling = Duration(seconds: 10);
@@ -243,6 +244,7 @@ class ControladorEntrega extends ChangeNotifier {
         chaveIdempotencia: gerarChaveIdempotencia('completion-$id'),
       );
       _uploadIdConfirmado = null;
+      SinalPedidos.instancia.avisar();
       await _carregar();
       return true;
     } on ErroApi catch (erro) {

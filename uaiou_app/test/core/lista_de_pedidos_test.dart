@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uaiou/core/estado/carregavel.dart';
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/core/pedidos/repositorio_pedidos.dart';
+import 'package:uaiou/core/pedidos/sinal_pedidos.dart';
 import 'package:uaiou/core/rede/cliente_api.dart';
 import 'package:uaiou/others/pedido.dart';
 
@@ -230,6 +231,49 @@ void main() {
       expect(lista.itens, isEmpty);
       expect(lista.temMais, isFalse);
       expect(lista.estado, isA<Carregando<List<Pedido>>>());
+    });
+  });
+
+  group('sinal de pedidos', () {
+    test('lista já carregada se atualiza sozinha ao sinal', () async {
+      montar();
+      servidor.respostas['/orders'] = [
+        _resp(200,
+            '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":20,"total":1}}'),
+        _resp(200,
+            '{"data":[${_pedido("a", status: "accepted")}],"meta":{"page":1,"perPage":20,"total":1}}'),
+      ];
+      await lista.carregar();
+      expect(lista.itens.single.status, StatusPedido.pendente);
+
+      SinalPedidos.instancia.avisar();
+      await pumpEventQueue();
+
+      expect(lista.itens.single.status, StatusPedido.aceito);
+    });
+
+    test('lista nunca carregada ignora o sinal', () async {
+      montar();
+      SinalPedidos.instancia.avisar();
+      await pumpEventQueue();
+
+      expect(servidor.chamadas, isEmpty);
+      expect(lista.estado, isA<Carregando<List<Pedido>>>());
+    });
+
+    test('falha em recarga mantém a lista na tela', () async {
+      montar();
+      servidor.respostas['/orders'] = [
+        _resp(200,
+            '{"data":[${_pedido("a")}],"meta":{"page":1,"perPage":20,"total":1}}'),
+        _resp(500, '{}'),
+      ];
+      await lista.carregar();
+
+      SinalPedidos.instancia.avisar();
+      await pumpEventQueue();
+
+      expect(lista.estado, isA<Pronto<List<Pedido>>>());
     });
   });
 }

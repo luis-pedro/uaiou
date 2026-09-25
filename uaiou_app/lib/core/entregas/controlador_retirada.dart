@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../estado/carregavel.dart';
 import '../pedidos/motivos.dart';
 import '../pedidos/repositorio_pedidos.dart';
+import '../pedidos/sinal_pedidos.dart';
 import '../presenca/leitor_de_posicao.dart';
 import '../rede/erros_api.dart';
 import '../../others/pedido.dart';
@@ -127,6 +128,7 @@ class ControladorRetirada extends ChangeNotifier {
     notifyListeners();
     try {
       await acao();
+      SinalPedidos.instancia.avisar();
       if (recarregarDepois) await _carregar();
     } on ErroApi catch (erro) {
       _erro = erro.mensagemParaUsuario;

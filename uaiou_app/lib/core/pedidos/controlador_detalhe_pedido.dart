@@ -8,6 +8,7 @@ import '../../others/pedido.dart';
 import 'contraoferta.dart';
 import 'motivos.dart';
 import 'repositorio_pedidos.dart';
+import 'sinal_pedidos.dart';
 
 /// RF-A15.2 — enquanto o pedido aguarda coleta, o detalhe se atualiza
 /// sozinho: a chegada do entregador não pode depender de puxar a tela.
@@ -26,7 +27,17 @@ class ControladorDetalhePedido extends ChangeNotifier {
   final RepositorioPedidos _repositorio;
   final String pedidoId;
 
-  ControladorDetalhePedido(this._repositorio, {required this.pedidoId});
+  ControladorDetalhePedido(this._repositorio, {required this.pedidoId}) {
+    _sinal = SinalPedidos.instancia.eventos.listen((origem) {
+      if (origem != this && _estado.temConteudo) _buscar();
+    });
+  }
+
+  late final StreamSubscription<Object?> _sinal;
+
+  /// Descarta respostas de buscas antigas que chegam depois de uma nova.
+  int _geracao = 0;
+  bool _descartado = false;
 
   Carregavel<Pedido> _estado = const Carregando();
   Carregavel<Pedido> get estado => _estado;
@@ -107,6 +118,8 @@ class ControladorDetalhePedido extends ChangeNotifier {
     notifyListeners();
     try {
       await executar();
+      // As listas das outras telas refletem a mudança sem esperar.
+      SinalPedidos.instancia.avisar(origem: this);
       return true;
     } on ErroApi catch (erro) {
       _aviso = erro.mensagemParaUsuario;
@@ -129,25 +142,33 @@ class ControladorDetalhePedido extends ChangeNotifier {
 
   @override
   void dispose() {
+    _descartado = true;
     _pollTimer?.cancel();
+    _sinal.cancel();
     super.dispose();
   }
 
   Future<void> _buscar() async {
+    final geracao = ++_geracao;
+    bool atual() => !_descartado && geracao == _geracao;
     try {
       final pedido = await _repositorio.obter(pedidoId);
-      _estado = Pronto(pedido);
-      _ajustarPolling(pedido);
       // RF-A10.6 — contraofertas só existem enquanto o pedido ainda
       // aguarda entregador (publicado ou em negociação); fora disso a
       // rota do servidor devolve lista vazia, e a chamada é evitada.
-      _contraofertas = pedido.status.aguardandoEntregador
+      final contraofertas = pedido.status.aguardandoEntregador
           ? await _repositorio.obterContraofertas(pedidoId)
-          : const [];
+          : const <Contraoferta>[];
+      if (!atual()) return;
+      _estado = Pronto(pedido);
+      _contraofertas = contraofertas;
+      _ajustarPolling(pedido);
     } on ErroApi catch (erro) {
-      _estado = Falhou(erro);
+      if (!atual()) return;
+      // Falha numa recarga não troca o pedido na tela por erro.
+      if (!_estado.temConteudo) _estado = Falhou(erro);
     } finally {
-      notifyListeners();
+      if (atual()) notifyListeners();
     }
   }
 
@@ -178,6 +199,7 @@ class ControladorDetalhePedido extends ChangeNotifier {
 
     try {
       await _repositorio.decidirContraoferta(contraofertaId, aceitar: aceitar);
+      SinalPedidos.instancia.avisar(origem: this);
       await _buscar();
       return true;
     } on ErroApi catch (erro) {

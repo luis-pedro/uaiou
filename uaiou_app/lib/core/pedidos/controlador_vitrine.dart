@@ -7,6 +7,7 @@ import '../modelos/status_pedido.dart';
 import '../rede/erros_api.dart';
 import 'lista_de_pedidos.dart';
 import 'repositorio_pedidos.dart';
+import 'sinal_pedidos.dart';
 
 /// ===============================================================
 /// VITRINE E ACEITE — A-07
@@ -89,6 +90,7 @@ class ControladorVitrine extends ChangeNotifier {
     try {
       await _repositorio.aceitar(pedidoId);
       pedidos.removerLocalmente(pedidoId);
+      SinalPedidos.instancia.avisar();
       return true;
     } on Conflito catch (erro) {
       // Mensagem já redigida pelo servidor (RF-A07.4) — se por algum
