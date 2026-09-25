@@ -27,7 +27,11 @@ class ControladorVitrine extends ChangeNotifier {
   final ListaDePedidos pedidos;
 
   ControladorVitrine(this._repositorio)
-    : pedidos = ListaDePedidos(_repositorio, recorte: StatusPedido.pendente);
+    : pedidos = ListaDePedidos(_repositorio, recorte: StatusPedido.pendente) {
+    // A tela escuta só a vitrine: sem repassar, a lista termina de
+    // carregar e a vitrine fica presa no indicador de carregamento.
+    pedidos.addListener(notifyListeners);
+  }
 
   /// Id do pedido cujo aceite está em voo. `null` = nenhum.
   ///
