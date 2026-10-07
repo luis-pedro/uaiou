@@ -72,3 +72,5 @@ O repositório é **independente** do backend e do frontend web (cada stack com 
 ## Verificação
 
 O workflow `android-apk.yml` roda `flutter analyze` e `flutter test` a cada push em `main` que toque `uaiou_app/`, antes de gerar o APK — build com lint ou teste quebrado não produz artefato. A suíte cobre a camada `core` (`test/core/`, testes de unidade) e os fluxos de cadastro e publicação de pedido (`test/telas/`, testes de widget).
+
+Verificação local em 2026-10-07 (Flutter 3.41.4, Windows): `flutter analyze` — **nenhum problema** — e `flutter test` — **246/246 testes verdes**. A execução expõe um aviso do `flutter_map` sobre a política de uso dos servidores públicos de tiles do OpenStreetMap, usados pelo app só como reserva quando os tiles do backend falham; revisar antes de escalar o uso em produção.

@@ -90,5 +90,5 @@ Build de release **recusa HTTP** fora da rede local: se a URL não for HTTPS e n
 
 ## Autores
 
-- **Luis Pedro Costa** — telas e fluxos iniciais do estabelecimento e do entregador (login, cadastro, telas principais, pedidos, atividades, perfis).
-- **jvpereira07** — camada `core`, integração com a API, testes, CI, notificações push, mapas e rotas.
+- **Luis Pedro Costa** — criou as telas do app: login, cadastro, principais, pedidos, entregas, atividades e perfis do estabelecimento e do entregador.
+- **João ([jvpereira07](https://github.com/jvpereira07))** — integrou o backend: camada `core`, adaptação das telas à API e telas novas da integração (detalhe e publicação de pedido, entrega em andamento, ganhos, notificações, avaliações), testes, CI, notificações push, mapas e rotas.
