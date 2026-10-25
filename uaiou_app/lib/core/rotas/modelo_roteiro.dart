@@ -59,11 +59,23 @@ class RoteiroDoEntregador {
   final List<ParadaDoRoteiro> paradas;
   final String? atribuicao;
 
+  /// Pedido da vitrine simulado no roteiro (`?withOrder=`), ainda não
+  /// aceito. Nulo no roteiro comum.
+  final String? candidatoId;
+
+  /// Quanto o pedido simulado acrescenta ao roteiro de hoje, por via.
+  /// Nulo sem simulação ou quando o servidor não conseguiu comparar.
+  final double? acrescimoKm;
+  final int? acrescimoMinutos;
+
   const RoteiroDoEntregador({
     this.trajeto = const Trajeto(),
     this.otimizado = false,
     this.paradas = const [],
     this.atribuicao,
+    this.candidatoId,
+    this.acrescimoKm,
+    this.acrescimoMinutos,
   });
 
   /// O corpo traz os campos do trajeto na raiz, não aninhados como em
@@ -87,8 +99,14 @@ class RoteiroDoEntregador {
               .toList(growable: false) ??
           const [],
       atribuicao: json['attribution'] as String?,
+      candidatoId: json['candidateOrderId'] as String?,
+      acrescimoKm: (json['addedDistanceKm'] as num?)?.toDouble(),
+      acrescimoMinutos: (json['addedDurationMinutes'] as num?)?.toInt(),
     );
   }
+
+  bool ehDoCandidato(ParadaDoRoteiro parada) =>
+      candidatoId != null && parada.pedidoId == candidatoId;
 
   bool get temTracado => trajeto.temTracado;
 

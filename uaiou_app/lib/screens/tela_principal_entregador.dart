@@ -19,6 +19,7 @@ import 'package:uaiou/core/rotas/modelo_rota.dart';
 import 'package:uaiou/others/entregador_service.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
+import 'package:uaiou/screens/tela_roteiro.dart';
 import 'package:uaiou/screens/widgets/painel_rota.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
@@ -71,12 +72,22 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     }
   }
 
-  /// RF-A08.9 — com entrega ativa (`accepted`), abrir o app leva direto
-  /// a ela em vez da tela principal.
+  /// Já levou à entrega ativa desde que o app abriu.
+  static bool _jaPriorizou = false;
+
+  /// RF-A08.9 — com entrega ativa (`accepted`), **abrir o app** leva
+  /// direto a ela em vez da tela principal.
+  ///
+  /// Uma vez por abertura, não a cada visita à Principal: redirecionar
+  /// sempre deixava quem tem entrega em andamento sem acesso à vitrine —
+  /// e sem vitrine não há como pegar um segundo pedido.
   Future<void> _priorizarEntregaEmAndamento() async {
     final estado = context.read<EstadoEntregador>();
+    // Carrega sempre: além do redirecionamento, é esta lista que decide se
+    // o card da vitrine oferece a prévia do roteiro.
     await estado.emAndamento.carregar();
-    if (!mounted) return;
+    if (!mounted || _jaPriorizou) return;
+    _jaPriorizou = true;
     final itens = estado.emAndamento.itens;
     if (itens.isEmpty) return;
     final ativa = itens.first;
@@ -615,7 +626,11 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             child: TextButton.icon(
               onPressed: () => _abrirRota(pedido),
               icon: const Icon(Icons.alt_route, size: 18),
-              label: const Text('Ver trajeto e distância real'),
+              label: Text(
+                context.read<EstadoEntregador>().emAndamento.itens.isNotEmpty
+                    ? 'Ver como fica no seu roteiro'
+                    : 'Ver trajeto e distância real',
+              ),
               style: TextButton.styleFrom(
                 foregroundColor: corPrincipal,
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -701,6 +716,15 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
   /// por via e, ao lado dela, a linha reta que a lista mostrou, cada
   /// uma com o nome. Uma abertura, uma rota (RNF-A14.1).
   Future<void> _abrirRota(Pedido pedido) async {
+    // Já carregando outras entregas, a pergunta que importa é "como fica
+    // o meu roteiro com este também?" — não o trajeto do pedido isolado.
+    if (context.read<EstadoEntregador>().emAndamento.itens.isNotEmpty) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => TelaRoteiro(candidato: pedido)),
+      );
+      return;
+    }
     final rota = context.read<ControladorRota>();
     final posicao = context.read<ControladorPresenca>().posicaoAtual;
     rota.carregar(

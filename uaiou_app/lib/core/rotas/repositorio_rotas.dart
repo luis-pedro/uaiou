@@ -31,10 +31,20 @@ class RepositorioRotas {
 
   /// `GET /couriers/me/route` — um trajeto por todos os pedidos em
   /// andamento do entregador, com as paradas em ordem.
-  Future<RoteiroDoEntregador> obterRoteiro({PontoGeo? origem}) async {
+  ///
+  /// [comPedido] simula um pedido da vitrine no roteiro, sem aceitá-lo:
+  /// a resposta diz quanto ele acrescenta.
+  Future<RoteiroDoEntregador> obterRoteiro({
+    PontoGeo? origem,
+    String? comPedido,
+  }) async {
     final resposta = await _api.obter(
       '/couriers/me/route',
-      query: origem == null ? null : {'lat': origem.lat, 'lng': origem.lng},
+      query: {
+        if (origem != null) 'lat': origem.lat,
+        if (origem != null) 'lng': origem.lng,
+        'withOrder': ?comPedido,
+      },
     );
     if (resposta is! Map) {
       throw const ErroInesperado(

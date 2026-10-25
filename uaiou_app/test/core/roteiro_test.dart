@@ -80,4 +80,24 @@ void main() {
     expect(vazio.semPedidos, isTrue);
     expect(vazio.temTracado, isFalse);
   });
+
+  test(
+    'a prévia com pedido candidato traz o acréscimo e marca as paradas dele',
+    () {
+      final previa = RoteiroDoEntregador.doJson({
+        ...corpo,
+        'candidateOrderId': 'b',
+        'addedDistanceKm': 2.3,
+        'addedDurationMinutes': 6,
+      });
+
+      expect(previa.acrescimoKm, 2.3);
+      expect(previa.acrescimoMinutos, 6);
+      expect(previa.paradas.where(previa.ehDoCandidato), hasLength(2));
+      expect(
+        RoteiroDoEntregador.doJson(corpo).ehDoCandidato(previa.paradas.first),
+        isFalse,
+      );
+    },
+  );
 }

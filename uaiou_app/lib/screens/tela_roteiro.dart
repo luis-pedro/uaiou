@@ -26,8 +26,15 @@ import 'package:uaiou/screens/widgets/mapa_rota.dart';
 /// ([TelaNavegacao]); esta tela responde "por onde eu vou primeiro?".
 /// Consulta sob demanda: abre, busca uma vez, e só refaz no botão
 /// "Recalcular" (RNF-A14.1 — consumo com teto).
+///
+/// Com [candidato], vira **prévia**: o pedido da vitrine entra no
+/// roteiro como se já tivesse sido aceito, as paradas dele aparecem
+/// marcadas como "Novo" e o resumo diz quanto ele acrescenta. Nada é
+/// aceito aqui — a decisão continua nos botões do card.
 class TelaRoteiro extends StatefulWidget {
-  const TelaRoteiro({super.key});
+  final Pedido? candidato;
+
+  const TelaRoteiro({super.key, this.candidato});
 
   @override
   State<TelaRoteiro> createState() => _TelaRoteiroState();
@@ -57,6 +64,7 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
     try {
       final roteiro = await context.read<RepositorioRotas>().obterRoteiro(
         origem: _posicao(),
+        comPedido: widget.candidato?.id,
       );
       if (!mounted) return;
       setState(() {
@@ -81,7 +89,11 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
       appBar: AppBar(
         backgroundColor: corPrincipal,
         foregroundColor: Colors.white,
-        title: const Text('Roteiro das entregas'),
+        title: Text(
+          widget.candidato == null
+              ? 'Roteiro das entregas'
+              : 'Prévia com o pedido ${widget.candidato!.rotuloCurto}',
+        ),
         actions: [
           IconButton(
             tooltip: 'Recalcular a partir daqui',
@@ -147,6 +159,33 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
                 ),
             ],
           ),
+          if (roteiro.acrescimoKm != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: corPrincipal.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.add_road, size: 18, color: corPrincipal),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '+${roteiro.acrescimoKm!.toStringAsFixed(1)} km'
+                      '${roteiro.acrescimoMinutos == null ? '' : ' · +${roteiro.acrescimoMinutos} min'}'
+                      ' no seu roteiro com este pedido',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             roteiro.otimizado
@@ -181,6 +220,8 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
     final pedidos = {
       for (final p in context.watch<EstadoEntregador>().emAndamento.itens)
         p.id: p,
+      // O candidato não está nas entregas — vem do card que abriu a prévia.
+      if (widget.candidato != null) widget.candidato!.id: widget.candidato!,
     };
     final proxima = roteiro.proximaParadaDe(posicao);
 
@@ -196,6 +237,7 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
           parada: parada,
           pedido: pedidos[parada.pedidoId],
           destaque: identical(parada, proxima),
+          novo: roteiro.ehDoCandidato(parada),
         );
       },
     );
@@ -207,6 +249,7 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
     required ParadaDoRoteiro parada,
     required Pedido? pedido,
     required bool destaque,
+    bool novo = false,
   }) {
     final coleta = parada.tipo == TipoParada.coleta;
     final nomeLoja = pedido?.nomeEstabelecimento?.isNotEmpty == true
@@ -241,13 +284,42 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  coleta ? 'Coletar em $nomeLoja' : 'Entregar — $nomeLoja',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        coleta
+                            ? 'Coletar em $nomeLoja'
+                            : 'Entregar — $nomeLoja',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (novo) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: corPrincipal,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Novo',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 if (!coleta && pedido != null)
                   Text(
