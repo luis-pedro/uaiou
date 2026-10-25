@@ -97,12 +97,14 @@ void main() {
           'status': 'published',
           'proposedFee': '9.50',
           'distanceKm': 3.2,
+          'totalDistanceKm': 5.7,
           'createdAt': '2026-08-09T12:00:00Z',
           '_links': {},
         }),
       );
       expect(pedido.freteProposto, Dinheiro.deString('9.50'));
       expect(pedido.distanciaKm, 3.2);
+      expect(pedido.distanciaTotalKm, 5.7);
     });
   });
 
