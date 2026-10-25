@@ -706,6 +706,25 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 : pedido.enderecoResumido,
             style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
           ),
+          // Quanto o entregador vai rodar no total: até a loja e dela até
+          // o cliente. Linha reta, por isso o "~".
+          if (pedido.distanciaTotalKm != null) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.route, size: 16, color: corPrincipal),
+                const SizedBox(width: 4),
+                Text(
+                  "Percurso total ~${pedido.distanciaTotalKm!.toStringAsFixed(1)} km",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: context.cores.texto,
+                  ),
+                ),
+              ],
+            ),
+          ],
           // RF-A14.4 — a distância que decide o aceite é a por via, e
           // ela custa uma chamada ao provedor: fica atrás de um toque,
           // por pedido, em vez de entrar na listagem inteira (RF-25.7).

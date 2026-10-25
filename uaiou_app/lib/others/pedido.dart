@@ -44,8 +44,14 @@ class Pedido {
   /// estabelecimento — ele não precisa do próprio nome em cada linha.
   final String? nomeEstabelecimento;
 
-  /// Distância até o pedido, em km. Só o entregador recebe (RF-11.7).
+  /// Distância até o ponto mais longe da entrega — a loja ou o destino —,
+  /// em km e em linha reta. Só o entregador recebe (RF-11.7).
   final double? distanciaKm;
+
+  /// Percurso inteiro, entregador → loja → destino, em km e em linha
+  /// reta. A distância por via fica atrás do toque em "Ver trajeto"
+  /// (RF-25.7).
+  final double? distanciaTotalKm;
 
   /// Criação, em fuso local.
   final DateTime criadoEm;
@@ -106,6 +112,7 @@ class Pedido {
     this.longitude,
     this.nomeEstabelecimento,
     this.distanciaKm,
+    this.distanciaTotalKm,
     this.aceitoEm,
     this.prazoEsperado,
     this.recebedorNome,
@@ -157,6 +164,7 @@ class Pedido {
       longitude: _decimal(destino['lng']),
       nomeEstabelecimento: estabelecimento['name'] as String?,
       distanciaKm: _decimal(json['distanceKm']),
+      distanciaTotalKm: _decimal(json['totalDistanceKm']),
       criadoEm: _dataLocal(json['createdAt']) ?? DateTime.now(),
       aceitoEm: _dataLocal(json['acceptedAt']),
       prazoEsperado: _dataLocal(json['expectedDeliveryAt']),
