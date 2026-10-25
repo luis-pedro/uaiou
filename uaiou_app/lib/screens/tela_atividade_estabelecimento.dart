@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
@@ -25,9 +26,6 @@ class TelaAtividadesEstabelecimento extends StatefulWidget {
 
 class _TelaAtividadesEstabelecimentoState
     extends State<TelaAtividadesEstabelecimento> {
-  /// Página selecionada do menu
-  int paginaAtual = 2;
-
   /// Cor principal do aplicativo
   static const Color corPrincipal = CoresUaiou.principal;
 
@@ -58,32 +56,10 @@ class _TelaAtividadesEstabelecimentoState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: corPrincipal,
-      // Ver a nota em `tela_estabelecimento_pedidos`: o recuo da barra do
-      // sistema é aplicado pelo menu, não aqui.
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
-        ),
-      ),
-    );
-  }
-
-  // TÍTULO
-  Widget _buildTitulo() {
-    return const Positioned(
-      top: 15,
-      left: 25,
-      child: Text(
-        "Atividades",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    return PaginaAba(
+      titulo: 'Atividade',
+      subtitulo: 'Resumo e histórico',
+      filho: _buildConteudo(),
     );
   }
 
@@ -92,59 +68,20 @@ class _TelaAtividadesEstabelecimentoState
   /// ============================================================
 
   Widget _buildConteudo() {
-    return Positioned.fill(
-      child: Container(
-        margin: const EdgeInsets.only(top: 70),
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        _buildCardFaturamento(),
+        const SizedBox(height: 20),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: TituloSecao('Pedidos anteriores'),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                "Pedidos anteriores",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: context.cores.texto,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            _buildCardFaturamento(),
-
-            const SizedBox(height: 12),
-
-            _buildBotaoAPagar(),
-
-            const SizedBox(height: 15),
-
-            _buildContadores(),
-
-            const SizedBox(height: 15),
-
-            _buildFiltros(),
-
-            const SizedBox(height: 10),
-
-            Divider(height: 1, color: context.cores.borda),
-
-            Expanded(child: _buildListaPedidos()),
-
-            SizedBox(height: 95 + MediaQuery.viewPaddingOf(context).bottom),
-          ],
-        ),
-      ),
+        _buildFiltros(),
+        const SizedBox(height: 8),
+        Expanded(child: _buildListaPedidos()),
+      ],
     );
   }
 
@@ -154,37 +91,68 @@ class _TelaAtividadesEstabelecimentoState
 
   Widget _buildCardFaturamento() {
     // ⚠️ A-10 (RF-A10.10): o agregado vem de `GET /me/stats` e
-    // `GET /me/payables`. Somar dinheiro no cliente e inferir "hoje"
-    // pelo relógio do aparelho eram as duas coisas que a task proíbe.
-    final faturamento = context.watch<EstadoEstabelecimento>().faturamentoHoje;
+    // `GET /me/payables` — nada de somar dinheiro no cliente.
+    final estado = context.watch<EstadoEstabelecimento>();
+    final faturamento = estado.faturamentoHoje;
+    final cores = context.cores;
+    final entregues = estado.concluidos.length;
+    final cancelados = estado.cancelados.length;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        decoration: BoxDecoration(
-          color: corPrincipal,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Faturamento de hoje",
-              style: TextStyle(color: context.cores.textoSuave, fontSize: 15),
+    return Cartao(
+      margem: const EdgeInsets.symmetric(horizontal: 16),
+      preenchimento: EdgeInsets.zero,
+      filho: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 8),
+            child: Row(
+              children: [
+                MedidorAnel(
+                  principal: entregues,
+                  secundario: cancelados,
+                  rotuloCentro: 'pedidos',
+                  tamanho: 132,
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Faturamento hoje',
+                        style: TextStyle(fontSize: 13, color: cores.textoSuave),
+                      ),
+                      Text(
+                        faturamento?.formatarBRL() ?? '—',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                          color: cores.texto,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildContador(
+                        'Entregues',
+                        entregues,
+                        CoresUaiou.principal,
+                      ),
+                      const SizedBox(height: 6),
+                      _buildContador(
+                        'Cancelados',
+                        cancelados,
+                        CoresUaiou.principal.withValues(alpha: .3),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 5),
-            Text(
-              faturamento?.formatarBRL() ?? "—",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+          ),
+          Divider(height: 1, color: cores.borda),
+          _buildBotaoAPagar(),
+        ],
       ),
     );
   }
@@ -194,26 +162,12 @@ class _TelaAtividadesEstabelecimentoState
   /// ============================================================
 
   Widget _buildBotaoAPagar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: OutlinedButton.icon(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const TelaAPagar()),
-        ),
-        icon: const Icon(Icons.payments_outlined, color: corPrincipal),
-        label: const Text(
-          "A pagar aos entregadores",
-          style: TextStyle(color: corPrincipal, fontWeight: FontWeight.w600),
-        ),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: corPrincipal),
-          // Sem recuo lateral o rótulo encostava na borda do botão.
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
+    return LinhaOpcao(
+      icone: Icons.payments_outlined,
+      texto: "A pagar aos entregadores",
+      aoTocar: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const TelaAPagar()),
       ),
     );
   }
@@ -222,38 +176,28 @@ class _TelaAtividadesEstabelecimentoState
   /// CONTADORES (Entregues / Cancelados)
   /// ============================================================
 
-  Widget _buildContadores() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        children: [
-          _buildContador(
-            "Entregues",
-            context.watch<EstadoEstabelecimento>().concluidos.length,
-          ),
-          const Spacer(),
-          _buildContador(
-            "Cancelados",
-            context.watch<EstadoEstabelecimento>().cancelados.length,
-          ),
-          const Spacer(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContador(String titulo, int quantidade) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildContador(String titulo, int quantidade, Color cor) {
+    return Row(
       children: [
-        Text(
-          titulo,
-          style: TextStyle(fontSize: 13, color: context.cores.texto),
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            titulo,
+            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
+          ),
+        ),
         Text(
-          "$quantidade",
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          '$quantidade',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: context.cores.texto,
+          ),
         ),
       ],
     );
@@ -265,13 +209,13 @@ class _TelaAtividadesEstabelecimentoState
 
   Widget _buildFiltros() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           _buildChipFiltro("Todos", _FiltroAtividades.todos),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           _buildChipFiltro("Entregues", _FiltroAtividades.entregues),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           _buildChipFiltro("Cancelados", _FiltroAtividades.cancelados),
         ],
       ),
@@ -280,23 +224,32 @@ class _TelaAtividadesEstabelecimentoState
 
   Widget _buildChipFiltro(String texto, _FiltroAtividades valor) {
     final bool selecionado = _filtro == valor;
+    final cores = context.cores;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => setState(() => _filtro = valor),
-      child: Container(
-        // 12 em vez de 8: com 8 o chip ficava abaixo do alvo mínimo de toque.
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: selecionado ? corPrincipal : context.cores.superficieSuave,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          texto,
-          style: TextStyle(
-            color: selecionado ? Colors.white : context.cores.texto,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => setState(() => _filtro = valor),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          // 10 de altura mantém o alvo mínimo de toque.
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: selecionado ? CoresUaiou.principal : cores.superficie,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selecionado ? CoresUaiou.principal : cores.borda,
+            ),
+          ),
+          child: Text(
+            texto,
+            style: TextStyle(
+              color: selecionado ? Colors.white : cores.texto,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -334,7 +287,7 @@ class _TelaAtividadesEstabelecimentoState
               );
             }
             return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: pedidos.length,
               itemBuilder: (context, index) => _buildCardPedido(pedidos[index]),
@@ -350,207 +303,63 @@ class _TelaAtividadesEstabelecimentoState
   /// ============================================================
 
   Widget _buildCardPedido(Pedido pedido) {
+    final cores = context.cores;
     final data = descreverData(pedido.criadoEm);
+    final entregue = pedido.status != StatusPedido.cancelado;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cores.superficie,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: context.cores.borda, width: 1.5),
+    return Cartao(
+      margem: const EdgeInsets.only(bottom: 10),
+      preenchimento: const EdgeInsets.all(14),
+      aoTocar: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      filho: Row(
         children: [
-          Text(
-            data,
-            style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
+          IconeTingido(
+            entregue ? Icons.check_rounded : Icons.close_rounded,
+            cor: entregue ? cores.positivo : cores.perigo,
+            tamanho: 42,
           ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              Text(
-                "Pedido ${pedido.rotuloCurto}",
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              BadgeStatus(pedido.status, comIcone: true),
-            ],
-          ),
-
-          const SizedBox(height: 15),
-
-          Text(
-            "Bairro: ${pedido.bairro}",
-            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
-          ),
-
-          const SizedBox(height: 5),
-
-          Row(
-            children: [
-              Text(
-                "Rua: ${pedido.rua}",
-                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "Número: ${pedido.numero}",
-                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          Center(
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
-                ),
-              ),
-              // Alvo de toque com altura de dedo (48dp).
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                child: Text(
-                  "Visualizar pedido",
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Pedido ${pedido.rotuloCurto}",
                   style: TextStyle(
-                    color: corPrincipal,
                     fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    color: cores.texto,
                   ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  "${pedido.rua}, ${pedido.numero} · ${pedido.bairro}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: cores.textoSuave),
+                ),
+              ],
             ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              BadgeStatus(pedido.status),
+              const SizedBox(height: 6),
+              Text(
+                data,
+                style: TextStyle(fontSize: 12, color: cores.textoSuave),
+              ),
+            ],
           ),
         ],
       ),
     );
-  }
-
-  /// ============================================================
-  /// MENU INFERIOR
-  /// ============================================================
-
-  Widget _buildMenuInferior() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        width: double.infinity,
-        // Ver a nota em `tela_estabelecimento_pedidos`: a barra acompanha a
-        // faixa do sistema em vez de ficar sob ela.
-        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.cores.sombra,
-              blurRadius: 15,
-              offset: Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
-              _buildItemMenu(
-                index: 1,
-                icone: Icons.shopping_bag,
-                texto: "Pedidos",
-              ),
-              _buildItemMenu(
-                index: 2,
-                icone: Icons.list_alt,
-                texto: "Atividades",
-              ),
-              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// ITEM DO MENU
-  /// ============================================================
-
-  Widget _buildItemMenu({
-    required int index,
-    required IconData icone,
-    required String texto,
-  }) {
-    final bool selecionado = paginaAtual == index;
-
-    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
-
-    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
-    // os quatro itens soavam iguais.
-    return Semantics(
-      button: true,
-      selected: selecionado,
-      label: texto,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _onItemMenuTap(index),
-        child: SizedBox(
-          width: 85,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icone, color: cor, size: 27),
-              const SizedBox(height: 5),
-              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// NAVEGAÇÃO
-  /// ============================================================
-
-  void _onItemMenuTap(int index) {
-    if (paginaAtual == index) return;
-
-    setState(() {
-      paginaAtual = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/principal_estabelecimento');
-        break;
-
-      case 1:
-        Navigator.pushReplacementNamed(context, '/pedidos_estabelecimento');
-        break;
-
-      case 2:
-        break;
-
-      case 3:
-        Navigator.pushReplacementNamed(context, '/perfil_estabelecimento');
-        break;
-    }
   }
 }

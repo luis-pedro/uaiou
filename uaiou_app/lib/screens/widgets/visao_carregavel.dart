@@ -17,6 +17,9 @@ class VisaoCarregavel<T> extends StatelessWidget {
   final String textoVazio;
   final IconData iconeVazio;
 
+  /// Vazio sob medida (ex.: estado vazio com ação). Sem ele, o aviso padrão.
+  final Widget Function()? construirVazio;
+
   const VisaoCarregavel({
     super.key,
     required this.estado,
@@ -24,6 +27,7 @@ class VisaoCarregavel<T> extends StatelessWidget {
     required this.aoTentarNovamente,
     this.textoVazio = 'Nada por aqui ainda',
     this.iconeVazio = Icons.inbox_outlined,
+    this.construirVazio,
   });
 
   static const Color _corPrincipal = Color.fromRGBO(254, 98, 29, 1);
@@ -38,18 +42,20 @@ class VisaoCarregavel<T> extends StatelessWidget {
         ),
       ),
       pronto: construir,
-      vazio: () => _Aviso(
-        icone: iconeVazio,
-        cor: context.cores.textoSuave,
-        titulo: textoVazio,
-        // Vazio com motivo do servidor (ex.: LOCATION_STALE) explica
-        // por que a lista veio vazia, em vez de deixar o usuário achar
-        // que não há trabalho disponível.
-        detalhe: switch (estado) {
-          Vazio<T>(:final motivo) => motivo,
-          _ => null,
-        },
-      ),
+      vazio: () =>
+          construirVazio?.call() ??
+          _Aviso(
+            icone: iconeVazio,
+            cor: context.cores.textoSuave,
+            titulo: textoVazio,
+            // Vazio com motivo do servidor (ex.: LOCATION_STALE) explica
+            // por que a lista veio vazia, em vez de deixar o usuário achar
+            // que não há trabalho disponível.
+            detalhe: switch (estado) {
+              Vazio<T>(:final motivo) => motivo,
+              _ => null,
+            },
+          ),
       falhou: (erro) => _Aviso(
         icone: Icons.cloud_off,
         cor: context.cores.perigo,

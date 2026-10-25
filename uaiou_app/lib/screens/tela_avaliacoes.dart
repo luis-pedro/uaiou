@@ -52,11 +52,10 @@ class _TelaAvaliacoesState extends State<TelaAvaliacoes> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: corPrincipal,
-          foregroundColor: Colors.white,
           title: const Text('Avaliações'),
           bottom: const TabBar(
-            indicatorColor: Colors.white,
+            indicatorColor: corPrincipal,
+            labelColor: corPrincipal,
             tabs: [
               Tab(text: 'Pendentes'),
               Tab(text: 'Recebidas'),

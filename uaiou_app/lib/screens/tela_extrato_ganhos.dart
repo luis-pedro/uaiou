@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/ganhos/controlador_ganhos.dart';
@@ -40,11 +41,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: TelaExtratoGanhos.corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Extrato de ganhos'),
-      ),
+      appBar: AppBar(title: const Text('Extrato de ganhos')),
       body: Consumer<ControladorGanhos>(
         builder: (context, controlador, _) => Column(
           children: [
@@ -62,55 +59,83 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
   // servidor, nunca soma feita aqui.
   Widget _buildResumo(ControladorGanhos controlador) {
     final resumo = controlador.resumo;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      color: TelaExtratoGanhos.corPrincipal.withValues(alpha: 0.06),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildValorResumo(
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+        decoration: BoxDecoration(
+          color: TelaExtratoGanhos.corPrincipal,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
               'Total do período',
+              style: TextStyle(color: Color(0xE6FFFFFF), fontSize: 14),
+            ),
+            const SizedBox(height: 2),
+            Text(
               resumo.total.formatarBRL(),
-              context.cores.texto,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.8,
+              ),
             ),
-          ),
-          Expanded(
-            child: _buildValorResumo(
-              'A receber',
-              resumo.receivable.formatarBRL(),
-              context.cores.atencao,
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildValorResumo(
+                    'A receber',
+                    resumo.receivable.formatarBRL(),
+                    Colors.white,
+                  ),
+                ),
+                Expanded(
+                  child: _buildValorResumo(
+                    'Recebido',
+                    resumo.settled.formatarBRL(),
+                    Colors.white,
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            child: _buildValorResumo(
-              'Recebido',
-              resumo.settled.formatarBRL(),
-              context.cores.positivo,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildValorResumo(String rotulo, String valor, Color cor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          rotulo,
-          style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          valor,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: cor,
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .16),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            rotulo,
+            style: TextStyle(fontSize: 12, color: cor.withValues(alpha: .85)),
           ),
-        ),
-      ],
+          const SizedBox(height: 2),
+          Text(
+            valor,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: cor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -167,7 +192,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
         color: selecionado
             ? TelaExtratoGanhos.corPrincipal.withValues(alpha: 0.08)
             : context.cores.superficie,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: selecionado
               ? TelaExtratoGanhos.corPrincipal
@@ -186,10 +211,10 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
           else
             Padding(
               padding: const EdgeInsets.only(right: 12),
-              child: Icon(
-                Icons.check_circle,
-                color: context.cores.positivo,
-                size: 22,
+              child: IconeTingido(
+                Icons.check_rounded,
+                cor: context.cores.positivo,
+                tamanho: 38,
               ),
             ),
           Expanded(
@@ -225,8 +250,8 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
               Text(
                 lancamento.amount.formatarBRL(),
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
                 ),
               ),
               const SizedBox(height: 4),
@@ -292,8 +317,7 @@ class _TelaExtratoGanhosState extends State<TelaExtratoGanhos> {
                   ? null
                   : () => _confirmar(controlador),
               style: ElevatedButton.styleFrom(
-                backgroundColor: TelaExtratoGanhos.corPrincipal,
-                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
               ),
               child: controlador.confirmando
                   ? const SizedBox(

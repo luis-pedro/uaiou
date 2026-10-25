@@ -67,10 +67,35 @@ class _CamadaMapaBaseState extends State<CamadaMapaBase> {
           retinaMode: RetinaMode.isHighDensity(context),
           userAgentPackageName: 'com.uaiou.app',
         ),
-        // Exigência de licença dos tiles, não escolha de layout.
-        SimpleAttributionWidget(
-          source: Text(camada.atribuicao, style: const TextStyle(fontSize: 10)),
-          backgroundColor: Colors.white.withValues(alpha: .8),
+        // Exigência de licença dos tiles: os créditos precisam estar
+        // acessíveis, não estampados. Um "i" discreto no canto abre o texto
+        // — no lugar da faixa branca que cobria o rodapé do mapa.
+        RichAttributionWidget(
+          alignment: AttributionAlignment.bottomLeft,
+          showFlutterMapAttribution: false,
+          popupBackgroundColor: context.cores.superficie,
+          openButton: (context, abrir) => Padding(
+            padding: const EdgeInsets.all(6),
+            child: Material(
+              color: context.cores.superficie.withValues(alpha: .85),
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: abrir,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: context.cores.textoSuave,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          attributions: [
+            TextSourceAttribution(camada.atribuicao, prependCopyright: false),
+          ],
         ),
       ],
     );

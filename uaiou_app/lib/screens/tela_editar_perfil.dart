@@ -140,11 +140,7 @@ class _TelaEditarPerfilState extends State<TelaEditarPerfil> {
     final ehEstabelecimento = perfil?.papel == Papel.estabelecimento;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: TelaEditarPerfil.corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Editar perfil'),
-      ),
+      appBar: AppBar(title: const Text('Editar perfil')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

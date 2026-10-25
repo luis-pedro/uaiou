@@ -79,11 +79,7 @@ class _TelaBloqueiosState extends State<TelaBloqueios> {
     final estado = context.watch<EstadoBloqueios>();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: TelaBloqueios.corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Entregadores bloqueados'),
-      ),
+      appBar: AppBar(title: const Text('Entregadores bloqueados')),
       floatingActionButton: FloatingActionButton(
         backgroundColor: TelaBloqueios.corPrincipal,
         onPressed: () => _abrirBloqueio(context),

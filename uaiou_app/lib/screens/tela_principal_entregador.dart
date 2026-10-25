@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
+import 'package:uaiou/screens/casca_principal.dart';
 import 'package:provider/provider.dart';
 
 import 'package:flutter_map/flutter_map.dart';
@@ -31,8 +33,6 @@ class TelaPrincipalEntregador extends StatefulWidget {
 }
 
 class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
-  int paginaAtual = 0;
-
   // Cor principal do app (laranja)
   static const Color corPrincipal = CoresUaiou.principal;
 
@@ -93,15 +93,100 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       body: Stack(
         children: [
           _buildMapa(),
-          _buildAvaliacao(),
-          _buildAvisos(),
-          _buildStatusDisponibilidade(),
-          _buildCardGanhos(),
+          // Barra flutuante do topo: nota à esquerda, estado e avisos à
+          // direita. Os ganhos desceram para o painel, junto dos pedidos —
+          // o topo do mapa fica livre para o mapa.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  children: [
+                    _buildAvaliacao(),
+                    const Spacer(),
+                    _buildStatusDisponibilidade(),
+                    const SizedBox(width: 8),
+                    _buildAvisos(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          _buildControlesDoMapa(),
           _buildPainelVitrine(),
-          _buildMenuInferior(),
         ],
       ),
     );
+  }
+
+  /// Controle de rua à direita do mapa: recentrar. Fica na altura
+  /// do polegar, fora da área da folha de pedidos.
+  Widget _buildControlesDoMapa() {
+    return Positioned(
+      right: 16,
+      top: MediaQuery.paddingOf(context).top + 84,
+      child: Column(
+        children: [
+          _botaoDoMapa(
+            icone: Icons.my_location_rounded,
+            rotulo: 'Centralizar',
+            aoTocar: _centralizar,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _botaoDoMapa({
+    required IconData icone,
+    required String rotulo,
+    required VoidCallback aoTocar,
+    Color? cor,
+  }) {
+    final cores = context.cores;
+    return Column(
+      children: [
+        Material(
+          color: cores.superficie,
+          shape: const CircleBorder(),
+          elevation: 3,
+          shadowColor: cores.sombra,
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: aoTocar,
+            child: SizedBox(
+              width: 52,
+              height: 52,
+              child: Icon(icone, color: cor ?? cores.texto, size: 24),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          rotulo,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: cores.texto,
+            shadows: [Shadow(color: cores.superficie, blurRadius: 6)],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _centralizar() {
+    final posicao = context.read<ControladorPresenca>().posicaoAtual;
+    if (posicao == null) {
+      context.read<ControladorPresenca>().lerPosicaoInicial();
+      mostrarAviso(context, 'Buscando sua localização…');
+      return;
+    }
+    _mapController.move(LatLng(posicao.lat, posicao.lng), 16);
   }
 
   // MAPA
@@ -162,14 +247,20 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
   // AVALIAÇÃO (canto superior esquerdo)
   Widget _buildAvaliacao() {
-    return Positioned(
-      top: 40,
-      left: 20,
+    return Padding(
+      padding: EdgeInsets.zero,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: context.cores.superficie,
           borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: context.cores.sombra,
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -189,7 +280,11 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                     ',',
                   ) ??
                   "—",
-              style: TextStyle(color: context.cores.textoSuave, fontSize: 15),
+              style: TextStyle(
+                color: context.cores.texto,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
@@ -206,32 +301,31 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     final bool disponivel = presenca.disponivel;
     final bool enviando = presenca.enviando;
 
-    final Color corTexto = disponivel
-        ? const Color.fromRGBO(108, 201, 80, 1)
-        : context.cores.borda;
+    const Color corTexto = Colors.white;
 
     final Color corFundo = disponivel
-        ? const Color.fromRGBO(17, 76, 0, 0.73)
-        : Colors.black.withValues(alpha: 0.55);
+        ? CoresUaiou.principal
+        : const Color(0xFF292524);
 
-    final Color corBorda = disponivel
-        ? const Color.fromRGBO(108, 201, 80, 1)
-        : context.cores.textoSuave;
-
-    return Positioned(
-      top: 40,
-      right: 20,
+    return Padding(
+      padding: EdgeInsets.zero,
       child: InkWell(
         borderRadius: BorderRadius.circular(25),
         onTap: enviando
             ? null
             : () => _alternarDisponibilidade(presenca, !disponivel),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: corFundo,
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: corBorda, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: context.cores.sombra,
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -250,14 +344,18 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                   width: 14,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: corTexto,
+                    color: disponivel ? Colors.white : const Color(0xFFA8A29E),
                     shape: BoxShape.circle,
                   ),
                 ),
               const SizedBox(width: 10),
               Text(
-                disponivel ? "Disponível" : "Indisponível",
-                style: TextStyle(color: corTexto, fontSize: 15),
+                disponivel ? "Online" : "Offline",
+                style: const TextStyle(
+                  color: corTexto,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -277,87 +375,56 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     }
   }
 
-  // CARD DE GANHOS — RF-A09.1/RF-A09.2. "Ganhos de hoje" do protótipo
-  // vira "total ganho no período": o servidor não expõe recorte diário
-  // em `GET /me/earnings`, então o app não inventa um filtro de dia
-  // que a API não oferece.
-  Widget _buildCardGanhos() {
-    final ganhos = context.watch<ControladorGanhos>();
-    final resumo = ganhos.resumo;
-
-    return Positioned(
-      top: 95,
-      left: 15,
-      right: 15,
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildGanhosCompactos() {
+    final resumo = context.watch<ControladorGanhos>().resumo;
+    final cores = context.cores;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => Navigator.pushNamed(context, '/extrato_ganhos'),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  "Ganhos do período",
-                  style: TextStyle(
-                    color: context.cores.textoSuave,
-                    fontSize: 15,
+            const IconeTingido(
+              Icons.account_balance_wallet_outlined,
+              tamanho: 40,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ganhos do período',
+                    style: TextStyle(fontSize: 12, color: cores.textoSuave),
                   ),
-                ),
-                InkWell(
-                  onTap: () => Navigator.pushNamed(context, '/extrato_ganhos'),
-                  child: const Text(
-                    "Ver extrato",
+                  Text(
+                    resumo.total.formatarBRL(),
                     style: TextStyle(
-                      color: corPrincipal,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: cores.texto,
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              resumo.total.formatarBRL(),
-              style: TextStyle(
-                color: context.cores.texto,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildRotuloGanho(
-                    resumo.receivable.formatarBRL(),
-                    context.cores.atencao,
-                  ),
-                ),
-                Expanded(
-                  child: _buildRotuloGanho(
-                    resumo.settled.formatarBRL(),
-                    context.cores.positivo,
-                  ),
-                ),
-              ],
+            Text(
+              'A receber ',
+              style: TextStyle(fontSize: 12, color: cores.textoSuave),
             ),
+            Text(
+              resumo.receivable.formatarBRL(),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: cores.atencao,
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: cores.textoSuave),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildRotuloGanho(String valor, Color cor) {
-    return Text(
-      valor,
-      overflow: TextOverflow.ellipsis,
-      style: TextStyle(fontSize: 12, color: cor, fontWeight: FontWeight.w600),
     );
   }
 
@@ -392,15 +459,15 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     _mostrarAvisoSeHouver(vitrine);
 
     return DraggableScrollableSheet(
-      initialChildSize: 0.28,
-      minChildSize: 0.12,
+      initialChildSize: 0.45,
+      minChildSize: 0.22,
       maxChildSize: 0.92,
       builder: (context, controlador) => Container(
         decoration: BoxDecoration(
           color: context.cores.superficie,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
           ),
           boxShadow: [
             BoxShadow(
@@ -418,12 +485,7 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
             onRefresh: vitrine.recarregar,
             child: ListView(
               controller: controlador,
-              padding: EdgeInsets.fromLTRB(
-                20,
-                12,
-                20,
-                100 + MediaQuery.viewPaddingOf(context).bottom,
-              ),
+              padding: EdgeInsets.fromLTRB(20, 12, 20, 24),
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 Center(
@@ -437,14 +499,18 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                     ),
                   ),
                 ),
+                _buildGanhosCompactos(),
+                const SizedBox(height: 8),
+                Divider(color: context.cores.borda),
+                const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       "Pedidos disponíveis",
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
                         color: context.cores.texto,
                       ),
                     ),
@@ -479,46 +545,86 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
   /// RF-A07.9 — estado explicando, com atalho pro toggle de
   /// disponibilidade em vez de um vazio mudo.
   Widget _buildVitrineIndisponivel() {
+    final enviando = context.watch<ControladorPresenca>().enviando;
+    final cores = context.cores;
     return Positioned(
       left: 0,
       right: 0,
       bottom: 0,
       child: Container(
-        // Acompanha a barra, que cresce com a faixa do sistema.
-        margin: EdgeInsets.only(
-          bottom: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(25),
-            topRight: Radius.circular(25),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.visibility_off, color: context.cores.textoSuave),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                "Fique disponível para ver os pedidos por perto.",
-                style: TextStyle(color: context.cores.textoSuave, fontSize: 14),
-              ),
+          color: cores.superficie,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: cores.sombra,
+              blurRadius: 20,
+              offset: const Offset(0, -4),
             ),
-            TextButton(
-              onPressed: () => _alternarDisponibilidade(
-                context.read<ControladorPresenca>(),
-                true,
-              ),
-              child: const Text(
-                "Ativar",
-                style: TextStyle(
-                  color: corPrincipal,
-                  fontWeight: FontWeight.bold,
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: cores.borda,
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
+            Text(
+              "Pronto para rodar?",
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: cores.texto,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              "Fique online e receba pedidos da sua região.",
+              style: TextStyle(color: cores.textoSuave, fontSize: 15),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 60,
+              child: ElevatedButton.icon(
+                onPressed: enviando
+                    ? null
+                    : () => _alternarDisponibilidade(
+                        context.read<ControladorPresenca>(),
+                        true,
+                      ),
+                style: ElevatedButton.styleFrom(
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                icon: enviando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.power_settings_new_rounded, size: 24),
+                label: const Text("Ficar online"),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Divider(color: cores.borda),
+            _buildGanhosCompactos(),
           ],
         ),
       ),
@@ -549,14 +655,16 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.cores.superficie,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.cores.textoSuave, width: 1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: context.cores.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              const IconeTingido(Icons.storefront_rounded, tamanho: 40),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   pedido.nomeEstabelecimento?.isNotEmpty == true
@@ -571,12 +679,22 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
                 ),
               ),
               // RNF-A07.2 — valor sempre pelo tipo Dinheiro.
-              Text(
-                pedido.freteProposto.formatarBRL(),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: corPrincipal,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: CoresUaiou.principal.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  pedido.freteProposto.formatarBRL(),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: CoresUaiou.principal,
+                  ),
                 ),
               ),
             ],
@@ -744,7 +862,9 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
 
     // RF-A07.8 — aceite não termina sem próximo passo visível.
     if (aceitou) {
-      Navigator.pushReplacementNamed(context, '/entregas_entregador');
+      if (!CascaPrincipal.irPara(context, 1)) {
+        Navigator.pushReplacementNamed(context, '/entregas_entregador');
+      }
     }
   }
 
@@ -792,179 +912,13 @@ class _TelaPrincipalEntregadorState extends State<TelaPrincipalEntregador> {
     }
   }
 
-  /// ============================================================
-  /// MENU INFERIOR
-  /// ============================================================
-
-  Widget _buildMenuInferior() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        width: double.infinity,
-        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.cores.sombra,
-              blurRadius: 15,
-              offset: Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
-              _buildItemMenu(
-                index: 1,
-                icone: Icons.local_shipping,
-                texto: "Entregas",
-              ),
-              _buildItemMenu(
-                index: 2,
-                icone: Icons.list_alt,
-                texto: "Atividades",
-              ),
-              _buildItemMenu(index: 4, icone: Icons.person, texto: "Perfil"),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// ITEM DO MENU
-  /// ============================================================
-
-  Widget _buildItemMenu({
-    required int index,
-    required IconData icone,
-    required String texto,
-  }) {
-    final bool selecionado = paginaAtual == index;
-
-    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
-
-    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
-    // os quatro itens soavam iguais.
-    return Semantics(
-      button: true,
-      selected: selecionado,
-      label: texto,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _onItemMenuTap(index),
-        child: SizedBox(
-          width: 85,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icone, color: cor, size: 27),
-              const SizedBox(height: 5),
-              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   /// RF-A11.7 — avisos no canto superior esquerdo, ao lado da nota, em
   /// vez de item da barra inferior: os quatro itens que sobraram lá são
   /// **lugares onde se fica** (principal, entregas, atividades, perfil),
   /// e avisos é uma consulta rápida da qual se volta. O contador
   /// continua vindo de `meta.unread` do servidor, nunca somado aqui.
-  Widget _buildAvisos() {
-    final naoLidas = context.watch<ControladorNotificacoes>().naoLidas;
-
-    return Positioned(
-      top: 40,
-      left: 100,
-      child: Material(
-        color: context.cores.superficie,
-        borderRadius: BorderRadius.circular(25),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(25),
-          onTap: () => Navigator.pushNamed(context, '/notificacoes'),
-          child: Padding(
-            // RNF-A14.2/RNF-A08.1 — alvo grande: mesmo uso de rua do
-            // resto da tela.
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(
-                  Icons.notifications_outlined,
-                  color: corPrincipal,
-                  size: 22,
-                ),
-                if (naoLidas > 0)
-                  Positioned(
-                    right: -8,
-                    top: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        naoLidas > 99 ? "99+" : "$naoLidas",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// NAVEGAÇÃO
-  /// ============================================================
-
-  void _onItemMenuTap(int index) {
-    if (paginaAtual == index) return;
-
-    setState(() {
-      paginaAtual = index;
-    });
-
-    switch (index) {
-      case 0:
-        break;
-
-      case 1:
-        Navigator.pushReplacementNamed(context, '/entregas_entregador');
-        break;
-
-      case 2:
-        Navigator.pushReplacementNamed(context, '/atividades_entregador');
-        break;
-
-      case 4:
-        Navigator.pushReplacementNamed(context, '/perfil_entregador');
-        break;
-    }
-  }
+  Widget _buildAvisos() => BotaoAvisos(
+    naoLidas: context.watch<ControladorNotificacoes>().naoLidas,
+    flutuante: true,
+  );
 }

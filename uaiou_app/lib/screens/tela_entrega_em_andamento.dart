@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -41,7 +42,7 @@ class TelaEntregaEmAndamento extends StatefulWidget {
 
 class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
   static const Color corPrincipal = CoresUaiou.principal;
-  static const Color corSucesso = Color.fromRGBO(108, 201, 80, 1);
+  static const Color corSucesso = CoresUaiou.principal;
 
   final TextEditingController _codigoController = TextEditingController();
   final FocusNode _focoCodigo = FocusNode();
@@ -240,7 +241,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                     url: pedido.logoEstabelecimento,
                     icone: chegou ? Icons.storefront : Icons.two_wheeler,
                     raio: 24,
-                    corFundo: chegou ? Colors.teal : context.cores.textoSuave,
+                    corFundo: chegou ? CoresUaiou.principal : corPrincipal,
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -266,7 +267,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                 icon: const Icon(Icons.where_to_vote),
                 label: const Text('Cheguei ao estabelecimento'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: CoresUaiou.principal,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 18),
                   textStyle: const TextStyle(
@@ -339,52 +340,79 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     }
   }
 
-  /// RF-A15.11 — cancelamento recebido: a navegação para, a entrega sai
-  /// do andamento. A taxa, quando houver, aparece em Ganhos.
-  Widget _buildCancelada(BuildContext context) {
+  Widget _buildDesfecho({
+    required IconData icone,
+    required Color cor,
+    required String titulo,
+    required String texto,
+  }) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.cancel, size: 72, color: context.cores.perigo),
-            const SizedBox(height: 16),
-            const Text(
-              'O estabelecimento cancelou este pedido.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Se você já estava no estabelecimento, a taxa de cancelamento '
-              'aparece nos seus ganhos.',
-              textAlign: TextAlign.center,
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: .12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icone, size: 52, color: cor),
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: corPrincipal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                ),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  '/entregas_entregador',
-                ),
-                child: const Text(
-                  'Voltar às entregas',
-                  style: TextStyle(fontSize: 16),
-                ),
+            Text(
+              titulo,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                color: context.cores.texto,
               ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              texto,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15, color: context.cores.textoSuave),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+              ),
+              onPressed: () => Navigator.pushReplacementNamed(
+                context,
+                '/principal_entregador',
+              ),
+              child: const Text('Voltar ao início'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.pushReplacementNamed(
+                context,
+                '/entregas_entregador',
+              ),
+              child: const Text('Ver minhas entregas'),
             ),
           ],
         ),
       ),
     );
   }
+
+  /// RF-A15.11 — cancelamento recebido: a navegação para, a entrega sai
+  /// do andamento. A taxa, quando houver, aparece em Ganhos.
+  Widget _buildCancelada(BuildContext context) => _buildDesfecho(
+    icone: Icons.cancel_outlined,
+    cor: context.cores.perigo,
+    titulo: 'Pedido cancelado',
+    texto:
+        'O estabelecimento cancelou este pedido. Se você já estava lá, a taxa '
+        'de cancelamento aparece nos seus ganhos.',
+  );
 
   /// Guarda de repetição: `build` roda a cada tique do polling (10s), e
   /// sem isto o mesmo erro reapareceria de dez em dez segundos.
@@ -396,11 +424,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     _avisarErro(controlador);
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Entrega em andamento'),
-      ),
+      appBar: AppBar(title: const Text('Entrega em andamento')),
       body: SafeArea(
         child: controlador.estado.quando(
           carregando: () => const Center(
@@ -507,6 +531,14 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
                     ),
                   ),
                 ),
+                _buildEtapas(
+                  retirada != null
+                      ? 0
+                      : mostrarCodigo
+                      ? 2
+                      : 1,
+                ),
+                const SizedBox(height: 18),
                 if (retirada != null) ...[
                   _buildResumoDaNavegacao(context, ponto),
                   const SizedBox(height: 16),
@@ -535,6 +567,71 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             ),
           ),
         ),
+      ],
+    );
+  }
+
+  /// Onde a entrega está: retirar, levar, finalizar. A fase vem do status
+  /// do pedido (RF-A15.8), não de qual cartão está visível.
+  Widget _buildEtapas(int atual) {
+    const rotulos = ['Retirada', 'Entrega', 'Finalizar'];
+    final cores = context.cores;
+    return Row(
+      children: [
+        for (var i = 0; i < rotulos.length; i++) ...[
+          if (i > 0)
+            Expanded(
+              child: Container(
+                height: 3,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: i <= atual ? corPrincipal : cores.borda,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          Column(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i <= atual ? corPrincipal : cores.superficieSuave,
+                  border: Border.all(
+                    color: i <= atual ? corPrincipal : cores.borda,
+                  ),
+                ),
+                child: Center(
+                  child: i < atual
+                      ? const Icon(
+                          Icons.check_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        )
+                      : Text(
+                          '${i + 1}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: i <= atual ? Colors.white : cores.textoSuave,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                rotulos[i],
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: i == atual ? FontWeight.w800 : FontWeight.w500,
+                  color: i == atual ? cores.texto : cores.textoSuave,
+                ),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -628,43 +725,12 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
     );
   }
 
-  Widget _buildFinalizada(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, size: 72, color: corSucesso),
-            const SizedBox(height: 16),
-            const Text(
-              'Entrega finalizada!',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: corPrincipal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                ),
-                onPressed: () => Navigator.pushReplacementNamed(
-                  context,
-                  '/entregas_entregador',
-                ),
-                child: const Text(
-                  'Voltar às entregas',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildFinalizada(BuildContext context) => _buildDesfecho(
+    icone: Icons.check_rounded,
+    cor: corSucesso,
+    titulo: 'Entrega finalizada!',
+    texto: 'Mandou bem. O valor do frete já entra no seu extrato.',
+  );
 
   /// RF-A14.1 — o caminho ocupa a tela inteira, atrás da folha.
   ///
@@ -723,10 +789,10 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       ),
       child: Row(
         children: [
-          Icon(
+          IconeTingido(
             dentro ? Icons.location_on : Icons.location_searching,
-            color: dentro ? corSucesso : context.cores.textoSuave,
-            size: 32,
+            cor: dentro ? corSucesso : context.cores.textoSuave,
+            tamanho: 44,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -758,7 +824,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
       decoration: BoxDecoration(
         color: context.cores.superficie,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.cores.textoSuave),
+        border: Border.all(color: context.cores.borda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -792,10 +858,13 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
             // impediu o entregador de digitar o código real.
             maxLength: entrega.codigo.tamanho,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 28, letterSpacing: 8),
+            style: const TextStyle(
+              fontSize: 30,
+              letterSpacing: 10,
+              fontWeight: FontWeight.w800,
+            ),
             decoration: InputDecoration(
               counterText: '',
-              border: const OutlineInputBorder(),
               hintText: '0' * entrega.codigo.tamanho,
             ),
           ),
@@ -806,7 +875,7 @@ class _TelaEntregaEmAndamentoState extends State<TelaEntregaEmAndamento> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: corSucesso,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 20),
+                minimumSize: const Size.fromHeight(56),
                 textStyle: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,

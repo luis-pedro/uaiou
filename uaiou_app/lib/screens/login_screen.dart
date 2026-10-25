@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/botao_google.dart';
 import 'package:uaiou/screens/widgets/aviso_flutuante.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/rede/erros_api.dart';
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
-import 'package:uaiou/core/sessao/identidade.dart';
 
 /// Login real (A-02).
 ///
@@ -24,10 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final _login = TextEditingController();
   final _senha = TextEditingController();
-
-  /// RF-A02.3 — o contrato exige `role` no login. O toggle é o
-  /// controle que 🖼 `tela_de_login_motoboy.png` já previa.
-  Papel _papel = Papel.estabelecimento;
 
   bool lembrarSenha = false;
   bool esconderSenha = true;
@@ -61,10 +57,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await context.read<ControladorSessao>().entrarComSenha(
+      await context.read<ControladorSessao>().entrarSemPapel(
         login: login,
         senha: senha,
-        papel: _papel,
       );
 
       // O destino continua sendo decidido pela raiz, a partir do papel
@@ -113,130 +108,104 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final larguraTela = MediaQuery.of(context).size.width;
+    final cores = context.cores;
 
     return Scaffold(
+      appBar: AppBar(),
       body: SafeArea(
+        top: false,
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-
-                  Center(
-                    child: Image.asset(
-                      'assets/imagens/UaiOu_logo_horizontal.png',
-                      height: 150,
-                      fit: BoxFit.contain,
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: AutofillGroup(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Bem-vindo de volta',
+                      style: Theme.of(context).textTheme.headlineMedium,
                     ),
-                  ),
+                    const SizedBox(height: 28),
 
-                  _buildSeletorDePapel(),
-
-                  const SizedBox(height: 24),
-
-                  const Text(
-                    'Entre',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: corPrincipal,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  TextField(
-                    controller: _login,
-                    enabled: !_enviando,
-                    autofillHints: const [AutofillHints.username],
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      hintText: 'Email ou usuário',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                    TextField(
+                      controller: _login,
+                      enabled: !_enviando,
+                      autofillHints: const [AutofillHints.username],
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        hintText: 'E-mail ou usuário',
+                        prefixIcon: Icon(Icons.alternate_email_rounded),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
-                  TextField(
-                    controller: _senha,
-                    enabled: !_enviando,
-                    obscureText: esconderSenha,
-                    autofillHints: const [AutofillHints.password],
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _enviando ? null : _entrar(),
-                    decoration: InputDecoration(
-                      hintText: 'Senha',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          esconderSenha
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                    TextField(
+                      controller: _senha,
+                      enabled: !_enviando,
+                      obscureText: esconderSenha,
+                      autofillHints: const [AutofillHints.password],
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: (_) => _enviando ? null : _entrar(),
+                      decoration: InputDecoration(
+                        hintText: 'Senha',
+                        prefixIcon: const Icon(Icons.lock_outline_rounded),
+                        suffixIcon: IconButton(
+                          tooltip: esconderSenha
+                              ? 'Mostrar senha'
+                              : 'Esconder senha',
+                          icon: Icon(
+                            esconderSenha
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () {
+                            setState(() => esconderSenha = !esconderSenha);
+                          },
                         ),
-                        onPressed: () {
-                          setState(() => esconderSenha = !esconderSenha);
-                        },
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 6),
 
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: lembrarSenha,
-                        activeColor: corPrincipal,
-                        onChanged: (valor) {
-                          setState(() => lembrarSenha = valor!);
-                        },
-                      ),
-                      const Text(
-                        'Lembrar-se de mim',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: _enviando ? null : _recuperarSenha,
-                        child: Text(
-                          'Esqueceu sua senha?',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: context.cores.textoSuave,
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: lembrarSenha,
+                          activeColor: corPrincipal,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          onChanged: (valor) {
+                            setState(() => lembrarSenha = valor!);
+                          },
+                        ),
+                        const Text(
+                          'Lembrar de mim',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        const Spacer(),
+                        TextButton(
+                          onPressed: _enviando ? null : _recuperarSenha,
+                          child: const Text(
+                            'Esqueci a senha',
+                            style: TextStyle(fontSize: 13),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
 
-                  if (_erro != null) _buildErro(_erro!),
+                    if (_erro != null) _buildErro(_erro!),
 
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
+                    ElevatedButton(
                       onPressed: _enviando ? null : _entrar,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: corPrincipal,
-                        disabledBackgroundColor: corPrincipal.withValues(
-                          alpha: .5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        minimumSize: const Size.fromHeight(56),
                       ),
                       child: _enviando
                           ? const SizedBox(
@@ -247,123 +216,56 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text(
-                              'Entrar',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
-                            ),
+                          : const Text('Entrar'),
                     ),
-                  ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 24),
 
-                  const Center(
-                    child: Text(
-                      'Ou',
-                      style: TextStyle(color: corPrincipal, fontSize: 16),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: _enviando ? null : _entrarComGoogle,
-                      icon: Image.asset(
-                        'assets/imagens/google_icon_novo.png',
-                        height: 22,
-                      ),
-                      label: Text(
-                        'Entrar com Google',
-                        style: TextStyle(color: context.cores.texto),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  Center(
-                    child: Wrap(
+                    Row(
                       children: [
-                        const Text(
-                          'Ainda não possui conta? ',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        GestureDetector(
-                          onTap: () =>
-                              Navigator.pushNamed(context, '/cadastro'),
-                          child: const Text(
-                            'Cadastre-se aqui',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: corPrincipal,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'ou',
+                            style: TextStyle(color: cores.textoSuave),
                           ),
                         ),
+                        const Expanded(child: Divider()),
                       ],
                     ),
-                  ),
 
-                  SizedBox(height: larguraTela > 800 ? 20 : 12),
-                ],
+                    const SizedBox(height: 24),
+
+                    BotaoGoogle(aoTocar: _enviando ? null : _entrarComGoogle),
+
+                    const SizedBox(height: 28),
+
+                    Center(
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Text(
+                            'Ainda não tem conta? ',
+                            style: TextStyle(color: cores.textoSuave),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/cadastro'),
+                            child: const Text(
+                              'Cadastre-se',
+                              style: TextStyle(
+                                color: corPrincipal,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 🖼 Toggle **Estabelecimento | Entregador** do protótipo.
-  Widget _buildSeletorDePapel() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: corPrincipal, width: 2),
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: Row(
-        children: [
-          _buildOpcaoDePapel(Papel.estabelecimento, 'Estabelecimento'),
-          _buildOpcaoDePapel(Papel.entregador, 'Entregador'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOpcaoDePapel(Papel papel, String rotulo) {
-    final selecionado = _papel == papel;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: _enviando
-            ? null
-            : () => setState(() {
-                _papel = papel;
-                _erro = null;
-              }),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          decoration: BoxDecoration(
-            color: selecionado ? corPrincipal : Colors.transparent,
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: Text(
-            rotulo,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: selecionado ? Colors.white : corPrincipal,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
             ),
           ),
         ),

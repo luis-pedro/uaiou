@@ -30,11 +30,7 @@ class _TelaDocumentosState extends State<TelaDocumentos> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: TelaDocumentos.corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Documentos'),
-      ),
+      appBar: AppBar(title: const Text('Documentos')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

@@ -16,7 +16,8 @@ class CoresUaiou {
   const CoresUaiou._();
 
   static const Color principal = Color.fromRGBO(254, 98, 29, 1);
-  static const Color sucesso = Color.fromRGBO(108, 201, 80, 1);
+  // Monocromático: "deu certo" também é laranja — a marca é a única cor.
+  static const Color sucesso = Color(0xFFC2410C);
   static const Color perigo = Color.fromRGBO(211, 47, 47, 1);
 
   /// Texto sobre o laranja da marca — branco nos dois temas, porque o fundo é
@@ -87,22 +88,24 @@ class CoresApp extends ThemeExtension<CoresApp> {
   final Color coleta;
 
   static const CoresApp claro = CoresApp(
-    fundo: Colors.white,
+    // Off-white quente: cartão branco sobre ele ganha contorno sem precisar de
+    // sombra pesada.
+    fundo: Color(0xFFF6F4F2),
     superficie: Colors.white,
-    superficieSuave: Color(0xFFF2F2F2),
+    superficieSuave: Color(0xFFF0EDEA),
     texto: Color.fromRGBO(34, 34, 34, 1),
     // #5E5E5E sobre branco dá ~7:1. O `Colors.grey` que estava aqui dava ~2,8:1,
     // abaixo do mínimo legível para texto pequeno.
     textoSuave: Color.fromRGBO(94, 94, 94, 1),
-    borda: Color.fromRGBO(217, 217, 217, 1),
-    sombra: Color(0x1F000000),
-    atencao: Color(0xFFEF6C00),
-    positivo: Color(0xFF2E7D32),
+    borda: Color(0xFFE6E1DC),
+    sombra: Color(0x14000000),
+    atencao: Color(0xFFE8590C),
+    positivo: Color(0xFFC2410C),
     // Tons 700/800: passam de 4,5:1 sobre branco em texto de 13px.
     perigo: Color(0xFFC62828),
-    informacao: Color(0xFF1565C0),
-    negociacao: Color(0xFF6A1B9A),
-    coleta: Color(0xFF00695C),
+    informacao: Color(0xFFEA580C),
+    negociacao: Color(0xFF9A3412),
+    coleta: Color(0xFFF97316),
   );
 
   /// Cinzas quentes, não pretos puros: preto absoluto com texto branco vibra e
@@ -115,13 +118,13 @@ class CoresApp extends ThemeExtension<CoresApp> {
     textoSuave: Color(0xFFB5ADA7),
     borda: Color(0xFF3A3431),
     sombra: Color(0x66000000),
-    atencao: Color(0xFFFFB74D),
-    positivo: Color(0xFF81C784),
+    atencao: Color(0xFFFFA06E),
+    positivo: Color(0xFFFDBA74),
     // Tons 200/300: o vermelho escuro some no fundo quase preto.
     perigo: Color(0xFFEF9A9A),
-    informacao: Color(0xFF90CAF9),
-    negociacao: Color(0xFFCE93D8),
-    coleta: Color(0xFF80CBC4),
+    informacao: Color(0xFFFB923C),
+    negociacao: Color(0xFFFFC9A8),
+    coleta: Color(0xFFFF8A4C),
   );
 
   @override

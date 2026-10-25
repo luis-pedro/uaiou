@@ -59,11 +59,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Pedido'),
-      ),
+      appBar: AppBar(title: const Text('Pedido')),
       body: ListenableBuilder(
         listenable: _controlador,
         builder: (context, _) => RefreshIndicator(
@@ -245,7 +241,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
                 url: pedido.fotoEntregador,
                 icone: Icons.delivery_dining,
                 raio: 28,
-                corFundo: Colors.teal,
+                corFundo: CoresUaiou.principal,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -269,7 +265,7 @@ class _TelaDetalhePedidoState extends State<TelaDetalhePedido> {
                   ? null
                   : _controlador.confirmarColeta,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
+                backgroundColor: CoresUaiou.principal,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(

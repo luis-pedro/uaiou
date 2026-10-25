@@ -26,6 +26,7 @@ import 'package:uaiou/core/notificacoes/identificador_dispositivo.dart';
 import 'package:uaiou/core/notificacoes/repositorio_dispositivo.dart';
 import 'package:uaiou/core/notificacoes/repositorio_notificacoes.dart';
 import 'package:uaiou/core/notificacoes/servico_push.dart';
+import 'package:uaiou/screens/casca_principal.dart';
 import 'package:uaiou/screens/widgets/barras_do_sistema.dart';
 import 'package:uaiou/screens/widgets/receptor_push.dart';
 import 'package:uaiou/core/pagar/controlador_payables.dart';
@@ -55,6 +56,7 @@ import 'package:uaiou/screens/principal_login.dart';
 import 'package:uaiou/screens/login_screen.dart';
 import 'package:uaiou/screens/tela_bloqueios.dart';
 import 'package:uaiou/screens/tela_cadastro.dart';
+import 'package:uaiou/screens/tela_cadastro_dados.dart';
 import 'package:uaiou/screens/tela_documentos.dart';
 import 'package:uaiou/screens/tela_editar_perfil.dart';
 import 'package:uaiou/screens/tela_notificacoes.dart';
@@ -63,28 +65,18 @@ import 'package:uaiou/screens/tela_status_conta.dart';
 import 'package:uaiou/screens/tela_avaliacoes.dart';
 
 //TELAS DE CADASTRO - ENTREGADOR
-import 'package:uaiou/screens/tela_cadastro_entregador1.dart';
 import 'package:uaiou/screens/tela_cadastro_entregador2.dart';
 import 'package:uaiou/screens/tela_cadastro_entregador3.dart';
 
 //TELAS DE CADASTRO - ESTABELECIMENTO
-import 'package:uaiou/screens/tela_cadastro_estabelecimento1.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento2.dart';
 import 'package:uaiou/screens/tela_cadastro_estabelecimento3.dart';
 
 //TELAS PRINCIPAIS - ENTREGADOR
-import 'package:uaiou/screens/tela_principal_entregador.dart';
 import 'package:uaiou/screens/tela_entrega_em_andamento.dart';
-import 'package:uaiou/screens/tela_entregas_entregador.dart';
-import 'package:uaiou/screens/tela_atividade_entregador.dart';
 import 'package:uaiou/screens/tela_extrato_ganhos.dart';
-import 'package:uaiou/screens/tela_perfil_entregador.dart';
 
 //TELAS PRINCIPAIS - ESTABELECIMENTO
-import 'package:uaiou/screens/tela_principal_estabelecimento.dart';
-import 'package:uaiou/screens/tela_estabelecimento_pedidos.dart';
-import 'package:uaiou/screens/tela_atividade_estabelecimento.dart';
-import 'package:uaiou/screens/tela_perfil_estabelecimento.dart';
 
 /// RF-A13.8 — coleta mínima e local de falha não tratada.
 ///
@@ -553,7 +545,9 @@ Route<dynamic>? _gerarRota(RouteSettings configuracao) {
     // argumento de rota; sem ele não há o que abrir.
     if (nome == '/entrega_em_andamento') {
       final pedidoId = configuracao.arguments as String?;
-      if (pedidoId == null) return const TelaEntregasEntregador();
+      if (pedidoId == null) {
+        return const CascaPrincipal(papel: Papel.entregador, abaInicial: 1);
+      }
       return TelaEntregaEmAndamento(pedidoId: pedidoId);
     }
 
@@ -569,26 +563,34 @@ final Map<String, WidgetBuilder> _telas = {
   '/cadastro': (_) => const TelaCadastro(),
 
   // TELAS DE CADASTRO — ENTREGADOR
-  '/cadastro_entregador1': (_) => const CadastroEntregador1(),
+  '/cadastro_dados': (_) => const TelaCadastroDados(),
+  '/cadastro_entregador1': (_) => const TelaCadastroDados(),
   '/cadastro_entregador2': (_) => const CadastroEntregador2(),
   '/cadastro_entregador3': (_) => const CadastroEntregador3(),
 
   // TELAS DE CADASTRO — ESTABELECIMENTO
-  '/cadastro_estabelecimento1': (_) => const CadastroEstabelecimento1(),
+  '/cadastro_estabelecimento1': (_) => const TelaCadastroDados(),
   '/cadastro_estabelecimento2': (_) => const CadastroEstabelecimento2(),
   '/cadastro_estabelecimento3': (_) => const CadastroEstabelecimento3(),
 
   // TELAS PRINCIPAIS — ENTREGADOR
-  '/principal_entregador': (_) => const TelaPrincipalEntregador(),
-  '/entregas_entregador': (_) => const TelaEntregasEntregador(),
-  '/atividades_entregador': (_) => const TelaAtividadesEntregador(),
-  '/perfil_entregador': (_) => const TelaPerfilEntregador(),
+  '/principal_entregador': (_) => const CascaPrincipal(papel: Papel.entregador),
+  '/entregas_entregador': (_) =>
+      const CascaPrincipal(papel: Papel.entregador, abaInicial: 1),
+  '/atividades_entregador': (_) =>
+      const CascaPrincipal(papel: Papel.entregador, abaInicial: 2),
+  '/perfil_entregador': (_) =>
+      const CascaPrincipal(papel: Papel.entregador, abaInicial: 3),
 
   // TELAS PRINCIPAIS — ESTABELECIMENTO
-  '/principal_estabelecimento': (_) => const TelaPrincipalEstabelecimento(),
-  '/pedidos_estabelecimento': (_) => const TelaPedidosEstabelecimento(),
-  '/atividades_estabelecimento': (_) => const TelaAtividadesEstabelecimento(),
-  '/perfil_estabelecimento': (_) => const TelaPerfilEstabelecimento(),
+  '/principal_estabelecimento': (_) =>
+      const CascaPrincipal(papel: Papel.estabelecimento),
+  '/pedidos_estabelecimento': (_) =>
+      const CascaPrincipal(papel: Papel.estabelecimento, abaInicial: 1),
+  '/atividades_estabelecimento': (_) =>
+      const CascaPrincipal(papel: Papel.estabelecimento, abaInicial: 2),
+  '/perfil_estabelecimento': (_) =>
+      const CascaPrincipal(papel: Papel.estabelecimento, abaInicial: 3),
 
   // PERFIL (A-05) — comuns aos dois papéis.
   '/editar_perfil': (_) => const TelaEditarPerfil(),
@@ -628,8 +630,10 @@ class _Raiz extends StatelessWidget {
     if (!sessao.podeOperar) return const TelaStatusConta();
 
     return switch (sessao.papel) {
-      Papel.entregador => const TelaPrincipalEntregador(),
-      Papel.estabelecimento => const TelaPrincipalEstabelecimento(),
+      Papel.entregador => const CascaPrincipal(papel: Papel.entregador),
+      Papel.estabelecimento => const CascaPrincipal(
+        papel: Papel.estabelecimento,
+      ),
       // Admin não tem área no app; papel desconhecido idem.
       Papel.admin || Papel.desconhecido => const TelaStatusConta(),
     };

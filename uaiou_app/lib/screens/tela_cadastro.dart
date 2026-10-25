@@ -1,191 +1,157 @@
 import 'package:flutter/material.dart';
-
-import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
 import 'package:uaiou/core/sessao/identidade.dart';
+import 'package:uaiou/core/tema/cores.dart';
 
+/// Porta de entrada do cadastro — a tela de identidade do UaiOu.
+///
+/// Mantém o que ela sempre foi — laranja da marca, logo, "Pediu, entregou!"
+/// e "Você é?" com os dois botões —, com acabamento atualizado.
 class TelaCadastro extends StatelessWidget {
   const TelaCadastro({super.key});
 
+  void _escolher(BuildContext context, Papel papel) {
+    context.read<RascunhoCadastro>().definirPapel(papel);
+    Navigator.pushNamed(context, '/cadastro_dados');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final cores = context.cores;
+    final baseInferior = MediaQuery.viewPaddingOf(context).bottom;
+
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // PARTE SUPERIOR (laranja com logo)
-            Expanded(
-              flex: 6,
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Align(
-                        alignment: Alignment.center,
-                        child: Image.asset(
+      backgroundColor: CoresUaiou.principal,
+      body: Column(
+        children: [
+          Expanded(
+            child: SafeArea(
+              bottom: false,
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: IconButton(
+                      tooltip: 'Voltar',
+                      color: Colors.white,
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: () => Navigator.maybePop(context),
+                    ),
+                  ),
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
                           'assets/imagens/UaiOu_logo_branca.png',
-                          height: 150,
+                          height: 120,
                           fit: BoxFit.contain,
                         ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      const Text(
-                        'Pediu, entregou!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w500,
+                        const SizedBox(height: 14),
+                        const Text(
+                          'Pediu, entregou!',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
-
-            // PARTE INFERIOR (branca)
-            Expanded(
-              flex: 5,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 32,
-                ),
-                decoration: BoxDecoration(
-                  color: context.cores.superficie,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(40),
-                    topRight: Radius.circular(40),
-                  ),
-                ),
-
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(24, 28, 24, 24 + baseInferior),
+            decoration: BoxDecoration(
+              color: cores.fundo,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Você é?',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                        color: cores.texto,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () =>
+                          _escolher(context, Papel.estabelecimento),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(58),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: const Text('Estabelecimento'),
+                    ),
+                    const SizedBox(height: 14),
+                    OutlinedButton(
+                      onPressed: () => _escolher(context, Papel.entregador),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(58),
+                        foregroundColor: CoresUaiou.principal,
+                        side: const BorderSide(
+                          color: CoresUaiou.principal,
+                          width: 2,
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: const Text('Entregador'),
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          const Text(
-                            'Você é?',
-                            style: TextStyle(
-                              fontSize: 30,
-                              color: Color.fromRGBO(254, 98, 29, 1),
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Text(
+                            'Já tem conta? ',
+                            style: TextStyle(color: cores.textoSuave),
                           ),
-
-                          const SizedBox(height: 40),
-
-                          // BOTÃO ESTABELECIMENTO
-                          SizedBox(
-                            width: double.infinity,
-                            height: 55,
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // RF-A04.2 — a escolha vira o `role` do
-                                // cadastro. É o único ponto em que o
-                                // cliente decide o papel, e ele só
-                                // propõe: quem confirma é o servidor.
-                                context.read<RascunhoCadastro>().definirPapel(
-                                  Papel.estabelecimento,
-                                );
-                                Navigator.pushNamed(
-                                  context,
-                                  '/cadastro_estabelecimento1',
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color.fromRGBO(
-                                  254,
-                                  98,
-                                  29,
-                                  1,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Estabelecimento',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                ),
-                              ),
+                          GestureDetector(
+                            onTap: () => Navigator.pushReplacementNamed(
+                              context,
+                              '/login',
                             ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // BOTÃO ENTREGADOR
-                          SizedBox(
-                            width: double.infinity,
-                            height: 55,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                context.read<RascunhoCadastro>().definirPapel(
-                                  Papel.entregador,
-                                );
-                                Navigator.pushNamed(
-                                  context,
-                                  '/cadastro_entregador1',
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(
-                                  color: Color.fromRGBO(254, 98, 29, 1),
-                                  width: 2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Entregador',
-                                style: TextStyle(
-                                  color: Color.fromRGBO(254, 98, 29, 1),
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 30),
-
-                          // VOLTAR
-                          Center(
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: Text(
-                                'Voltar à tela principal',
-                                style: TextStyle(
-                                  color: context.cores.textoSuave,
-                                  fontSize: 12,
-                                ),
+                            child: const Text(
+                              'Entrar',
+                              style: TextStyle(
+                                color: CoresUaiou.principal,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

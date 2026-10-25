@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/formato/data.dart';
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/estatisticas/controlador_estatisticas.dart';
@@ -24,9 +25,6 @@ class TelaAtividadesEntregador extends StatefulWidget {
 }
 
 class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
-  /// Página selecionada do menu
-  int paginaAtual = 2;
-
   /// Cor principal do aplicativo
   static const Color corPrincipal = CoresUaiou.principal;
 
@@ -62,31 +60,10 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: corPrincipal,
-      // O recuo da barra do sistema é aplicado pelo menu inferior.
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
-        ),
-      ),
-    );
-  }
-
-  // TÍTULO
-  Widget _buildTitulo() {
-    return const Positioned(
-      top: 15,
-      left: 25,
-      child: Text(
-        "Atividades",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    return PaginaAba(
+      titulo: 'Atividade',
+      subtitulo: 'Seu desempenho e histórico',
+      filho: _buildConteudo(),
     );
   }
 
@@ -95,51 +72,20 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   /// ============================================================
 
   Widget _buildConteudo() {
-    return Positioned.fill(
-      child: Container(
-        margin: const EdgeInsets.only(top: 70),
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 12),
+        _buildPainelEstatisticas(),
+        const SizedBox(height: 20),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: TituloSecao('Histórico'),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-
-            _buildPainelEstatisticas(),
-
-            const SizedBox(height: 20),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                "Entregas anteriores",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: context.cores.texto,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            _buildFiltros(),
-
-            const SizedBox(height: 10),
-
-            Divider(height: 1, color: context.cores.borda),
-
-            Expanded(child: _buildListaEntregas()),
-
-            SizedBox(height: 95 + MediaQuery.viewPaddingOf(context).bottom),
-          ],
-        ),
-      ),
+        _buildFiltros(),
+        const SizedBox(height: 8),
+        Expanded(child: _buildListaEntregas()),
+      ],
     );
   }
 
@@ -155,7 +101,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
     final controlador = context.watch<ControladorEstatisticas>();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: controlador.estado.quando(
         carregando: () => const SizedBox(
           height: 60,
@@ -169,29 +115,34 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   }
 
   Widget _buildCardsEstatisticas(EstatisticasEntregador stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildCardEstatistica(
-            "Entregas concluídas",
-            "${stats.entregasConcluidas}",
-          ),
+    return Cartao(
+      preenchimento: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+      filho: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: _buildCardEstatistica(
+                "Concluídas",
+                "${stats.entregasConcluidas}",
+              ),
+            ),
+            VerticalDivider(width: 1, color: context.cores.borda),
+            Expanded(
+              child: _buildCardEstatistica(
+                "Sem ocorrência",
+                _formatarPercentual(stats.taxaFinalizacaoLimpa),
+              ),
+            ),
+            VerticalDivider(width: 1, color: context.cores.borda),
+            Expanded(
+              child: _buildCardEstatistica(
+                "Contrapropostas",
+                _formatarPercentual(stats.taxaSucessoContraoferta),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildCardEstatistica(
-            "Finalização limpa",
-            _formatarPercentual(stats.taxaFinalizacaoLimpa),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _buildCardEstatistica(
-            "Contrapropostas aceitas",
-            _formatarPercentual(stats.taxaSucessoContraoferta),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -199,30 +150,24 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
       taxa == null ? "—" : "${(taxa * 100).toStringAsFixed(0)}%";
 
   Widget _buildCardEstatistica(String rotulo, String valor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color.fromRGBO(254, 98, 29, 0.08),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(
-            valor,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: corPrincipal,
-            ),
+    return Column(
+      children: [
+        Text(
+          valor,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            color: context.cores.texto,
           ),
-          const SizedBox(height: 4),
-          Text(
-            rotulo,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: context.cores.textoSuave),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          rotulo,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
+        ),
+      ],
     );
   }
 
@@ -236,13 +181,13 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
   Widget _buildFiltros() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           _buildChipFiltro("Todos", _FiltroAtividades.todos),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           _buildChipFiltro("Entregues", _FiltroAtividades.entregues),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           _buildChipFiltro("Cancelados", _FiltroAtividades.cancelados),
         ],
       ),
@@ -251,23 +196,32 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
 
   Widget _buildChipFiltro(String texto, _FiltroAtividades valor) {
     final bool selecionado = _filtro == valor;
+    final cores = context.cores;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () => setState(() => _filtro = valor),
-      child: Container(
-        // 12 em vez de 8: com 8 o chip ficava abaixo do alvo mínimo de toque.
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: selecionado ? corPrincipal : context.cores.superficieSuave,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          texto,
-          style: TextStyle(
-            color: selecionado ? Colors.white : context.cores.texto,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
+    return Semantics(
+      button: true,
+      selected: selecionado,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => setState(() => _filtro = valor),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          // 10 de altura mantém o alvo mínimo de toque.
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: selecionado ? CoresUaiou.principal : cores.superficie,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: selecionado ? CoresUaiou.principal : cores.borda,
+            ),
+          ),
+          child: Text(
+            texto,
+            style: TextStyle(
+              color: selecionado ? Colors.white : cores.texto,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ),
@@ -305,7 +259,7 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
               );
             }
             return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               physics: const AlwaysScrollableScrollPhysics(),
               itemCount: entregas.length,
               itemBuilder: (context, index) =>
@@ -322,184 +276,59 @@ class _TelaAtividadesEntregadorState extends State<TelaAtividadesEntregador> {
   /// ============================================================
 
   Widget _buildCardEntrega(Pedido entrega) {
+    final cores = context.cores;
     final data = descreverData(entrega.criadoEm);
+    final entregue = entrega.status != StatusPedido.cancelado;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cores.superficie,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: context.cores.borda, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // Não há toque aqui: o entregador não tem tela de detalhe de entrega
+    // encerrada, e um cartão tocável que não abre nada engana.
+    return Cartao(
+      margem: const EdgeInsets.only(bottom: 10),
+      preenchimento: const EdgeInsets.all(14),
+      filho: Row(
         children: [
-          Text(
-            data,
-            style: TextStyle(fontSize: 12, color: context.cores.textoSuave),
+          IconeTingido(
+            entregue ? Icons.check_rounded : Icons.close_rounded,
+            cor: entregue ? cores.positivo : cores.perigo,
+            tamanho: 42,
           ),
-
-          const SizedBox(height: 8),
-
-          Row(
-            children: [
-              Text(
-                "Pedido ${entrega.rotuloCurto}",
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Pedido ${entrega.rotuloCurto}",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: cores.texto,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              BadgeStatus(entrega.status, comIcone: true),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  "${entrega.rua}, ${entrega.numero} · ${entrega.bairro}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: cores.textoSuave),
+                ),
+              ],
+            ),
           ),
-
-          const SizedBox(height: 15),
-
-          Text(
-            "Bairro: ${entrega.bairro}",
-            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
-          ),
-
-          const SizedBox(height: 5),
-
-          Row(
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              BadgeStatus(entrega.status),
+              const SizedBox(height: 6),
               Text(
-                "Rua: ${entrega.rua}",
-                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                "Número: ${entrega.numero}",
-                style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
+                data,
+                style: TextStyle(fontSize: 12, color: cores.textoSuave),
               ),
             ],
           ),
-
-          // Não há "Visualizar pedido" aqui: o entregador não tem tela de
-          // detalhe de entrega encerrada, e o botão que existia não fazia nada
-          // ao ser tocado. Botão morto engana mais que ausência de botão.
         ],
       ),
     );
-  }
-
-  /// ============================================================
-  /// MENU INFERIOR
-  /// ============================================================
-
-  Widget _buildMenuInferior() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        width: double.infinity,
-        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.cores.sombra,
-              blurRadius: 15,
-              offset: Offset(0, -3),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
-              _buildItemMenu(
-                index: 1,
-                icone: Icons.local_shipping,
-                texto: "Entregas",
-              ),
-              _buildItemMenu(
-                index: 2,
-                icone: Icons.list_alt,
-                texto: "Atividades",
-              ),
-              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// ITEM DO MENU
-  /// ============================================================
-
-  Widget _buildItemMenu({
-    required int index,
-    required IconData icone,
-    required String texto,
-  }) {
-    final bool selecionado = paginaAtual == index;
-
-    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
-
-    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
-    // os quatro itens soavam iguais.
-    return Semantics(
-      button: true,
-      selected: selecionado,
-      label: texto,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _onItemMenuTap(index),
-        child: SizedBox(
-          width: 85,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icone, color: cor, size: 27),
-              const SizedBox(height: 5),
-              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// NAVEGAÇÃO
-  /// ============================================================
-
-  void _onItemMenuTap(int index) {
-    if (paginaAtual == index) return;
-
-    setState(() {
-      paginaAtual = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/principal_entregador');
-        break;
-
-      case 1:
-        Navigator.pushReplacementNamed(context, '/entregas_entregador');
-        break;
-
-      case 2:
-        break;
-
-      case 3:
-        Navigator.pushReplacementNamed(context, '/perfil_entregador');
-        break;
-    }
   }
 }

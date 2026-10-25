@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:uaiou/screens/widgets/mascara_entrada.dart';
 
-import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
 import 'package:uaiou/screens/widgets/campo_cadastro.dart';
+import 'package:uaiou/screens/widgets/esqueleto_cadastro.dart';
 
 class CadastroEstabelecimento2 extends StatefulWidget {
   const CadastroEstabelecimento2({super.key});
@@ -34,153 +36,64 @@ class _CadastroEstabelecimento2State extends State<CadastroEstabelecimento2> {
         ? rascunho.validar(PassoCadastro.perfil)
         : const <String, String>{};
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            //padding: const EdgeInsets.fromLTRB(24, 10, 24, 30),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // LOGO
-                  Center(
-                    child: Image.asset(
-                      'assets/imagens/UaiOu_logo_horizontal.png',
-                      height: 150,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // TÍTULO
-                  const Text(
-                    'Quase lá...',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Color.fromRGBO(254, 98, 29, 1),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // BARRA DE PROGRESSO
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: 0.66,
-                      minHeight: 10,
-                      backgroundColor: context.cores.borda,
-                      valueColor: const AlwaysStoppedAnimation(
-                        Color.fromRGBO(108, 201, 80, 1),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // CNPJ
-                  CampoCadastro(
-                    rotulo: 'CNPJ',
-                    valorInicial: rascunho.cnpj,
-                    aoMudar: (v) => rascunho.cnpj = v,
-                    teclado: TextInputType.number,
-                    erro: erros['CNPJ'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // RUA
-                  CampoCadastro(
-                    rotulo: 'Rua',
-                    valorInicial: rascunho.rua,
-                    aoMudar: (v) => rascunho.rua = v,
-                    erro: erros['Rua'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // ENDEREÇO
-                  CampoCadastro(
-                    rotulo: 'Endereço',
-                    valorInicial: rascunho.enderecoComplemento,
-                    aoMudar: (v) => rascunho.enderecoComplemento = v,
-                    erro: erros['Endereço'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // NÚMERO
-                  CampoCadastro(
-                    rotulo: 'Número',
-                    valorInicial: rascunho.numero,
-                    aoMudar: (v) => rascunho.numero = v,
-                    teclado: TextInputType.number,
-                    erro: erros['Número'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // CIDADE
-                  CampoCadastro(
-                    rotulo: 'Cidade',
-                    valorInicial: rascunho.cidade,
-                    aoMudar: (v) => rascunho.cidade = v,
-                    erro: erros['Cidade'],
-                  ),
-
-                  const SizedBox(height: 35),
-
-                  // BOTÃO PRÓXIMO
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _avancar(context, rascunho);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Próximo',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // VOLTAR
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Voltar a tela anterior',
-                        style: TextStyle(
-                          color: context.cores.textoSuave,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  //const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
+    return EsqueletoCadastro(
+      passo: 2,
+      titulo: 'Seu negócio',
+      subtitulo:
+          'O endereço é o ponto de retirada: é para lá que o entregador vai.',
+      rotuloBotao: 'Continuar',
+      aoAvancar: () => _avancar(context, rascunho),
+      filhos: [
+        CampoCadastro(
+          rotulo: 'CNPJ',
+          exemplo: '00.000.000/0000-00',
+          mascara: [MascaraEntrada.cnpj],
+          valorInicial: rascunho.cnpj,
+          aoMudar: (v) => rascunho.cnpj = v,
+          teclado: TextInputType.number,
+          erro: erros['CNPJ'],
         ),
-      ),
+
+        const SizedBox(height: 14),
+        CampoCadastro(
+          rotulo: 'Rua',
+          exemplo: 'Rua Beija-Flor',
+          valorInicial: rascunho.rua,
+          aoMudar: (v) => rascunho.rua = v,
+          erro: erros['Rua'],
+        ),
+
+        const SizedBox(height: 14),
+        CampoCadastro(
+          rotulo: 'Endereço',
+          exemplo: 'Apto, bloco, referência',
+          valorInicial: rascunho.enderecoComplemento,
+          aoMudar: (v) => rascunho.enderecoComplemento = v,
+          erro: erros['Endereço'],
+        ),
+
+        const SizedBox(height: 14),
+        CampoCadastro(
+          rotulo: 'Número',
+          exemplo: '45',
+          mascara: [FilteringTextInputFormatter.digitsOnly],
+          valorInicial: rascunho.numero,
+          aoMudar: (v) => rascunho.numero = v,
+          teclado: TextInputType.number,
+          erro: erros['Número'],
+        ),
+
+        const SizedBox(height: 14),
+        CampoCadastro(
+          rotulo: 'Cidade',
+          exemplo: 'Santa Rita do Sapucaí',
+          valorInicial: rascunho.cidade,
+          aoMudar: (v) => rascunho.cidade = v,
+          erro: erros['Cidade'],
+        ),
+
+        const SizedBox(height: 35),
+      ],
     );
   }
 }

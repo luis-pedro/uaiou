@@ -55,10 +55,21 @@ ThemeData _tema(
     dividerColor: cores.borda,
     pageTransitionsTheme: transicoes,
     extensions: [cores],
-    appBarTheme: const AppBarTheme(
-      backgroundColor: CoresUaiou.principal,
-      foregroundColor: CoresUaiou.sobrePrincipal,
+    // Barra neutra, título forte à esquerda: o laranja fica reservado para o
+    // que é ação, em vez de ocupar o topo de toda tela.
+    appBarTheme: AppBarTheme(
+      backgroundColor: cores.fundo,
+      foregroundColor: cores.texto,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        color: cores.texto,
+        letterSpacing: -0.2,
+      ),
     ),
     // Fundo do campo e da folha seguem a superfície do tema; no escuro, um
     // branco fixo aqui seria uma lanterna na cara de quem usa à noite.
@@ -74,27 +85,117 @@ ThemeData _tema(
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: cores.superficie),
-    cardTheme: CardThemeData(color: cores.superficie),
+    cardTheme: CardThemeData(
+      color: cores.superficie,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: cores.borda),
+      ),
+    ),
+    // Botões grandes em pílula: alvo de toque confortável para quem usa o app
+    // de capacete ou com uma mão só.
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: CoresUaiou.principal,
+        foregroundColor: CoresUaiou.sobrePrincipal,
+        disabledBackgroundColor: CoresUaiou.principal.withValues(alpha: .45),
+        disabledForegroundColor: CoresUaiou.sobrePrincipal,
+        elevation: 0,
+        minimumSize: const Size(64, 52),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        shape: const StadiumBorder(),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: CoresUaiou.principal,
+        foregroundColor: CoresUaiou.sobrePrincipal,
+        minimumSize: const Size(64, 52),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        shape: const StadiumBorder(),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: cores.texto,
+        minimumSize: const Size(64, 52),
+        side: BorderSide(color: cores.borda, width: 1.5),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        shape: const StadiumBorder(),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: CoresUaiou.principal,
+        textStyle: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      labelTextStyle: WidgetStateProperty.resolveWith(
+        (estados) => TextStyle(
+          fontSize: 12,
+          fontWeight: estados.contains(WidgetState.selected)
+              ? FontWeight.w700
+              : FontWeight.w500,
+          color: estados.contains(WidgetState.selected)
+              ? CoresUaiou.principal
+              : cores.textoSuave,
+        ),
+      ),
+    ),
+    chipTheme: ChipThemeData(
+      backgroundColor: cores.superficieSuave,
+      side: BorderSide.none,
+      shape: const StadiumBorder(),
+      labelStyle: TextStyle(color: cores.texto, fontWeight: FontWeight.w600),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: cores.superficie,
+      fillColor: cores.superficieSuave,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       hintStyle: TextStyle(color: cores.textoSuave),
       labelStyle: TextStyle(color: cores.textoSuave),
       floatingLabelStyle: const TextStyle(color: CoresUaiou.principal),
       helperStyle: TextStyle(color: cores.textoSuave),
       errorStyle: TextStyle(color: cores.perigo),
       prefixStyle: TextStyle(color: cores.texto),
+      prefixIconColor: cores.textoSuave,
+      suffixIconColor: cores.textoSuave,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: cores.borda),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: cores.superficieSuave),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide(color: cores.borda),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: cores.superficieSuave),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: CoresUaiou.principal, width: 1.6),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: cores.perigo),
       ),
     ),
     textTheme: Typography.material2021(platform: TargetPlatform.android).black
-        .apply(bodyColor: cores.texto, displayColor: cores.texto)
+        .copyWith(
+          headlineMedium: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+          ),
+          titleLarge: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+          ),
+        )
         .apply(bodyColor: cores.texto, displayColor: cores.texto),
     iconTheme: IconThemeData(color: cores.texto),
     listTileTheme: ListTileThemeData(

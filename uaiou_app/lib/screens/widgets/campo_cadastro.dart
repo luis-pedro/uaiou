@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
 
@@ -18,6 +19,13 @@ class CampoCadastro extends StatefulWidget {
   /// Erro vindo da validação local ou do servidor (RF-A04.4).
   final String? erro;
 
+  /// Exemplo mostrado quando o campo está vazio e focado — o formato
+  /// esperado, ex.: "(35) 99999-9999".
+  final String? exemplo;
+
+  /// Formata enquanto digita (ver `MascaraEntrada`).
+  final List<TextInputFormatter>? mascara;
+
   const CampoCadastro({
     super.key,
     required this.rotulo,
@@ -26,6 +34,8 @@ class CampoCadastro extends StatefulWidget {
     this.teclado,
     this.senha = false,
     this.erro,
+    this.exemplo,
+    this.mascara,
   });
 
   @override
@@ -66,10 +76,11 @@ class _CampoCadastroState extends State<CampoCadastro> {
       keyboardType: widget.teclado,
       obscureText: _escondido,
       onChanged: widget.aoMudar,
+      inputFormatters: widget.mascara,
       decoration: InputDecoration(
-        hintText: widget.rotulo,
+        labelText: widget.rotulo,
+        hintText: widget.exemplo,
         errorText: widget.erro,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         suffixIcon: widget.senha
             ? IconButton(
                 icon: Icon(

@@ -61,8 +61,6 @@ class _TelaNotificacoesState extends State<TelaNotificacoes>
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: corPrincipal,
-        foregroundColor: Colors.white,
         title: const Text('Notificações'),
         actions: [
           if (controlador.naoLidas > 0)

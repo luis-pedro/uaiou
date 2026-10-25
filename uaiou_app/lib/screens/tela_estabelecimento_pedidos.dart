@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
+import 'package:uaiou/screens/casca_principal.dart';
+import 'package:uaiou/screens/tela_publicar_pedido.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/estabelecimento_service.dart';
 import 'package:uaiou/screens/tela_detalhe_pedido.dart';
-import 'package:uaiou/screens/widgets/badge_status.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
 class TelaPedidosEstabelecimento extends StatefulWidget {
@@ -20,9 +22,6 @@ class TelaPedidosEstabelecimento extends StatefulWidget {
 
 class _TelaPedidosEstabelecimentoState
     extends State<TelaPedidosEstabelecimento> {
-  /// Página selecionada do menu
-  int paginaAtual = 1;
-
   /// Cor principal do aplicativo
   static const Color corPrincipal = CoresUaiou.principal;
 
@@ -36,15 +35,10 @@ class _TelaPedidosEstabelecimentoState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: corPrincipal,
-      // `bottom: false` de propósito: quem aplica o recuo da barra do sistema
-      // (botões nativos ou gesto) é o menu inferior. Consumindo aqui, o menu
-      // ficava POR BAIXO dos botões de home/voltar.
-      body: SafeArea(
-        bottom: false,
-        child: Stack(children: [_buildConteudo(), _buildMenuInferior()]),
-      ),
+    return PaginaAba(
+      titulo: 'Pedidos',
+      subtitulo: 'Em andamento agora',
+      filho: _buildConteudo(),
     );
   }
 
@@ -52,66 +46,11 @@ class _TelaPedidosEstabelecimentoState
   /// CONTEÚDO PRINCIPAL
   /// ============================================================
 
-  Widget _buildConteudo() {
-    return Positioned.fill(
-      child: Container(
-        margin: const EdgeInsets.only(top: 70),
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-        ),
-        child: Column(
-          // Sem isto a coluna centraliza os filhos, e o cabeçalho — que ocupa
-          // só a largura do próprio texto — aparecia no meio da tela.
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 25),
-            _buildHeader(),
-            const SizedBox(height: 20),
-            Expanded(child: _buildListaPedidos()),
-            // O vão do menu acompanha a barra do sistema, senão o último card
-            // fica escondido atrás dela em aparelho com botões nativos.
-            SizedBox(height: 95 + MediaQuery.viewPaddingOf(context).bottom),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildConteudo() => _buildListaPedidos();
 
   /// ============================================================
   /// CABEÇALHO
   /// ============================================================
-
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            // Nome real da sessão (A-02), no lugar do campo vazio do
-            // antigo singleton.
-            context.watch<EstadoEstabelecimento>().nome.isEmpty
-                ? "Carregando…"
-                : context.watch<EstadoEstabelecimento>().nome,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: context.cores.texto,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            "Pedidos",
-            style: TextStyle(fontSize: 16, color: context.cores.textoSuave),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// ============================================================
   /// LISTA DE PEDIDOS
@@ -131,6 +70,7 @@ class _TelaPedidosEstabelecimentoState
           aoTentarNovamente: lista.carregar,
           textoVazio: "Nenhum pedido em andamento",
           iconeVazio: Icons.receipt_long_outlined,
+          construirVazio: _buildVazio,
           // Entregues e cancelados saem daqui: esta tela é o que está
           // acontecendo agora. O histórico fica em Atividades.
           construir: (todos) => _buildLista(
@@ -145,24 +85,10 @@ class _TelaPedidosEstabelecimentoState
   Widget _buildLista(List<Pedido> pedidos, ListaDePedidos lista) {
     // Vazio aqui não é "nenhum pedido": é "nenhum em andamento". A página pode
     // estar cheia de entregas concluídas, e dizer o contrário confundiria.
-    if (pedidos.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          Padding(
-            padding: EdgeInsets.all(40),
-            child: Text(
-              "Nenhum pedido em andamento.\nOs concluídos ficam em Atividades.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: context.cores.textoSuave),
-            ),
-          ),
-        ],
-      );
-    }
+    if (pedidos.isEmpty) return _buildVazio();
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       physics: const AlwaysScrollableScrollPhysics(),
       // RF-A03.7 — a última linha vira o gatilho da próxima página, seguindo o
       // `_links.next` do servidor.
@@ -186,201 +112,272 @@ class _TelaPedidosEstabelecimentoState
   /// CARD DO PEDIDO
   /// ============================================================
 
-  Widget _buildCardPedido(Pedido pedido) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      padding: const EdgeInsets.all(18),
+  Widget _buildVazio() {
+    final cores = context.cores;
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        Text(
+          'Nenhuma entrega rodando agora',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: cores.texto,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Quando você chamar um entregador, o pedido aparece aqui e '
+          'avança sozinho por estas etapas:',
+          style: TextStyle(fontSize: 14, color: cores.textoSuave),
+        ),
+        const SizedBox(height: 16),
+        for (var i = 0; i < 2; i++)
+          _buildCartaoFantasma(opacidade: 1 - i * .45),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: _chamarEntregador,
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size.fromHeight(56),
+          ),
+          icon: const Icon(Icons.two_wheeler_rounded),
+          label: const Text('Chamar entregador'),
+        ),
+        const SizedBox(height: 4),
+        Center(
+          child: TextButton(
+            onPressed: () => CascaPrincipal.irPara(context, 2),
+            child: const Text('Ver entregas finalizadas'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _chamarEntregador() async {
+    final publicado = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const TelaPublicarPedido()),
+    );
+    if (publicado == true && mounted) {
+      context.read<EstadoEstabelecimento>().carregar();
+    }
+  }
+
+  /// Esqueleto no formato exato do cartão real, com a trilha de etapas.
+  Widget _buildCartaoFantasma({required double opacidade}) {
+    final cores = context.cores;
+    Widget barra(double largura) => Container(
+      height: 10,
+      width: largura,
       decoration: BoxDecoration(
-        color: context.cores.superficie,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: context.cores.borda, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+        color: cores.superficieSuave,
+        borderRadius: BorderRadius.circular(5),
+      ),
+    );
+    return Opacity(
+      opacity: opacidade,
+      child: _CartaoComFaixa(
+        margem: const EdgeInsets.only(bottom: 12),
+        filho: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final icone in const [
+              Icons.place_outlined,
+              Icons.two_wheeler_rounded,
+              Icons.person_outline_rounded,
+            ])
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Icon(icone, size: 18, color: cores.textoSuave),
+                    const SizedBox(width: 10),
+                    barra(icone == Icons.place_outlined ? 180 : 110),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 4),
+            const _TrilhaDeEtapas(etapa: 0),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Etapa na trilha: publicado → aceito → chegou → coletado → entregue.
+  int _etapa(Pedido pedido) => switch (pedido.status) {
+    StatusPedido.aceito => pedido.chegouEm != null ? 2 : 1,
+    StatusPedido.coletado => 3,
+    StatusPedido.entregue || StatusPedido.entregueContestavel => 4,
+    _ => 0,
+  };
+
+  Widget _buildCardPedido(Pedido pedido) {
+    final cores = context.cores;
+    void abrir() => Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => TelaDetalhePedido(pedidoId: pedido.id)),
+    );
+
+    Widget linha(IconData icone, String texto, {bool forte = false}) => Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icone, size: 18, color: CoresUaiou.principal),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              texto,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: forte ? FontWeight.w700 : FontWeight.w500,
+                color: forte ? cores.texto : cores.textoSuave,
+              ),
+            ),
           ),
         ],
       ),
-      child: Column(
+    );
+
+    return _CartaoComFaixa(
+      margem: const EdgeInsets.only(bottom: 12),
+      aoTocar: abrir,
+      filho: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// Linha superior
           Row(
             children: [
-              Text(
-                "Pedido ${pedido.rotuloCurto}",
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              BadgeStatus(pedido.status),
-            ],
-          ),
-
-          const SizedBox(height: 15),
-
-          Text(pedido.enderecoResumido, style: const TextStyle(fontSize: 14)),
-
-          const SizedBox(height: 8),
-
-          Text(
-            "Frete: ${pedido.valor.formatarBRL()}",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: context.cores.textoSuave,
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          Center(
-            child: InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => TelaDetalhePedido(pedidoId: pedido.id),
-                ),
-              ),
-              // Alvo de toque com altura de dedo (48dp): era texto puro, e
-              // quem usa isto está de moto, com pressa.
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+              Expanded(
                 child: Text(
-                  "Visualizar pedido",
+                  "Pedido ${pedido.rotuloCurto}",
                   style: TextStyle(
-                    color: corPrincipal,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: cores.texto,
                   ),
                 ),
               ),
-            ),
+              Text(
+                pedido.valor.formatarBRL(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: CoresUaiou.principal,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 10),
+          linha(Icons.place_outlined, pedido.enderecoResumido, forte: true),
+          linha(
+            Icons.two_wheeler_rounded,
+            pedido.nomeEntregador?.isNotEmpty == true
+                ? pedido.nomeEntregador!
+                : pedido.status == StatusPedido.emNegociacao
+                ? 'Entregador propôs outro valor'
+                : 'Procurando entregador…',
+          ),
+          if (pedido.recebedorNome?.isNotEmpty == true)
+            linha(Icons.person_outline_rounded, pedido.recebedorNome!),
+          const SizedBox(height: 6),
+          _TrilhaDeEtapas(etapa: _etapa(pedido)),
         ],
       ),
     );
   }
+}
 
-  /// ============================================================
-  /// MENU INFERIOR
-  /// ============================================================
+/// Cartão com a faixa laranja à esquerda — marca visual de "em andamento".
+class _CartaoComFaixa extends StatelessWidget {
+  const _CartaoComFaixa({
+    required this.filho,
+    this.aoTocar,
+    this.margem = EdgeInsets.zero,
+  });
 
-  Widget _buildMenuInferior() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        width: double.infinity,
-        // A barra CRESCE com a faixa do sistema (botões nativos ou gesto). Com
-        // altura fixa, o SafeArea abaixo só espremia o conteúdo para dentro dos
-        // mesmos 85 px e a barra seguia por baixo dos botões do aparelho.
-        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.cores.sombra,
-              blurRadius: 15,
-              offset: Offset(0, -3),
+  final Widget filho;
+  final VoidCallback? aoTocar;
+  final EdgeInsetsGeometry margem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Cartao(
+      margem: margem,
+      aoTocar: aoTocar,
+      preenchimento: EdgeInsets.zero,
+      filho: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 4, color: CoresUaiou.principal),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 16, 14),
+                child: filho,
+              ),
             ),
           ],
         ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
-              _buildItemMenu(
-                index: 1,
-                icone: Icons.shopping_bag,
-                texto: "Pedidos",
-              ),
-              _buildItemMenu(
-                index: 2,
-                icone: Icons.list_alt,
-                texto: "Atividades",
-              ),
-              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
-            ],
-          ),
-        ),
       ),
     );
   }
+}
 
-  /// ============================================================
-  /// ITEM DO MENU
-  /// ============================================================
+/// Trilha de cinco etapas do pedido; a atual e as anteriores em laranja.
+class _TrilhaDeEtapas extends StatelessWidget {
+  const _TrilhaDeEtapas({required this.etapa});
 
-  Widget _buildItemMenu({
-    required int index,
-    required IconData icone,
-    required String texto,
-  }) {
-    final bool selecionado = paginaAtual == index;
+  final int etapa;
 
-    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
+  static const _rotulos = [
+    'Publicado',
+    'Aceito',
+    'Chegou',
+    'Coletado',
+    'Entregue',
+  ];
 
-    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
-    // os quatro itens soavam iguais.
-    return Semantics(
-      button: true,
-      selected: selecionado,
-      label: texto,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _onItemMenuTap(index),
-        child: SizedBox(
-          width: 85,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icone, color: cor, size: 27),
-              const SizedBox(height: 5),
-              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
+  @override
+  Widget build(BuildContext context) {
+    final cores = context.cores;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            for (var i = 0; i < _rotulos.length; i++) ...[
+              if (i > 0)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: i <= etapa ? CoresUaiou.principal : cores.borda,
+                  ),
+                ),
+              Container(
+                width: i == etapa ? 12 : 8,
+                height: i == etapa ? 12 : 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i <= etapa ? CoresUaiou.principal : cores.borda,
+                ),
+              ),
             ],
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          _rotulos[etapa],
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: CoresUaiou.principal,
           ),
         ),
-      ),
+      ],
     );
-  }
-
-  /// ============================================================
-  /// NAVEGAÇÃO
-  /// ============================================================
-
-  void _onItemMenuTap(int index) {
-    if (paginaAtual == index) return;
-
-    setState(() {
-      paginaAtual = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/principal_estabelecimento');
-        break;
-
-      case 1:
-        break;
-
-      case 2:
-        Navigator.pushReplacementNamed(context, '/atividades_estabelecimento');
-        break;
-
-      case 3:
-        Navigator.pushReplacementNamed(context, '/perfil_estabelecimento');
-        break;
-    }
   }
 }

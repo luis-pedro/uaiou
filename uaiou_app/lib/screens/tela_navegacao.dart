@@ -50,8 +50,6 @@ class TelaNavegacao extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: corPrincipal,
-        foregroundColor: Colors.white,
         title: const Text('Navegação'),
         actions: [
           IconButton(

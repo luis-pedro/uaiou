@@ -129,11 +129,7 @@ class _TelaPublicarPedidoState extends State<TelaPublicarPedido> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('Pedir um entregador'),
-      ),
+      appBar: AppBar(title: const Text('Pedir um entregador')),
       body: SafeArea(
         child: ListenableBuilder(
           listenable: _controlador,

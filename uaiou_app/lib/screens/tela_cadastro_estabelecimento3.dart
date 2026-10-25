@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/cadastro/controlador_cadastro.dart';
 import 'package:uaiou/core/cadastro/rascunho_cadastro.dart';
 import 'package:uaiou/screens/widgets/campo_cadastro.dart';
+import 'package:uaiou/screens/widgets/esqueleto_cadastro.dart';
 
 class CadastroEstabelecimento3 extends StatefulWidget {
   const CadastroEstabelecimento3({super.key});
@@ -47,7 +47,6 @@ class _CadastroEstabelecimento3State extends State<CadastroEstabelecimento3> {
     }
   }
 
-  bool lembrarSenha = false;
   bool esconderSenha = true;
   bool esconderConfirmacao = true;
 
@@ -59,178 +58,47 @@ class _CadastroEstabelecimento3State extends State<CadastroEstabelecimento3> {
         ? rascunho.validar(PassoCadastro.credenciais)
         : const <String, String>{};
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            //padding: const EdgeInsets.fromLTRB(24, 10, 24, 30),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // LOGO
-                  Center(
-                    child: Image.asset(
-                      'assets/imagens/UaiOu_logo_horizontal.png',
-                      height: 150,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // TÍTULO
-                  const Text(
-                    'Pronto!',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromRGBO(254, 98, 29, 1),
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // BARRA DE PROGRESSO
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: 1.0,
-                      minHeight: 10,
-                      backgroundColor: context.cores.borda,
-                      valueColor: const AlwaysStoppedAnimation(
-                        Color.fromRGBO(108, 201, 80, 1),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // USUÁRIO
-                  CampoCadastro(
-                    rotulo: 'Usuário',
-                    valorInicial: rascunho.login,
-                    aoMudar: (v) => rascunho.login = v,
-                    erro: erros['Usuário'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // SENHA
-                  CampoCadastro(
-                    rotulo: 'Senha',
-                    valorInicial: rascunho.senha,
-                    aoMudar: (v) => rascunho.senha = v,
-                    senha: true,
-                    erro: erros['Senha'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // CONFIRMAR SENHA
-                  CampoCadastro(
-                    rotulo: 'Confirme a senha',
-                    valorInicial: rascunho.confirmacaoDeSenha,
-                    aoMudar: (v) => rascunho.confirmacaoDeSenha = v,
-                    senha: true,
-                    erro: erros['Confirme a senha'],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  // LEMBRAR SENHA
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: lembrarSenha,
-                        activeColor: const Color.fromRGBO(254, 98, 29, 1),
-                        onChanged: (valor) {
-                          setState(() {
-                            lembrarSenha = valor!;
-                          });
-                        },
-                      ),
-                      const Text(
-                        'Lembrar-se da senha',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Erro do servidor, exibido como veio (RF-A04.3).
-                  if (cadastro.falha != null)
-                    AvisoDeErro(cadastro.falha!.mensagem),
-
-                  const SizedBox(height: 10),
-
-                  // BOTÃO FINALIZAR
-                  SizedBox(
-                    width: double.infinity,
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: cadastro.enviando
-                          ? null
-                          : () => _concluir(context, rascunho),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color.fromRGBO(254, 98, 29, 1),
-                        disabledBackgroundColor: const Color.fromRGBO(
-                          254,
-                          98,
-                          29,
-                          0.5,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: cadastro.enviando
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text(
-                              'Finalizar Cadastro',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
-                            ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // VOLTAR
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Voltar a tela anterior',
-                        style: TextStyle(
-                          color: context.cores.textoSuave,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  //const SizedBox(height: 20),
-                ],
-              ),
-            ),
-          ),
+    return EsqueletoCadastro(
+      passo: 3,
+      titulo: 'Crie seu acesso',
+      subtitulo: 'É com este usuário e senha que você entra no app.',
+      rotuloBotao: 'Criar conta',
+      carregando: cadastro.enviando,
+      aoAvancar: cadastro.enviando ? null : () => _concluir(context, rascunho),
+      filhos: [
+        CampoCadastro(
+          rotulo: 'Usuário',
+          exemplo: 'seu_usuario',
+          valorInicial: rascunho.login,
+          aoMudar: (v) => rascunho.login = v,
+          erro: erros['Usuário'],
         ),
-      ),
+
+        const SizedBox(height: 14),
+        CampoCadastro(
+          rotulo: 'Senha',
+          valorInicial: rascunho.senha,
+          aoMudar: (v) => rascunho.senha = v,
+          senha: true,
+          erro: erros['Senha'],
+        ),
+
+        const SizedBox(height: 14),
+        CampoCadastro(
+          rotulo: 'Confirme a senha',
+          valorInicial: rascunho.confirmacaoDeSenha,
+          aoMudar: (v) => rascunho.confirmacaoDeSenha = v,
+          senha: true,
+          erro: erros['Confirme a senha'],
+        ),
+
+        const SizedBox(height: 16),
+
+        // Erro do servidor, exibido como veio (RF-A04.3).
+        if (cadastro.falha != null) AvisoDeErro(cadastro.falha!.mensagem),
+
+        const SizedBox(height: 10),
+      ],
     );
   }
 }

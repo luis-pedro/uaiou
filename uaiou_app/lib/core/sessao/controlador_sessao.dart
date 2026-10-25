@@ -133,6 +133,28 @@ class ControladorSessao extends ChangeNotifier implements ProvedorDeCredencial {
     await _registrarDispositivo();
   }
 
+  /// Login único, sem o usuário escolher o papel.
+  ///
+  /// O contrato de `POST /auth/sessions` exige `role`, e o servidor só
+  /// responde `ROLE_MISMATCH` **depois** de conferir a senha — então tentar
+  /// o outro papel nesse caso não revela nada a quem não tem a senha. Senha
+  /// errada continua falhando na primeira tentativa, com a mesma mensagem.
+  Future<void> entrarSemPapel({
+    required String login,
+    required String senha,
+  }) async {
+    try {
+      await entrarComSenha(login: login, senha: senha, papel: Papel.entregador);
+    } on ErroApi catch (erro) {
+      if (erro.codigo != 'ROLE_MISMATCH') rethrow;
+      await entrarComSenha(
+        login: login,
+        senha: senha,
+        papel: Papel.estabelecimento,
+      );
+    }
+  }
+
   /// RF-A02.2
   Future<void> entrarComGoogle({
     required String idToken,

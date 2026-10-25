@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/screens/widgets/dialogo_padrao.dart';
-import 'package:uaiou/core/tema/cores.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/sessao/controlador_sessao.dart';
@@ -38,31 +37,17 @@ class AcaoSair extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 28),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _confirmarESair(context),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-          decoration: BoxDecoration(
-            color: context.cores.superficie,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _corPerigo.withValues(alpha: .4)),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.logout, color: _corPerigo),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Sair da conta',
-                  style: TextStyle(fontSize: 16, color: _corPerigo),
-                ),
-              ),
-            ],
-          ),
+    return Center(
+      child: TextButton.icon(
+        onPressed: () => _confirmarESair(context),
+        style: TextButton.styleFrom(
+          foregroundColor: _corPerigo,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        ),
+        icon: const Icon(Icons.logout_rounded, size: 20),
+        label: const Text(
+          'Sair da conta',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
         ),
       ),
     );

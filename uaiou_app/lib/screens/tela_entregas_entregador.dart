@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:uaiou/core/tema/cores.dart';
+import 'package:uaiou/screens/widgets/ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
@@ -17,9 +18,6 @@ class TelaEntregasEntregador extends StatefulWidget {
 }
 
 class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
-  /// Página selecionada do menu
-  int paginaAtual = 1;
-
   /// Cor principal do aplicativo
   static const Color corPrincipal = CoresUaiou.principal;
 
@@ -35,31 +33,10 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: corPrincipal,
-      // O recuo da barra do sistema é aplicado pelo menu inferior.
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [_buildTitulo(), _buildConteudo(), _buildMenuInferior()],
-        ),
-      ),
-    );
-  }
-
-  // TÍTULO
-  Widget _buildTitulo() {
-    return const Positioned(
-      top: 15,
-      left: 25,
-      child: Text(
-        "Entregas",
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+    return PaginaAba(
+      titulo: 'Entregas',
+      subtitulo: 'O que está com você agora',
+      filho: _buildConteudo(),
     );
   }
 
@@ -67,21 +44,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   /// CONTEÚDO PRINCIPAL
   /// ============================================================
 
-  Widget _buildConteudo() {
-    return Positioned.fill(
-      child: Container(
-        margin: const EdgeInsets.only(top: 70),
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-        ),
-        child: _buildLista(),
-      ),
-    );
-  }
+  Widget _buildConteudo() => _buildLista();
 
   /// ============================================================
   /// LISTA (seções: pendentes / concluídas)
@@ -98,12 +61,7 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
       onRefresh: estado.emAndamento.recarregar,
       child: ListView(
         // O vão do fim acompanha a barra, senão o último card fica atrás dela.
-        padding: EdgeInsets.fromLTRB(
-          20,
-          25,
-          20,
-          95 + MediaQuery.viewPaddingOf(context).bottom,
-        ),
+        padding: EdgeInsets.fromLTRB(20, 25, 20, 24),
         // Sem isto, puxar não funciona quando a lista é curta demais
         // para rolar — que é justamente o caso do estado vazio.
         physics: const AlwaysScrollableScrollPhysics(),
@@ -111,8 +69,6 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
           // Só o que está em andamento: concluídas e canceladas viraram
           // histórico, na tela de Atividades. Misturar as duas coisas fazia o
           // entregador rolar por entregas antigas para achar a de agora.
-          _buildTituloSecao("Entregas pendentes"),
-          const SizedBox(height: 10),
           _buildSecao(estado.emAndamento, vazio: "Nenhuma entrega pendente"),
         ],
       ),
@@ -158,90 +114,83 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
     );
   }
 
-  Widget _buildTituloSecao(String texto) {
-    return Text(
-      texto,
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: context.cores.texto,
-      ),
-    );
-  }
-
   /// ============================================================
   /// CARD DA ENTREGA
   /// ============================================================
 
   Widget _buildCardEntrega(BuildContext context, Pedido entrega) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cores.superficie,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: context.cores.textoSuave, width: 1.5),
-      ),
-      child: Column(
+    final cores = context.cores;
+    // RF-A08.2 — pedido aceito abre a execução da entrega; demais estados
+    // não têm ação aqui ainda.
+    final abrir = entrega.status == StatusPedido.aceito
+        ? () => Navigator.pushNamed(
+            context,
+            '/entrega_em_andamento',
+            arguments: entrega.id,
+          )
+        : null;
+
+    return Cartao(
+      margem: const EdgeInsets.only(bottom: 12),
+      aoTocar: abrir,
+      filho: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              const IconeTingido(Icons.storefront_rounded, tamanho: 44),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  entrega.nomeEstabelecimento?.isNotEmpty == true
-                      ? entrega.nomeEstabelecimento!
-                      : "Pedido ${entrega.rotuloCurto}",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: context.cores.texto,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entrega.nomeEstabelecimento?.isNotEmpty == true
+                          ? entrega.nomeEstabelecimento!
+                          : "Pedido ${entrega.rotuloCurto}",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: cores.texto,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    // O endereço vem no detalhe que o servidor permitiu: na
+                    // vitrine, só o bairro (RF-11.6).
+                    Text(
+                      entrega.enderecoResumido,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 13, color: cores.textoSuave),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
               BadgeStatus(entrega.status),
             ],
           ),
-
-          const SizedBox(height: 10),
-
-          // O endereço vem no detalhe que o servidor permitiu: na
-          // vitrine, só o bairro (RF-11.6).
-          Text(
-            entrega.enderecoResumido,
-            style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
-          ),
-
           const SizedBox(height: 14),
-
           Row(
             children: [
-              if (entrega.minutosDesdeAceite != null) ...[
+              if (entrega.minutosDesdeAceite != null)
                 _buildChipTempo(entrega.minutosDesdeAceite!),
-                const Spacer(),
-              ] else
-                const Spacer(),
-              InkWell(
-                // RF-A08.2 — pedido aceito abre a execução da entrega;
-                // demais estados não têm ação aqui ainda.
-                onTap: entrega.status == StatusPedido.aceito
-                    ? () => Navigator.pushNamed(
-                        context,
-                        '/entrega_em_andamento',
-                        arguments: entrega.id,
-                      )
-                    : null,
-                child: const Text(
-                  "Visualizar pedido",
-                  style: TextStyle(
-                    color: corPrincipal,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+              const Spacer(),
+              if (abrir != null)
+                FilledButton.icon(
+                  onPressed: abrir,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
+                  icon: const Icon(Icons.navigation_rounded, size: 18),
+                  label: const Text("Continuar"),
                 ),
-              ),
             ],
           ),
         ],
@@ -250,132 +199,16 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
   }
 
   Widget _buildChipTempo(int minutos) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.cores.textoSuave),
-      ),
-      child: Text(
-        "há $minutos min",
-        style: TextStyle(fontSize: 13, color: context.cores.texto),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// MENU INFERIOR
-  /// ============================================================
-
-  Widget _buildMenuInferior() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      bottom: 0,
-      child: Container(
-        width: double.infinity,
-        height: 85 + MediaQuery.viewPaddingOf(context).bottom,
-        decoration: BoxDecoration(
-          color: context.cores.superficie,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(40),
-            topRight: Radius.circular(40),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: context.cores.sombra,
-              blurRadius: 15,
-              offset: Offset(0, -3),
-            ),
-          ],
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.schedule_rounded, size: 16, color: context.cores.textoSuave),
+        const SizedBox(width: 4),
+        Text(
+          "há $minutos min",
+          style: TextStyle(fontSize: 13, color: context.cores.textoSuave),
         ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildItemMenu(index: 0, icone: Icons.home, texto: "Principal"),
-              _buildItemMenu(
-                index: 1,
-                icone: Icons.local_shipping,
-                texto: "Entregas",
-              ),
-              _buildItemMenu(
-                index: 2,
-                icone: Icons.list_alt,
-                texto: "Atividades",
-              ),
-              _buildItemMenu(index: 3, icone: Icons.person, texto: "Perfil"),
-            ],
-          ),
-        ),
-      ),
+      ],
     );
-  }
-
-  /// ============================================================
-  /// ITEM DO MENU
-  /// ============================================================
-
-  Widget _buildItemMenu({
-    required int index,
-    required IconData icone,
-    required String texto,
-  }) {
-    final bool selecionado = paginaAtual == index;
-
-    final Color cor = selecionado ? corPrincipal : context.cores.textoSuave;
-
-    // `selected` faz o leitor de tela anunciar qual aba está aberta; sem isso
-    // os quatro itens soavam iguais.
-    return Semantics(
-      button: true,
-      selected: selecionado,
-      label: texto,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _onItemMenuTap(index),
-        child: SizedBox(
-          width: 85,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icone, color: cor, size: 27),
-              const SizedBox(height: 5),
-              Text(texto, style: TextStyle(color: cor, fontSize: 12)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ============================================================
-  /// NAVEGAÇÃO
-  /// ============================================================
-
-  void _onItemMenuTap(int index) {
-    if (paginaAtual == index) return;
-
-    setState(() {
-      paginaAtual = index;
-    });
-
-    switch (index) {
-      case 0:
-        Navigator.pushReplacementNamed(context, '/principal_entregador');
-        break;
-
-      case 1:
-        break;
-
-      case 2:
-        Navigator.pushReplacementNamed(context, '/atividades_entregador');
-        break;
-
-      case 3:
-        Navigator.pushReplacementNamed(context, '/perfil_entregador');
-        break;
-    }
   }
 }

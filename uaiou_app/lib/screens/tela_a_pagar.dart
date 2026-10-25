@@ -38,11 +38,7 @@ class _TelaAPagarState extends State<TelaAPagar> {
     final controlador = context.watch<ControladorPayables>();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: corPrincipal,
-        foregroundColor: Colors.white,
-        title: const Text('A pagar'),
-      ),
+      appBar: AppBar(title: const Text('A pagar')),
       body: RefreshIndicator(
         color: corPrincipal,
         onRefresh: controlador.recarregar,
