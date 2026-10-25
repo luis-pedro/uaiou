@@ -105,6 +105,9 @@ class _TelaRoteiroState extends State<TelaRoteiro> {
                           ? null
                           : LatLng(posicao.lat, posicao.lng),
                       preencher: true,
+                      // A legenda "até a loja / até a entrega" é da rota de
+                      // um pedido só; aqui as paradas estão na lista abaixo.
+                      mostrarLegenda: false,
                     ),
                   )
                 else
