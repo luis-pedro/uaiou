@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uaiou/core/pedidos/lista_de_pedidos.dart';
 import 'package:uaiou/others/pedido.dart';
 import 'package:uaiou/others/entregador_service.dart';
+import 'package:uaiou/screens/tela_roteiro.dart';
 import 'package:uaiou/screens/widgets/badge_status.dart';
 import 'package:uaiou/screens/widgets/visao_carregavel.dart';
 
@@ -91,9 +92,33 @@ class _TelaEntregasEntregadorState extends State<TelaEntregasEntregador> {
         iconeVazio: Icons.local_shipping_outlined,
         construir: (entregas) => Column(
           children: [
+            // Com mais de uma entrega na mão, a pergunta passa a ser
+            // "por onde eu começo?" — o roteiro responde com a ordem.
+            if (entregas.length >= 2) _buildBotaoRoteiro(entregas.length),
             ...entregas.map((entrega) => _buildCardEntrega(context, entrega)),
             if (lista.temMais) _buildCarregarMais(lista),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotaoRoteiro(int quantidade) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TelaRoteiro()),
+          ),
+          icon: const Icon(Icons.alt_route),
+          label: Text("Ver rota com as $quantidade entregas"),
+          style: FilledButton.styleFrom(
+            backgroundColor: corPrincipal,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
         ),
       ),
     );

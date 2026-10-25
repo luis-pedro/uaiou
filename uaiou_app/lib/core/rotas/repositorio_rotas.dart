@@ -1,6 +1,7 @@
 import '../rede/cliente_api.dart';
 import '../rede/erros_api.dart';
 import 'modelo_rota.dart';
+import 'modelo_roteiro.dart';
 
 /// `GET /orders/{id}/route` — sub-recurso de rota do pedido (T-25).
 ///
@@ -26,5 +27,30 @@ class RepositorioRotas {
       );
     }
     return RotaDoPedido.doJson(Map<String, dynamic>.from(resposta));
+  }
+
+  /// `GET /couriers/me/route` — um trajeto por todos os pedidos em
+  /// andamento do entregador, com as paradas em ordem.
+  ///
+  /// [comPedido] simula um pedido da vitrine no roteiro, sem aceitá-lo:
+  /// a resposta diz quanto ele acrescenta.
+  Future<RoteiroDoEntregador> obterRoteiro({
+    PontoGeo? origem,
+    String? comPedido,
+  }) async {
+    final resposta = await _api.obter(
+      '/couriers/me/route',
+      query: {
+        if (origem != null) 'lat': origem.lat,
+        if (origem != null) 'lng': origem.lng,
+        'withOrder': ?comPedido,
+      },
+    );
+    if (resposta is! Map) {
+      throw const ErroInesperado(
+        mensagem: 'Resposta de roteiro fora do contrato.',
+      );
+    }
+    return RoteiroDoEntregador.doJson(Map<String, dynamic>.from(resposta));
   }
 }
